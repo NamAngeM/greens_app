@@ -18,6 +18,10 @@ class _ProductsViewState extends State<ProductsView> {
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
   int _currentIndex = 2; // Index pour la page products (2 = Shop)
+  
+  // Ajouter une liste pour le panier
+  List<CartItem> _cartItems = [];
+  bool _isCartVisible = false;
 
   @override
   void initState() {
@@ -133,6 +137,61 @@ class _ProductsViewState extends State<ProductsView> {
     });
   }
 
+  // Ajouter un produit au panier
+  void _addToCart(Product product) {
+    setState(() {
+      // Vérifier si le produit est déjà dans le panier
+      int existingIndex = _cartItems.indexWhere((item) => item.product.name == product.name);
+      
+      if (existingIndex != -1) {
+        // Si le produit existe déjà, augmenter la quantité
+        _cartItems[existingIndex].quantity++;
+      } else {
+        // Sinon, ajouter un nouvel élément au panier
+        _cartItems.add(CartItem(product: product, quantity: 1));
+      }
+      
+      // Afficher un message de confirmation
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} ajouté au panier'),
+          duration: const Duration(seconds: 2),
+          action: SnackBarAction(
+            label: 'Voir le panier',
+            onPressed: () {
+              setState(() {
+                _isCartVisible = true;
+              });
+            },
+          ),
+        ),
+      );
+    });
+  }
+  
+  // Supprimer un produit du panier
+  void _removeFromCart(int index) {
+    setState(() {
+      _cartItems.removeAt(index);
+    });
+  }
+  
+  // Modifier la quantité d'un produit dans le panier
+  void _updateQuantity(int index, int newQuantity) {
+    setState(() {
+      if (newQuantity > 0) {
+        _cartItems[index].quantity = newQuantity;
+      } else {
+        _cartItems.removeAt(index);
+      }
+    });
+  }
+  
+  // Calculer le total du panier
+  double get _cartTotal {
+    return _cartItems.fold(0, (total, item) => total + (item.product.price * item.quantity));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -159,14 +218,64 @@ class _ProductsViewState extends State<ProductsView> {
           ],
         ),
         actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.settings,
-              color: Color(0xFF1F3140),
-            ),
-            onPressed: () {
-              // Action pour les paramètres
-            },
+          // Ajouter un bouton pour afficher le panier avec un design amélioré
+          Stack(
+            alignment: Alignment.center,
+            children: [
+              Container(
+                margin: const EdgeInsets.only(right: 8),
+                decoration: BoxDecoration(
+                  color: _isCartVisible ? const Color(0xFF4CAF50).withOpacity(0.1) : Colors.transparent,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: IconButton(
+                  icon: Image.asset(
+                    'assets/images/icons/basket.png',
+                    width: 24,
+                    height: 24,
+                    color: _isCartVisible ? const Color(0xFF4CAF50) : const Color(0xFF1F3140),
+                  ),
+                  onPressed: () {
+                    setState(() {
+                      _isCartVisible = !_isCartVisible;
+                    });
+                  },
+                  tooltip: 'Voir mon panier',
+                ),
+              ),
+              if (_cartItems.isNotEmpty)
+                Positioned(
+                  top: 8,
+                  right: 8,
+                  child: Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(10),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.red.withOpacity(0.3),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    constraints: const BoxConstraints(
+                      minWidth: 16,
+                      minHeight: 16,
+                    ),
+                    child: Text(
+                      _cartItems.length.toString(),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 10,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ),
+                ),
+            ],
           ),
         ],
         bottom: PreferredSize(
@@ -185,7 +294,9 @@ class _ProductsViewState extends State<ProductsView> {
           ),
         ),
       ),
-      body: Column(
+      body: _isCartVisible
+          ? _buildCartView()
+          : Column(
         children: [
           // Category filter
           Container(
@@ -269,7 +380,7 @@ class _ProductsViewState extends State<ProductsView> {
                     child: Text(
                       "Fashion",
                       style: TextStyle(
-                        color: Color(0xFF1F3140),
+                        color: const Color(0xFF1F3140),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -301,7 +412,7 @@ class _ProductsViewState extends State<ProductsView> {
                     child: Text(
                       "Essentials",
                       style: TextStyle(
-                        color: Color(0xFF1F3140),
+                        color: const Color(0xFF1F3140),
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                       ),
@@ -343,6 +454,407 @@ class _ProductsViewState extends State<ProductsView> {
           }
         },
       ),
+    );
+  }
+
+  // Construire la vue du panier avec un design amélioré
+  Widget _buildCartView() {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 12.0),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 8,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Image.asset(
+                      'assets/images/icons/basket.png',
+                      width: 24,
+                      height: 24,
+                      color: const Color(0xFF4CAF50),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Mon Panier',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1F3140),
+                        ),
+                      ),
+                      Text(
+                        '${_cartItems.length} article${_cartItems.length > 1 ? 's' : ''}',
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: Colors.grey.shade600,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+              TextButton.icon(
+                icon: const Icon(Icons.arrow_back, size: 18),
+                label: const Text('Retour'),
+                style: TextButton.styleFrom(
+                  foregroundColor: const Color(0xFF4CAF50),
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                ),
+                onPressed: () {
+                  setState(() {
+                    _isCartVisible = false;
+                  });
+                },
+              ),
+            ],
+          ),
+        ),
+        Expanded(
+          child: _cartItems.isEmpty
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(24),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: Image.asset(
+                          'assets/images/icons/basket.png',
+                          width: 60,
+                          height: 60,
+                          color: const Color(0xFF4CAF50).withOpacity(0.5),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      Text(
+                        'Votre panier est vide',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: const Color(0xFF1F3140),
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Ajoutez des produits pour commencer vos achats',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey.shade600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 32),
+                      ElevatedButton.icon(
+                        icon: const Icon(Icons.shopping_bag_outlined),
+                        label: const Text('Découvrir nos produits'),
+                        onPressed: () {
+                          setState(() {
+                            _isCartVisible = false;
+                          });
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                )
+              : ListView.builder(
+                  itemCount: _cartItems.length,
+                  padding: const EdgeInsets.symmetric(vertical: 12),
+                  itemBuilder: (context, index) {
+                    final item = _cartItems[index];
+                    return Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.03),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Padding(
+                        padding: const EdgeInsets.all(12.0),
+                        child: Row(
+                          children: [
+                            // Image du produit avec bordure
+                            Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: Image.asset(
+                                  item.product.imageAsset,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(width: 16),
+                            // Informations du produit
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    item.product.name,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 16,
+                                      color: const Color(0xFF1F3140),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  if (item.product.isEcoFriendly)
+                                    Row(
+                                      children: [
+                                        Icon(
+                                          Icons.eco,
+                                          size: 14,
+                                          color: const Color(0xFF4CAF50),
+                                        ),
+                                        const SizedBox(width: 4),
+                                        Text(
+                                          'Éco-responsable',
+                                          style: TextStyle(
+                                            fontSize: 12,
+                                            color: const Color(0xFF4CAF50),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '\$${item.product.price.toStringAsFixed(2)}',
+                                    style: TextStyle(
+                                      color: const Color(0xFF4CAF50),
+                                      fontWeight: FontWeight.bold,
+                                      fontSize: 15,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Contrôles de quantité avec design amélioré
+                            Container(
+                              decoration: BoxDecoration(
+                                color: Colors.grey.shade50,
+                                borderRadius: BorderRadius.circular(8),
+                                border: Border.all(
+                                  color: Colors.grey.shade200,
+                                  width: 1,
+                                ),
+                              ),
+                              child: Row(
+                                children: [
+                                  IconButton(
+                                    icon: const Icon(Icons.remove, size: 18),
+                                    onPressed: () {
+                                      _updateQuantity(index, item.quantity - 1);
+                                    },
+                                    color: Colors.grey.shade600,
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8),
+                                    child: Text(
+                                      item.quantity.toString(),
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        color: const Color(0xFF1F3140),
+                                      ),
+                                    ),
+                                  ),
+                                  IconButton(
+                                    icon: const Icon(Icons.add, size: 18),
+                                    onPressed: () {
+                                      _updateQuantity(index, item.quantity + 1);
+                                    },
+                                    color: const Color(0xFF4CAF50),
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(
+                                      minWidth: 32,
+                                      minHeight: 32,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            // Bouton de suppression
+                            IconButton(
+                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
+                              onPressed: () {
+                                _removeFromCart(index);
+                              },
+                              tooltip: 'Supprimer du panier',
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  },
+                ),
+        ),
+        // Résumé du panier et bouton de paiement avec design amélioré
+        if (_cartItems.isNotEmpty)
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, -5),
+                ),
+              ],
+            ),
+            child: Column(
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Sous-total:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      '\$${_cartTotal.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF1F3140),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      'Livraison:',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Colors.grey.shade600,
+                      ),
+                    ),
+                    Text(
+                      'Gratuite',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF4CAF50),
+                      ),
+                    ),
+                  ],
+                ),
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 12),
+                  child: Divider(),
+                ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Total:',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    Text(
+                      '\$${_cartTotal.toStringAsFixed(2)}',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: const Color(0xFF4CAF50),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton.icon(
+                    icon: const Icon(Icons.payment),
+                    label: const Text(
+                      'Procéder au paiement',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    onPressed: () {
+                      // Implémenter la logique de paiement ici
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Paiement en cours de traitement...'),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF4CAF50),
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      elevation: 2,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+      ],
     );
   }
 
@@ -427,13 +939,42 @@ class _ProductsViewState extends State<ProductsView> {
                   overflow: TextOverflow.ellipsis,
                 ),
                 const SizedBox(height: 8),
-                Text(
-                  '\$${product.price.toStringAsFixed(2)}',
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 14,
-                    color: Color(0xFF1F3140),
-                  ),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '\$${product.price.toStringAsFixed(2)}',
+                      style: const TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 14,
+                        color: Color(0xFF1F3140),
+                      ),
+                    ),
+                    // Bouton d'ajout au panier avec design amélioré
+                    InkWell(
+                      onTap: () => _addToCart(product),
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50),
+                          borderRadius: BorderRadius.circular(8),
+                          boxShadow: [
+                            BoxShadow(
+                              color: const Color(0xFF4CAF50).withOpacity(0.3),
+                              blurRadius: 4,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Image.asset(
+                          'assets/images/icons/basket.png',
+                          width: 18,
+                          height: 18,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ],
             ),
@@ -459,5 +1000,16 @@ class Product {
     required this.imageAsset,
     required this.category,
     this.isEcoFriendly = false,
+  });
+}
+
+// Classe pour représenter un élément du panier
+class CartItem {
+  final Product product;
+  int quantity;
+
+  CartItem({
+    required this.product,
+    required this.quantity,
   });
 }
