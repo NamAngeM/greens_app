@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "52406500094",
+    "project_id": "greens-app-59611",
+    "storage_bucket": "greens-app-59611.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:52406500094:android:641fac4240dc76f383c3af",
+        "android_client_info": {
+          "package_name": "com.greensapp.greens_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBOComehLBkIiTvsQP-vDWv3RNMC-xQ_bM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

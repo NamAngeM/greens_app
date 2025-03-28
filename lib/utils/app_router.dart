@@ -1,0 +1,159 @@
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/material.dart';
+import 'package:greens_app/services/auth_service.dart';
+import 'package:greens_app/views/auth/login_view.dart';
+import 'package:greens_app/views/auth/signup_view.dart';
+import 'package:greens_app/views/home/home_view.dart';
+import 'package:greens_app/views/onboarding/onboarding_view.dart';
+import 'package:greens_app/views/splash_view.dart';
+import 'package:greens_app/views/splash_view_connect.dart';
+import 'package:greens_app/views/carbon/carbon_calculator_view.dart';
+import 'package:greens_app/views/questions/question_1_view.dart';
+import 'package:greens_app/views/questions/question_2_view.dart';
+import 'package:greens_app/views/questions/question_3_view.dart';
+import 'package:greens_app/views/questions/question_4_view.dart';
+import 'package:greens_app/views/questions/question_5_view.dart';
+import 'package:greens_app/views/articles/article_view.dart';
+import 'package:greens_app/views/blogs/blog_view.dart';
+import 'package:greens_app/views/legale/legale_notice_view.dart';
+import 'package:greens_app/views/settings/setting_view.dart';
+import 'package:greens_app/views/chatbot/chatbot_view.dart';
+import 'package:greens_app/views/products/products_view.dart';
+import 'package:greens_app/views/profile/profile_view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+// Classe pour définir les constantes de routes
+class AppRoutes {
+  static const String splash = '/';
+  static const String splashConnect = '/splash_connect';
+  static const String login = '/login';
+  static const String signup = '/signup';
+  static const String onboarding = '/onboarding';
+  static const String home = '/home';
+  static const String carbonCalculator = '/carbon_calculator';
+  static const String products = '/products';
+  static const String rewards = '/rewards';
+  static const String profile = '/profile';
+  static const String articles = '/articles';
+  static const String settings = '/settings';
+  static const String help = '/help';
+  static const String chatbot = '/chatbot';
+  static const String question1 = '/question1';
+  static const String question2 = '/question2';
+  static const String question3 = '/question3';
+  static const String question4 = '/question4';
+  static const String question5 = '/question5';
+  static const String blog = '/blog';
+  static const String legalNotice = '/legal_notice';
+}
+
+class AppRouter {
+  static Route<dynamic> generateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case AppRoutes.splash:
+        return MaterialPageRoute(builder: (_) => const SplashView());
+      case AppRoutes.splashConnect:
+        return MaterialPageRoute(builder: (_) => const SplashViewConnect());
+      case AppRoutes.login:
+        return MaterialPageRoute(builder: (_) => const LoginView());
+      case AppRoutes.signup:
+        return MaterialPageRoute(builder: (_) => const SignupView());
+      case AppRoutes.onboarding:
+        return MaterialPageRoute(builder: (_) => const OnboardingView());
+      case AppRoutes.home:
+        return MaterialPageRoute(builder: (_) => const HomeView());
+      case AppRoutes.carbonCalculator:
+        return MaterialPageRoute(builder: (_) => const CarbonCalculatorView());
+      case AppRoutes.question1:
+        return MaterialPageRoute(builder: (_) => const Question1View());
+      case AppRoutes.question2:
+        return MaterialPageRoute(builder: (_) => const Question2View());
+      case AppRoutes.question3:
+        return MaterialPageRoute(builder: (_) => const Question3View());
+      case AppRoutes.question4:
+        return MaterialPageRoute(builder: (_) => const Question4View());
+      case AppRoutes.question5:
+        return MaterialPageRoute(builder: (_) => const Question5View());
+      case AppRoutes.articles:
+        return MaterialPageRoute(builder: (_) => const ArticleView());
+      case AppRoutes.blog:
+        return MaterialPageRoute(builder: (_) => const BlogView());
+      case AppRoutes.legalNotice:
+        return MaterialPageRoute(builder: (_) => const LegaleNoticeView());
+      case AppRoutes.settings:
+        return MaterialPageRoute(builder: (_) => const SettingView());
+      case AppRoutes.products:
+        return MaterialPageRoute(builder: (_) => const ProductsView());
+      case AppRoutes.chatbot:
+        return MaterialPageRoute(builder: (_) => const ChatbotView());
+      case AppRoutes.rewards:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Récompenses')),
+            body: const Center(child: Text('Page des récompenses - À implémenter')),
+          ),
+        );
+      case AppRoutes.profile:
+        return MaterialPageRoute(
+          builder: (_) => const ProfileView(), 
+        );
+      case AppRoutes.help:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Aide')),
+            body: const Center(child: Text('Page d\'aide - À implémenter')),
+          ),
+        );
+      default:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            body: Center(
+              child: Text('Route non définie pour ${settings.name}'),
+            ),
+          ),
+        );
+    }
+  }
+
+  static Route<dynamic> onGenerateRoute(RouteSettings settings) {
+    return generateRoute(settings);
+  }
+
+  static Widget initialRoute() {
+    return StreamBuilder<User?>(
+      stream: AuthService().authStateChanges,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SplashView();
+        } else if (snapshot.hasData) {
+          return FutureBuilder<bool>(
+            future: _hasCompletedQuestions(),
+            builder: (context, questionsSnapshot) {
+              if (questionsSnapshot.connectionState == ConnectionState.waiting) {
+                return const SplashView();
+              }
+              
+              if (questionsSnapshot.data == false) {
+                return const Question1View();
+              }
+              
+              return const HomeView();
+            },
+          );
+        } else {
+          return const LoginView();
+        }
+      },
+    );
+  }
+  
+  static Future<bool> _hasCompletedQuestions() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      return prefs.getBool('has_completed_questions') ?? false;
+    } catch (e) {
+      print('Erreur lors de la vérification des questions: $e');
+      return false;
+    }
+  }
+}
