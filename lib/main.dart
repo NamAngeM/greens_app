@@ -12,6 +12,7 @@ import 'package:greens_app/firebase/firebase_config.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/views/splash_view.dart';
+import 'package:greens_app/services/cart_service.dart';
 
 import 'controllers/article_controller.dart';
 import 'controllers/auth_controller.dart';
@@ -41,6 +42,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => RewardController()),
         ChangeNotifierProvider(create: (_) => ProductController()),
         ChangeNotifierProvider(create: (_) => ArticleController()),
+        ChangeNotifierProvider(create: (_) => CartService()),
       ],
       child: MaterialApp(
         title: 'GreenMinds',

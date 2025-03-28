@@ -24,4 +24,8 @@ class AppColors {
   static const Color lowCarbonColor = Color(0xFF34D399);
   static const Color mediumCarbonColor = Color(0xFFFCD34D);
   static const Color highCarbonColor = Color(0xFFEF4444);
+  
+  // Couleurs spécifiques pour certaines vues
+  static const Color profilePrimaryColor = Color(0xFF1F2937);
+  static const Color articlePrimaryColor = Color(0xFF1F2937);
 }

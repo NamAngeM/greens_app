@@ -104,11 +104,29 @@ class _ProfileViewState extends State<ProfileView> {
     return Scaffold(
       backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
-        title: const Text('Mon Profil'),
-        backgroundColor: AppColors.primaryColor,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            const Icon(
+              Icons.person_outline,
+              color: Color(0xFF4CAF50),
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              "Mon profil",
+              style: TextStyle(
+                color: Color(0xFF1F3140),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
         actions: [
           IconButton(
-            icon: Icon(_isEditing ? Icons.check : Icons.edit),
+            icon: Icon(_isEditing ? Icons.check : Icons.edit, color: Color(0xFF1F3140)),
             onPressed: _isEditing ? _saveProfile : _toggleEdit,
           ),
         ],
@@ -124,11 +142,11 @@ class _ProfileViewState extends State<ProfileView> {
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundColor: AppColors.primaryColor.withOpacity(0.2),
+                      backgroundColor: AppColors.profilePrimaryColor.withOpacity(0.2),
                       child: Icon(
                         Icons.person,
                         size: 80,
-                        color: AppColors.primaryColor,
+                        color: AppColors.profilePrimaryColor,
                       ),
                     ),
                     const SizedBox(height: 24),
@@ -240,7 +258,7 @@ class _ProfileViewState extends State<ProfileView> {
             style: TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.bold,
-              color: AppColors.primaryColor,
+              color: AppColors.profilePrimaryColor,
             ),
           ),
           const SizedBox(height: 16),

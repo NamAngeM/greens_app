@@ -7,14 +7,9 @@ import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/widgets/custom_button.dart';
 import 'package:greens_app/widgets/menu.dart';
-
-import '../../controllers/article_controller.dart';
-import '../../controllers/auth_controller.dart';
-import '../../controllers/product_controller.dart';
-import '../../utils/app_colors.dart';
-import '../../utils/app_router.dart';
-import '../../widgets/custom_button.dart';
-import '../../widgets/menu.dart';
+import 'package:greens_app/views/products/products_view.dart';
+import 'package:greens_app/services/cart_service.dart';
+import 'package:greens_app/models/product_model.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -385,6 +380,9 @@ class _HomeViewState extends State<HomeView> {
   }
   
   Widget _buildProductCard(String imagePath, String brand, String name, String price) {
+    // Extraire le prix numérique pour le panier (enlever le symbole de devise)
+    final priceValue = double.tryParse(price.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0;
+    
     return Container(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -400,18 +398,79 @@ class _HomeViewState extends State<HomeView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image
-          ClipRRect(
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(12),
-              topRight: Radius.circular(12),
-            ),
-            child: Image.asset(
-              imagePath,
-              height: 120,
-              width: double.infinity,
-              fit: BoxFit.cover,
-            ),
+          // Image avec bouton d'ajout au panier
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(12),
+                  topRight: Radius.circular(12),
+                ),
+                child: Image.asset(
+                  imagePath,
+                  height: 120,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                ),
+              ),
+              // Bouton d'ajout au panier
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: GestureDetector(
+                  onTap: () {
+                    // Créer un ProductModel à partir des données
+                    final product = ProductModel(
+                      id: name.hashCode.toString(), // Génère un ID basé sur le nom
+                      name: name.split('\n').first,
+                      brand: brand,
+                      description: name,
+                      price: priceValue,
+                      imageUrl: imagePath,
+                      categories: ['Home'],
+                      isEcoFriendly: true,
+                    );
+                    
+                    // Ajouter au service de panier
+                    final cartService = Provider.of<CartService>(context, listen: false);
+                    cartService.addItem(product);
+                    
+                    // Afficher un message de confirmation
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(
+                        content: Text('${name.split('\n').first} ajouté au panier'),
+                        duration: const Duration(seconds: 1),
+                        action: SnackBarAction(
+                          label: 'VOIR PANIER',
+                          onPressed: () {
+                            Navigator.pushNamed(context, AppRoutes.products);
+                          },
+                        ),
+                      ),
+                    );
+                  },
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50),
+                      shape: BoxShape.circle,
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          blurRadius: 4,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(
+                      Icons.add_shopping_cart,
+                      color: Colors.white,
+                      size: 18,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
           Padding(
             padding: const EdgeInsets.all(8.0),
@@ -453,102 +512,146 @@ class _HomeViewState extends State<HomeView> {
   }
   
   Widget _buildFooter() {
-    return Container(
-      height: 200,
-      width: double.infinity,
-      decoration: BoxDecoration(
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 80), // Marge importante pour éviter le menu
+      child: ClipRRect(
         borderRadius: BorderRadius.circular(16),
-        image: const DecorationImage(
-          image: AssetImage('assets/images/backgrounds/footer_background.png'),
-          fit: BoxFit.cover,
-        ),
-      ),
-      child: Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.transparent,
-              Colors.black.withOpacity(0.7),
-            ],
-          ),
-        ),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
+        child: Stack(
           children: [
-            // Logo
+            // Image de fond
+            Image.asset(
+              'assets/images/backgrounds/footer_background.png',
+              width: double.infinity,
+              fit: BoxFit.cover,
+            ),
+            // Overlay gradient
             Container(
-              width: 60,
-              height: 60,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white,
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/logo/green_minds_logo.png',
-                  width: 40,
-                  height: 40,
-                  color: const Color(0xFF4CAF50),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.transparent,
+                    Colors.black.withOpacity(0.7),
+                  ],
                 ),
               ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Shaping a\nsustainable future',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                height: 1.2,
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Discuss with our chatbot',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 14,
-              ),
-            ),
-            const SizedBox(height: 16),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Legal notices',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      decoration: TextDecoration.underline,
+              // Contenu
+              child: Padding(
+                padding: const EdgeInsets.all(15),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min, // Important: permet au contenu de définir la taille
+                  children: [
+                    // Logo
+                    Container(
+                      width: 45,
+                      height: 45,
+                      decoration: const BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white,
+                      ),
+                      child: Center(
+                        child: Image.asset(
+                          'assets/images/logo/green_minds_logo.png',
+                          width: 30,
+                          height: 30,
+                          color: const Color(0xFF4CAF50),
+                        ),
+                      ),
                     ),
-                  ),
-                ),
-                const Text(
-                  '|',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 12,
-                  ),
-                ),
-                TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Privacy Policy',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      decoration: TextDecoration.underline,
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Shaping a\nsustainable future',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 20, // Légèrement plus petit
+                        fontWeight: FontWeight.bold,
+                        height: 1.1, // Réduit l'espacement des lignes
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 6),
+                    // Bouton chatbot au centre
+                    Positioned.fill(
+                      child: Center(
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.pushNamed(context, AppRoutes.chatbot);
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 25, vertical: 12),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(30),
+                              border: Border.all(color: Colors.white.withOpacity(0.5), width: 1),
+                            ),
+                            child: const Text(
+                              'Discuss with our chatbot',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                shadows: [
+                                  Shadow(
+                                    offset: Offset(0, 1),
+                                    blurRadius: 2.0,
+                                    color: Color.fromARGB(100, 0, 0, 0),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Legal notices',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                        const Text(
+                          '|',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                          ),
+                        ),
+                        TextButton(
+                          onPressed: () {},
+                          style: TextButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 0),
+                            minimumSize: Size.zero,
+                            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                          ),
+                          child: const Text(
+                            'Privacy Policy',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              decoration: TextDecoration.underline,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
-              ],
+              ),
             ),
           ],
         ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/widgets/menu.dart';
+import 'package:greens_app/utils/app_colors.dart';
 
 class ArticleView extends StatefulWidget {
   const ArticleView({Key? key}) : super(key: key);
@@ -248,7 +249,26 @@ By implementing these water conservation strategies, you can significantly reduc
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Articles'),
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            const Icon(
+              Icons.article_outlined,
+              color: Color(0xFF4CAF50),
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            const Text(
+              "Découvrez nos articles",
+              style: TextStyle(
+                color: Color(0xFF1F3140),
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
       ),
       body: SafeArea(
         child: Stack(

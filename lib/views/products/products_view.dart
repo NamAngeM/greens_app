@@ -1,9 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/utils/app_router.dart';
-
-import '../../utils/app_router.dart';
-import '../../widgets/menu.dart';
+import 'package:provider/provider.dart';
+import 'package:greens_app/services/cart_service.dart';
+import 'package:greens_app/models/product_model.dart';
+import 'package:greens_app/models/cart_item_model.dart';
 
 class ProductsView extends StatefulWidget {
   const ProductsView({Key? key}) : super(key: key);
@@ -19,15 +20,38 @@ class _ProductsViewState extends State<ProductsView> {
   List<Product> _filteredProducts = [];
   int _currentIndex = 2; // Index pour la page products (2 = Shop)
   
-  // Ajouter une liste pour le panier
-  List<CartItem> _cartItems = [];
+  // Affichage du panier
   bool _isCartVisible = false;
+  final TextEditingController _promoController = TextEditingController();
 
   @override
   void initState() {
     super.initState();
     _initializeProducts();
-    _filteredProducts = _products;
+    
+    // Charger le panier depuis le service
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      Provider.of<CartService>(context, listen: false).loadCart();
+      
+      // Vérifier les arguments de navigation pour l'ajout au panier
+      final arguments = ModalRoute.of(context)?.settings.arguments;
+      if (arguments != null && arguments is Map<String, dynamic>) {
+        final productToAdd = arguments['addToCart'];
+        if (productToAdd != null && productToAdd is Product) {
+          _addToCart(productToAdd);
+          // Afficher le panier
+          setState(() {
+            _isCartVisible = true;
+          });
+        }
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _promoController.dispose();
+    super.dispose();
   }
 
   void _initializeProducts() {
@@ -124,6 +148,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Essentials',
       ),
     ];
+    _filteredProducts = _products;
   }
 
   void _filterProductsByCategory(String category) {
@@ -139,57 +164,132 @@ class _ProductsViewState extends State<ProductsView> {
 
   // Ajouter un produit au panier
   void _addToCart(Product product) {
-    setState(() {
-      // Vérifier si le produit est déjà dans le panier
-      int existingIndex = _cartItems.indexWhere((item) => item.product.name == product.name);
-      
-      if (existingIndex != -1) {
-        // Si le produit existe déjà, augmenter la quantité
-        _cartItems[existingIndex].quantity++;
-      } else {
-        // Sinon, ajouter un nouvel élément au panier
-        _cartItems.add(CartItem(product: product, quantity: 1));
-      }
-      
-      // Afficher un message de confirmation
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('${product.name} ajouté au panier'),
-          duration: const Duration(seconds: 2),
-          action: SnackBarAction(
-            label: 'Voir le panier',
-            onPressed: () {
-              setState(() {
-                _isCartVisible = true;
-              });
-            },
-          ),
+    // Convertir le Product local en ProductModel
+    final productModel = ProductModel(
+      id: product.name.hashCode.toString(), // Génère un ID basé sur le nom
+      name: product.name,
+      brand: 'GreenMinds', // À adapter selon vos besoins
+      description: product.description,
+      price: product.price,
+      imageUrl: product.imageAsset,
+      categories: [product.category],
+      isEcoFriendly: product.isEcoFriendly,
+    );
+    
+    // Ajouter au service de panier
+    final cartService = Provider.of<CartService>(context, listen: false);
+    cartService.addItem(productModel);
+    
+    // Afficher un message de confirmation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${product.name} ajouté au panier'),
+        duration: const Duration(seconds: 1),
+        action: SnackBarAction(
+          label: 'VOIR PANIER',
+          onPressed: () {
+            setState(() {
+              _isCartVisible = true;
+            });
+          },
         ),
-      );
-    });
+      ),
+    );
   }
-  
-  // Supprimer un produit du panier
+
+  // Supprimer un élément du panier
   void _removeFromCart(int index) {
-    setState(() {
-      _cartItems.removeAt(index);
-    });
+    final cartService = Provider.of<CartService>(context, listen: false);
+    final removedItem = cartService.removeItem(index);
+    
+    // Afficher un message de confirmation avec option d'annulation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('${removedItem.product.name} supprimé du panier'),
+        duration: const Duration(seconds: 2),
+        action: SnackBarAction(
+          label: 'ANNULER',
+          onPressed: () {
+            final cartService = Provider.of<CartService>(context, listen: false);
+            cartService.addItem(removedItem.product);
+          },
+        ),
+      ),
+    );
   }
-  
-  // Modifier la quantité d'un produit dans le panier
+
+  // Mettre à jour la quantité d'un élément du panier
   void _updateQuantity(int index, int newQuantity) {
+    final cartService = Provider.of<CartService>(context, listen: false);
+    cartService.updateQuantity(index, newQuantity);
+  }
+
+  // Mettre à jour la quantité directement
+  void _updateQuantityDirectly(int index, String value) {
+    final parsedValue = int.tryParse(value);
+    if (parsedValue != null && parsedValue > 0) {
+      _updateQuantity(index, parsedValue);
+    }
+  }
+
+  // Appliquer un code promo
+  void _applyPromoCode() {
+    final cartService = Provider.of<CartService>(context);
+    
     setState(() {
-      if (newQuantity > 0) {
-        _cartItems[index].quantity = newQuantity;
-      } else {
-        _cartItems.removeAt(index);
-      }
+      // Utiliser le promoCode du TextEditingController
+      cartService.applyPromoCode(_promoController.text).then((isValid) {
+        // Afficher un message selon la validité du code
+        if (isValid) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Code promo appliqué avec succès'),
+              backgroundColor: Color(0xFF4CAF50),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Code promo invalide'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      });
     });
   }
-  
-  // Calculer le total du panier
-  double get _cartTotal {
-    return _cartItems.fold(0, (total, item) => total + (item.product.price * item.quantity));
+
+  // Vider le panier
+  void _clearCart() {
+    final cartService = Provider.of<CartService>(context, listen: false);
+    final oldItems = cartService.clearCart();
+    
+    // Afficher un message avec option d'annulation
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Panier vidé'),
+        duration: const Duration(seconds: 3),
+        action: SnackBarAction(
+          label: 'ANNULER',
+          onPressed: () {
+            final cartService = Provider.of<CartService>(context, listen: false);
+            cartService.restoreItems(oldItems);
+          },
+        ),
+      ),
+    );
+  }
+
+  // Sauvegarder le panier pour plus tard
+  void _saveCartForLater() {
+    // Ici, vous pourriez implémenter la sauvegarde du panier dans un compte utilisateur
+    // Pour l'instant, nous affichons simplement un message
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Panier sauvegardé pour plus tard'),
+        duration: Duration(seconds: 2),
+      ),
+    );
   }
 
   @override
@@ -243,7 +343,7 @@ class _ProductsViewState extends State<ProductsView> {
                   tooltip: 'Voir mon panier',
                 ),
               ),
-              if (_cartItems.isNotEmpty)
+              if (Provider.of<CartService>(context).itemCount > 0)
                 Positioned(
                   top: 8,
                   right: 8,
@@ -265,7 +365,7 @@ class _ProductsViewState extends State<ProductsView> {
                       minHeight: 16,
                     ),
                     child: Text(
-                      _cartItems.length.toString(),
+                      Provider.of<CartService>(context).itemCount.toString(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -459,6 +559,9 @@ class _ProductsViewState extends State<ProductsView> {
 
   // Construire la vue du panier avec un design amélioré
   Widget _buildCartView() {
+    final cartService = Provider.of<CartService>(context);
+    final cartItems = cartService.items;
+    
     return Column(
       children: [
         Container(
@@ -504,7 +607,7 @@ class _ProductsViewState extends State<ProductsView> {
                         ),
                       ),
                       Text(
-                        '${_cartItems.length} article${_cartItems.length > 1 ? 's' : ''}',
+                        '${cartService.itemCount} article${cartService.itemCount > 1 ? 's' : ''}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -531,7 +634,7 @@ class _ProductsViewState extends State<ProductsView> {
           ),
         ),
         Expanded(
-          child: _cartItems.isEmpty
+          child: cartItems.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -570,7 +673,13 @@ class _ProductsViewState extends State<ProductsView> {
                       const SizedBox(height: 32),
                       ElevatedButton.icon(
                         icon: const Icon(Icons.shopping_bag_outlined),
-                        label: const Text('Découvrir nos produits'),
+                        label: const Text(
+                          'Découvrir nos produits',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
                         onPressed: () {
                           setState(() {
                             _isCartVisible = false;
@@ -589,10 +698,10 @@ class _ProductsViewState extends State<ProductsView> {
                   ),
                 )
               : ListView.builder(
-                  itemCount: _cartItems.length,
+                  itemCount: cartItems.length,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   itemBuilder: (context, index) {
-                    final item = _cartItems[index];
+                    final item = cartItems[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
@@ -612,6 +721,8 @@ class _ProductsViewState extends State<ProductsView> {
                           children: [
                             // Image du produit avec bordure
                             Container(
+                              width: 70, // Réduire la largeur pour éviter le débordement
+                              height: 70, // Réduire la hauteur pour maintenir le ratio
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
@@ -622,16 +733,14 @@ class _ProductsViewState extends State<ProductsView> {
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
                                 child: Image.asset(
-                                  item.product.imageAsset,
-                                  width: 80,
-                                  height: 80,
+                                  item.product.imageUrl ?? 'assets/images/placeholder.png',
                                   fit: BoxFit.cover,
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 16),
+                            const SizedBox(width: 12), // Réduire l'espacement
                             // Informations du produit
-                            Expanded(
+                            Flexible(
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
@@ -739,7 +848,7 @@ class _ProductsViewState extends State<ProductsView> {
                 ),
         ),
         // Résumé du panier et bouton de paiement avec design amélioré
-        if (_cartItems.isNotEmpty)
+        if (cartItems.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -765,7 +874,7 @@ class _ProductsViewState extends State<ProductsView> {
                       ),
                     ),
                     Text(
-                      '\$${_cartTotal.toStringAsFixed(2)}',
+                      '\$${cartService.subtotal.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.bold,
@@ -810,7 +919,7 @@ class _ProductsViewState extends State<ProductsView> {
                       ),
                     ),
                     Text(
-                      '\$${_cartTotal.toStringAsFixed(2)}',
+                      '\$${cartService.total.toStringAsFixed(2)}',
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
@@ -1000,16 +1109,5 @@ class Product {
     required this.imageAsset,
     required this.category,
     this.isEcoFriendly = false,
-  });
-}
-
-// Classe pour représenter un élément du panier
-class CartItem {
-  final Product product;
-  int quantity;
-
-  CartItem({
-    required this.product,
-    required this.quantity,
   });
 }
