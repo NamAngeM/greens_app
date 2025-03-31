@@ -40,6 +40,11 @@ dependencies:
   cloud_firestore: ^4.8.5
   provider: ^6.0.5
   shared_preferences: ^2.0.0
+
+  fl_chart: ^0.60.0  # Downgraded from 0.62.0 to resolve MediaQuery.boldTextOverride issue
+  flutter_barcode_scanner: ^2.0.0
+  uuid: ^3.0.7
+  intl: ^0.18.1
   
 
 dev_dependencies:

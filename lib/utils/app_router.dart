@@ -21,6 +21,9 @@ import 'package:greens_app/views/chatbot/chatbot_view.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/views/profile/profile_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:greens_app/views/goals/goals_view.dart';
+import 'package:greens_app/views/community/community_view.dart';
+import 'package:greens_app/views/scanner/product_scanner_view.dart';
 
 // Classe pour définir les constantes de routes
 class AppRoutes {
@@ -45,6 +48,9 @@ class AppRoutes {
   static const String question5 = '/question5';
   static const String blog = '/blog';
   static const String legalNotice = '/legal_notice';
+  static const String goals = '/goals';
+  static const String community = '/community';
+static const String productScanner = '/product_scanner';
 }
 
 class AppRouter {
@@ -87,6 +93,12 @@ class AppRouter {
       case AppRoutes.chatbot:
         return MaterialPageRoute(builder: (_) => const ChatbotView());
       case AppRoutes.rewards:
+      case AppRoutes.goals:
+  return MaterialPageRoute(builder: (_) => const GoalsView());
+case AppRoutes.community:
+  return MaterialPageRoute(builder: (_) => const CommunityView());
+case AppRoutes.productScanner:
+  return MaterialPageRoute(builder: (_) => const ProductScannerView());
         return MaterialPageRoute(
           builder: (_) => Scaffold(
             appBar: AppBar(title: const Text('Récompenses')),

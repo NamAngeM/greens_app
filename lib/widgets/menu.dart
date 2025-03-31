@@ -14,87 +14,34 @@ class CustomMenu extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Stack(
-      alignment: Alignment.center,
-      clipBehavior: Clip.none,
-      children: [
-        Container(
-          height: 70,
-          decoration: BoxDecoration(
-            color: AppColors.cardColor,
-            borderRadius: const BorderRadius.only(
-              topLeft: Radius.circular(20),
-              topRight: Radius.circular(20),
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.08),
-                blurRadius: 8,
-                spreadRadius: 0,
-                offset: const Offset(0, -2),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildNavItem(context, 'home.png', 0, 'Home'),
-                _buildNavItem(context, 'article.png', 1, 'Articles'),
-                // Espace pour le bouton central
-                const SizedBox(width: 40),
-                _buildNavItem(context, 'panier.png', 2, 'Produits'),
-                _buildNavItem(context, 'profil.png', 3, 'Profile'),
-              ],
-            ),
-          ),
+    return Container(
+      height: 70,
+      decoration: BoxDecoration(
+        color: AppColors.cardColor,
+        borderRadius: const BorderRadius.only(
+          topLeft: Radius.circular(20),
+          topRight: Radius.circular(20),
         ),
-        // Bouton central surélevé
-        Positioned(
-          top: -15,
-          child: InkWell(
-            onTap: () {
-              if (onTap != null) {
-                onTap!(4); // Index spécial pour le chatbot
-              }
-              Navigator.pushNamed(context, AppRoutes.chatbot);
-            },
-            customBorder: const CircleBorder(),
-            child: Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: AppColors.secondaryColor,
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.1),
-                    blurRadius: 8,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: Image.asset(
-                  'assets/images/logo/green_minds_logo.png',
-                  width: 36,
-                  height: 36,
-                  color: Colors.white,
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Icon(
-                      Icons.chat,
-                      size: 36,
-                      color: Colors.white,
-                    );
-                  },
-                ),
-              ),
-            ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.08),
+            blurRadius: 8,
+            spreadRadius: 0,
+            offset: const Offset(0, -2),
           ),
-        ),
-      ],
+        ],
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          _buildNavItem(context, 'home.png', 0, 'Home'),
+          _buildNavItem(context, 'article.png', 1, 'Articles'),
+          _buildChatbotButton(context),
+          _buildNavItem(context, 'panier.png', 2, 'Produits'),
+          _buildNavItem(context, 'profil.png', 3, 'Profile'),
+          _buildMoreButton(context),
+        ],
+      ),
     );
   }
 
@@ -122,10 +69,11 @@ class CustomMenu extends StatelessWidget {
             break;
         }
       },
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
+      child: Container(
+        alignment: Alignment.center,
         child: Column(
           mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Image.asset(
               'assets/images/icons/$iconName',
@@ -138,7 +86,8 @@ class CustomMenu extends StatelessWidget {
                   index == 0 ? Icons.home :
                   index == 1 ? Icons.article :
                   index == 2 ? Icons.shopping_cart :
-                  Icons.person,
+                  index == 3 ? Icons.person :
+                  Icons.menu,
                   size: 24,
                   color: isActive ? AppColors.secondaryColor : AppColors.textLightColor,
                 );
@@ -147,6 +96,7 @@ class CustomMenu extends StatelessWidget {
             const SizedBox(height: 4),
             Text(
               label,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isActive ? FontWeight.bold : FontWeight.normal,
@@ -156,6 +106,175 @@ class CustomMenu extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildChatbotButton(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        if (onTap != null) {
+          onTap!(4); // Index spécial pour le chatbot
+        }
+        Navigator.pushNamed(context, AppRoutes.chatbot);
+      },
+      customBorder: const CircleBorder(),
+      child: Container(
+        width: 60,
+        height: 60,
+        margin: const EdgeInsets.only(bottom: 15),
+        decoration: BoxDecoration(
+          color: AppColors.secondaryColor,
+          shape: BoxShape.circle,
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.1),
+              blurRadius: 8,
+              spreadRadius: 1,
+              offset: const Offset(0, 2),
+            ),
+          ],
+        ),
+        child: Center(
+          child: Image.asset(
+            'assets/images/logo/green_minds_logo.png',
+            width: 36,
+            height: 36,
+            color: Colors.white,
+            errorBuilder: (context, error, stackTrace) {
+              return const Icon(
+                Icons.chat,
+                size: 36,
+                color: Colors.white,
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreButton(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        _showMoreMenu(context);
+      },
+      child: Container(
+        alignment: Alignment.center,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.more_horiz,
+              size: 24,
+              color: AppColors.textLightColor,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              'Plus',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.normal,
+                color: AppColors.textLightColor,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showMoreMenu(BuildContext context) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.cardColor,
+          borderRadius: const BorderRadius.only(
+            topLeft: Radius.circular(20),
+            topRight: Radius.circular(20),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 5,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(10),
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              'Plus d\'options',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textColor,
+              ),
+            ),
+            const SizedBox(height: 20),
+            _buildMoreMenuItem(
+              context,
+              Icons.eco,
+              'Objectifs écologiques',
+              () => Navigator.pushNamed(context, AppRoutes.goals),
+            ),
+            const Divider(),
+            _buildMoreMenuItem(
+              context,
+              Icons.people,
+              'Défis communautaires',
+              () => Navigator.pushNamed(context, AppRoutes.community),
+            ),
+            const Divider(),
+            _buildMoreMenuItem(
+              context,
+              Icons.qr_code_scanner,
+              'Scanner de produits',
+              () => Navigator.pushNamed(context, AppRoutes.productScanner),
+            ),
+            const SizedBox(height: 20),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMoreMenuItem(
+    BuildContext context,
+    IconData icon,
+    String label,
+    VoidCallback onTap,
+  ) {
+    return ListTile(
+      leading: Icon(
+        icon,
+        color: AppColors.primaryColor,
+        size: 28,
+      ),
+      title: Text(
+        label,
+        style: TextStyle(
+          fontSize: 16,
+          fontWeight: FontWeight.w500,
+          color: AppColors.textColor,
+        ),
+      ),
+      trailing: Icon(
+        Icons.arrow_forward_ios,
+        color: AppColors.textLightColor,
+        size: 16,
+      ),
+      onTap: () {
+        Navigator.pop(context); // Fermer le menu
+        onTap();
+      },
     );
   }
 }

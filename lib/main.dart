@@ -20,6 +20,9 @@ import 'controllers/carbon_footprint_controller.dart';
 import 'controllers/product_controller.dart';
 import 'controllers/reward_controller.dart';
 import 'firebase/firebase_config.dart';
+import 'package:greens_app/controllers/eco_goal_controller.dart';
+import 'package:greens_app/controllers/community_controller.dart';
+import 'package:greens_app/controllers/product_scan_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -43,6 +46,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ProductController()),
         ChangeNotifierProvider(create: (_) => ArticleController()),
         ChangeNotifierProvider(create: (_) => CartService()),
+        ChangeNotifierProvider(create: (_) => EcoGoalController()),
+ChangeNotifierProvider(create: (_) => CommunityController()),
+ChangeNotifierProvider(create: (_) => ProductScanController()),
       ],
       child: MaterialApp(
         title: 'GreenMinds',

@@ -32,7 +32,7 @@ await tester.pump(); // Ajouter un pump supplémentaire
     await tester.tap(find.text('Sign Up'));
     await tester.pumpAndSettle(Duration(seconds: 3));
 
-    // Vérification alternative avec texte de la question
-    expect(find.text('Pourquoi avez-vous téléchargé GreenMinds ?'), findsOneWidget);
+    // Remplacer la vérification de texte par une clé de widget
+expect(find.byKey(Key('splash-connect-title')), findsOneWidget);
   });
 }

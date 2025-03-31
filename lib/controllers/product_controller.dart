@@ -130,4 +130,14 @@ class ProductController extends ChangeNotifier {
       notifyListeners();
     }
   }
+
+  /// Sélectionne un produit et le définit comme produit actuel
+  void selectProduct(ProductModel product) {
+    try {
+      _selectedProduct = product;
+      notifyListeners();
+    } catch (e) {
+      _errorMessage = 'Erreur lors de la sélection du produit: $e';
+    }
+  }
 }
