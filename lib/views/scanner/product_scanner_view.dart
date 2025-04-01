@@ -47,13 +47,27 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
     final scanController = Provider.of<ProductScanController>(context);
     
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Scanner de produits'),
-        backgroundColor: AppColors.primaryColor,
+        elevation: 0,
+        title: const Text(
+          'Scanner de produits',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        backgroundColor: Colors.white,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.of(context).pop(),
+        ),
         bottom: TabBar(
           controller: _tabController,
-          indicatorColor: Colors.white,
+          labelColor: const Color(0xFF4CAF50),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF4CAF50),
           tabs: const [
             Tab(text: 'Scanner'),
             Tab(text: 'Historique'),
@@ -79,22 +93,32 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
           if (controller.isScanning)
-            const CircularProgressIndicator()
+            Container(
+              padding: const EdgeInsets.all(32),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                strokeWidth: 3,
+              ),
+            )
           else if (controller.lastScan != null)
             _buildLastScanResult(controller.lastScan!)
           else
             Column(
               children: [
                 Container(
-                  padding: const EdgeInsets.all(24),
+                  padding: const EdgeInsets.all(32),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryColor.withOpacity(0.1),
+                    color: const Color(0xFF4CAF50).withOpacity(0.1),
                     shape: BoxShape.circle,
                   ),
-                  child: Icon(
+                  child: const Icon(
                     Icons.qr_code_scanner,
                     size: 80,
-                    color: AppColors.primaryColor,
+                    color: Color(0xFF4CAF50),
                   ),
                 ),
                 const SizedBox(height: 24),
@@ -103,18 +127,47 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Placez le code-barres dans le cadre\npour le scanner automatiquement',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
                     color: Colors.grey,
                   ),
                 ),
               ],
             ),
-          const SizedBox(height: 32),
-          CustomButton(
-            text: 'Scanner un code-barres',
-            icon: Icons.qr_code_scanner,
+          const SizedBox(height: 40),
+          ElevatedButton(
             onPressed: () => _scanBarcode(context, controller, authController),
-            backgroundColor: AppColors.primaryColor,
-            width: 250,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(30),
+              ),
+              elevation: 4,
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: const [
+                Icon(Icons.qr_code_scanner),
+                SizedBox(width: 12),
+                Text(
+                  'Scanner un code-barres',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -123,22 +176,42 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
 
   Widget _buildHistoryTab(ProductScanController controller) {
     if (controller.isLoading) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(
+          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+        ),
+      );
     }
     
     if (controller.scanHistory.isEmpty) {
-      return const Center(
+      return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.history,
-              size: 64,
-              color: Colors.grey,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.history,
+                size: 80,
+                color: Colors.amber,
+              ),
             ),
-            SizedBox(height: 16),
-            Text(
+            const SizedBox(height: 16),
+            const Text(
               'Aucun historique de scan',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Scannez des produits pour les voir apparaître ici',
               style: TextStyle(
                 fontSize: 16,
                 color: Colors.grey,
@@ -160,129 +233,30 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
   }
 
   Widget _buildScanHistoryItem(ProductScan scan, ProductScanController controller) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: InkWell(
         onTap: () => _showScanDetails(context, scan),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(16),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
             children: [
               // Image du produit
               ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: Image.network(
-                  scan.imageUrl,
-                  width: 60,
-                  height: 60,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 60,
-                      height: 60,
-                      color: Colors.grey[300],
-                      child: const Icon(
-                        Icons.image_not_supported_outlined,
-                        color: Colors.grey,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 16),
-              
-              // Informations du produit
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      scan.productName,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      scan.brand,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 14,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                          decoration: BoxDecoration(
-                            color: scan.getRatingColor().withOpacity(0.2),
-                            borderRadius: BorderRadius.circular(4),
-                          ),
-                          child: Text(
-                            scan.getRatingText(),
-                            style: TextStyle(
-                              color: scan.getRatingColor(),
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                            ),
-                          ),
-                        ),
-                        const Spacer(),
-                        Text(
-                          DateFormat('dd/MM/yyyy').format(scan.scannedAt),
-                          style: const TextStyle(
-                            color: Colors.grey,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
-              ),
-              
-              // Icône pour voir plus
-              const Icon(
-                Icons.chevron_right,
-                color: Colors.grey,
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildLastScanResult(ProductScan scan) {
-    return Container(
-      margin: const EdgeInsets.all(16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.2),
-            spreadRadius: 1,
-            blurRadius: 5,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              // Image du produit
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
+                borderRadius: BorderRadius.circular(12),
                 child: Image.network(
                   scan.imageUrl,
                   width: 80,
@@ -292,11 +266,28 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
                     return Container(
                       width: 80,
                       height: 80,
-                      color: Colors.grey[300],
+                      color: Colors.grey.shade200,
                       child: const Icon(
                         Icons.image_not_supported_outlined,
                         color: Colors.grey,
-                        size: 40,
+                        size: 30,
+                      ),
+                    );
+                  },
+                  loadingBuilder: (context, child, loadingProgress) {
+                    if (loadingProgress == null) return child;
+                    return Container(
+                      width: 80,
+                      height: 80,
+                      color: Colors.grey.shade200,
+                      child: Center(
+                        child: CircularProgressIndicator(
+                          value: loadingProgress.expectedTotalBytes != null
+                              ? loadingProgress.cumulativeBytesLoaded / 
+                                  loadingProgress.expectedTotalBytes!
+                              : null,
+                          valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                        ),
                       ),
                     );
                   },
@@ -313,151 +304,434 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
                       scan.productName,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 18,
+                        fontSize: 16,
                       ),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
                     Text(
                       scan.brand,
-                      style: const TextStyle(
-                        color: Colors.grey,
-                        fontSize: 16,
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 14,
                       ),
                     ),
                     const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                      decoration: BoxDecoration(
-                        color: scan.getRatingColor().withOpacity(0.2),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Impact: ${scan.getRatingText()}',
-                        style: TextStyle(
-                          color: scan.getRatingColor(),
-                          fontWeight: FontWeight.bold,
+                    Row(
+                      children: [
+                        _buildEcoScoreBadge(scan.ecoScore),
+                        const SizedBox(width: 12),
+                        Icon(
+                          Icons.calendar_today_outlined,
+                          size: 12,
+                          color: Colors.grey.shade600,
                         ),
-                      ),
+                        const SizedBox(width: 4),
+                        Text(
+                          DateFormat('dd/MM/yyyy').format(scan.scanDate),
+                          style: TextStyle(
+                            color: Colors.grey.shade600,
+                            fontSize: 12,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
+              
+              // Flèche pour voir les détails
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey.shade400,
+              ),
             ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Impact environnemental',
-            style: TextStyle(
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
-            ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildEcoScoreBadge(String ecoScore) {
+    Color backgroundColor;
+    Color textColor = Colors.white;
+    
+    switch (ecoScore.toUpperCase()) {
+      case 'A':
+        backgroundColor = const Color(0xFF4CAF50);
+        break;
+      case 'B':
+        backgroundColor = const Color(0xFF8BC34A);
+        break;
+      case 'C':
+        backgroundColor = const Color(0xFFFFEB3B);
+        textColor = Colors.black87;
+        break;
+      case 'D':
+        backgroundColor = const Color(0xFFFF9800);
+        break;
+      case 'E':
+        backgroundColor = const Color(0xFFF44336);
+        break;
+      default:
+        backgroundColor = Colors.grey;
+    }
+    
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: backgroundColor,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Text(
+        'Score: $ecoScore',
+        style: TextStyle(
+          color: textColor,
+          fontWeight: FontWeight.bold,
+          fontSize: 12,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLastScanResult(ProductScan scan) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
           ),
-          const SizedBox(height: 8),
-          Text(
-            scan.ecoImpact,
-            style: TextStyle(
-              color: Colors.grey[700],
-              fontSize: 14,
-            ),
-          ),
-          if (scan.ecoTips.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            const Text(
-              'Conseils écologiques',
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Image du produit avec overlay
+          Stack(
+            children: [
+              ClipRRect(
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(16),
+                  topRight: Radius.circular(16),
+                ),
+                child: Image.network(
+                  scan.imageUrl,
+                  height: 200,
+                  width: double.infinity,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Container(
+                      height: 200,
+                      width: double.infinity,
+                      color: Colors.grey.shade200,
+                      child: const Icon(
+                        Icons.image_not_supported_outlined,
+                        color: Colors.grey,
+                        size: 50,
+                      ),
+                    );
+                  },
+                ),
               ),
-            ),
-            const SizedBox(height: 8),
-            ...scan.ecoTips.map((tip) => Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(
-                    Icons.eco_outlined,
-                    color: AppColors.secondaryColor,
-                    size: 16,
+              // Badge eco-score
+              Positioned(
+                top: 16,
+                right: 16,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: _getEcoScoreColor(scan.ecoScore),
+                    borderRadius: BorderRadius.circular(30),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.2),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      tip,
-                      style: TextStyle(
-                        color: Colors.grey[700],
-                        fontSize: 14,
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.eco_outlined,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      Text(
+                        'Score: ${scan.ecoScore}',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+          
+          // Informations du produit
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Nom et marque
+                Text(
+                  scan.productName,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 20,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  scan.brand,
+                  style: TextStyle(
+                    color: Colors.grey.shade600,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                
+                // Caractéristiques
+                _buildInfoRow(Icons.category_outlined, 'Catégorie', scan.category),
+                const SizedBox(height: 8),
+                _buildInfoRow(Icons.science_outlined, 'Ingrédients', '${scan.ingredients.length} ingrédients'),
+                const SizedBox(height: 8),
+                _buildInfoRow(Icons.public_outlined, 'Origine', scan.origin),
+                const SizedBox(height: 16),
+                
+                // Impact environnemental
+                const Text(
+                  'Impact environnemental',
+                  style: TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                
+                // Barres de progression pour différents impacts
+                _buildImpactBar('Émission CO2', scan.carbonFootprint, 5, const Color(0xFF4CAF50)),
+                const SizedBox(height: 8),
+                _buildImpactBar('Consommation d\'eau', scan.waterFootprint, 5, Colors.blue),
+                const SizedBox(height: 8),
+                _buildImpactBar('Déforestation', scan.deforestationImpact, 5, Colors.brown),
+                
+                const SizedBox(height: 24),
+                
+                // Boutons d'action
+                Row(
+                  children: [
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Sauvegarder dans les favoris
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.white,
+                          foregroundColor: const Color(0xFF4CAF50),
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                            side: const BorderSide(color: Color(0xFF4CAF50)),
+                          ),
+                          elevation: 0,
+                        ),
+                        child: const Text('Sauvegarder'),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: ElevatedButton(
+                        onPressed: () {
+                          // Partager le résultat
+                        },
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFF4CAF50),
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 12),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          elevation: 2,
+                        ),
+                        child: const Text('Partager'),
+                      ),
+                    ),
+                  ],
+                ),
+                
+                const SizedBox(height: 16),
+                
+                // Bouton pour scanner un nouveau produit
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      // Réinitialiser et scanner un nouveau produit
+                      final scanController = Provider.of<ProductScanController>(context, listen: false);
+                      scanController.resetLastScan();
+                    },
+                    icon: const Icon(Icons.qr_code_scanner),
+                    label: const Text('Scanner un nouveau produit'),
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: Colors.grey.shade700,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      side: BorderSide(color: Colors.grey.shade300),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
                       ),
                     ),
                   ),
-                ],
-              ),
-            )),
-          ],
-          const SizedBox(height: 16),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              OutlinedButton.icon(
-                onPressed: () => _showAlternatives(context, scan),
-                icon: const Icon(Icons.swap_horiz),
-                label: const Text('Alternatives'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.primaryColor,
                 ),
-              ),
-              ElevatedButton.icon(
-                onPressed: () => _scanBarcode(
-                  context,
-                  Provider.of<ProductScanController>(context, listen: false),
-                  Provider.of<AuthController>(context, listen: false),
-                ),
-                icon: const Icon(Icons.qr_code_scanner),
-                label: const Text('Nouveau scan'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.primaryColor,
-                  foregroundColor: Colors.white,
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _scanBarcode(BuildContext context, ProductScanController controller, AuthController authController) async {
-    if (authController.currentUser == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Vous devez être connecté pour scanner des produits'),
-          backgroundColor: Colors.red,
+  Widget _buildInfoRow(IconData icon, String label, String value) {
+    return Row(
+      children: [
+        Icon(
+          icon,
+          size: 16,
+          color: Colors.grey.shade600,
         ),
-      );
-      return;
-    }
+        const SizedBox(width: 8),
+        Text(
+          '$label: ',
+          style: TextStyle(
+            color: Colors.grey.shade600,
+            fontSize: 14,
+          ),
+        ),
+        Expanded(
+          child: Text(
+            value,
+            style: const TextStyle(
+              fontWeight: FontWeight.w500,
+              fontSize: 14,
+            ),
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildImpactBar(String label, int value, int maxValue, Color color) {
+    final double progress = value / maxValue;
     
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            Text(
+              label,
+              style: TextStyle(
+                color: Colors.grey.shade700,
+                fontSize: 14,
+              ),
+            ),
+            Row(
+              children: [
+                ...List.generate(
+                  maxValue,
+                  (index) => Container(
+                    margin: const EdgeInsets.only(left: 2),
+                    child: Icon(
+                      Icons.circle,
+                      size: 12,
+                      color: index < value ? color : Colors.grey.shade200,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+        const SizedBox(height: 4),
+        Stack(
+          children: [
+            Container(
+              height: 6,
+              decoration: BoxDecoration(
+                color: Colors.grey.shade200,
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+            Container(
+              height: 6,
+              width: MediaQuery.of(context).size.width * 0.85 * progress,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    color.withOpacity(0.7),
+                    color,
+                  ],
+                  begin: Alignment.centerLeft,
+                  end: Alignment.centerRight,
+                ),
+                borderRadius: BorderRadius.circular(3),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Color _getEcoScoreColor(String score) {
+    switch (score.toUpperCase()) {
+      case 'A':
+        return const Color(0xFF4CAF50);
+      case 'B':
+        return const Color(0xFF8BC34A);
+      case 'C':
+        return const Color(0xFFFFEB3B);
+      case 'D':
+        return const Color(0xFFFF9800);
+      case 'E':
+        return const Color(0xFFF44336);
+      default:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _scanBarcode(BuildContext context, ProductScanController controller, AuthController authController) async {
     try {
       String barcode = await FlutterBarcodeScanner.scanBarcode(
-        '#ff6666',
+        '#4CAF50',
         'Annuler',
         true,
         ScanMode.BARCODE,
       );
-      
-      if (barcode == '-1') {
-        // L'utilisateur a annulé le scan
-        return;
-      }
-      
-      final scan = await controller.scanBarcode(barcode, authController.currentUser!.uid);
-      
-      if (scan == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Produit non trouvé dans notre base de données'),
-            backgroundColor: Colors.orange,
-          ),
+
+      if (barcode != '-1') {
+        // Utiliser la nouvelle méthode scanProduct
+        await controller.scanProduct(
+          barcode,
+          authController.currentUser?.uid,
         );
       }
     } catch (e) {
@@ -475,315 +749,476 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
+      backgroundColor: Colors.transparent,
       builder: (context) => DraggableScrollableSheet(
-        initialChildSize: 0.9,
-        minChildSize: 0.5,
+        initialChildSize: 0.85,
         maxChildSize: 0.95,
-        expand: false,
-        builder: (context, scrollController) => SingleChildScrollView(
-          controller: scrollController,
-          child: Padding(
-            padding: const EdgeInsets.all(20),
+        minChildSize: 0.5,
+        builder: (context, scrollController) {
+          return Container(
+            decoration: const BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.only(
+                topLeft: Radius.circular(24),
+                topRight: Radius.circular(24),
+              ),
+            ),
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Center(
-                  child: Container(
-                    width: 50,
-                    height: 5,
-                    decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(10),
+                // En-tête
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(24),
+                      topRight: Radius.circular(24),
                     ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.grey.withOpacity(0.1),
+                        spreadRadius: 1,
+                        blurRadius: 3,
+                        offset: const Offset(0, 1),
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text(
+                        'Détails du produit',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Navigator.pop(context),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 20),
-                Row(
-                  children: [
-                    // Image du produit
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: Image.network(
-                        scan.imageUrl,
-                        width: 100,
-                        height: 100,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
-                            width: 100,
-                            height: 100,
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.image_not_supported_outlined,
-                              color: Colors.grey,
-                              size: 40,
-                            ),
-                          );
-                        },
-                      ),
-                    ),
-                    const SizedBox(width: 16),
-                    
-                    // Informations du produit
-                    Expanded(
-                      child: Column(
+                
+                // Contenu
+                Expanded(
+                  child: ListView(
+                    controller: scrollController,
+                    padding: const EdgeInsets.all(20),
+                    children: [
+                      // Image et informations principales
+                      Row(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            scan.productName,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                          // Image du produit
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(16),
+                            child: Image.network(
+                              scan.imageUrl,
+                              width: 120,
+                              height: 120,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 120,
+                                  height: 120,
+                                  color: Colors.grey.shade200,
+                                  child: const Icon(
+                                    Icons.image_not_supported_outlined,
+                                    color: Colors.grey,
+                                    size: 40,
+                                  ),
+                                );
+                              },
                             ),
                           ),
-                          const SizedBox(height: 4),
-                          Text(
-                            scan.brand,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 16,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                                decoration: BoxDecoration(
-                                  color: scan.getRatingColor().withOpacity(0.2),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
-                                child: Text(
-                                  'Impact: ${scan.getRatingText()}',
-                                  style: TextStyle(
-                                    color: scan.getRatingColor(),
+                          const SizedBox(width: 16),
+                          
+                          // Informations principales
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  scan.productName,
+                                  style: const TextStyle(
+                                    fontSize: 20,
                                     fontWeight: FontWeight.bold,
                                   ),
                                 ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  scan.brand,
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey.shade700,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    _buildEcoScoreBadge(scan.ecoScore),
+                                    const SizedBox(width: 8),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                                      decoration: BoxDecoration(
+                                        color: scan.getRatingColor().withOpacity(0.2),
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      child: Text(
+                                        scan.getRatingText(),
+                                        style: TextStyle(
+                                          color: scan.getRatingColor(),
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: 12,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Catégorie: ${scan.category}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  'Origine: ${scan.origin}',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    color: Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Impact environnemental
+                      const Text(
+                        'Impact environnemental',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Container(
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(16),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.grey.withOpacity(0.1),
+                              spreadRadius: 1,
+                              blurRadius: 5,
+                              offset: const Offset(0, 2),
+                            ),
+                          ],
+                        ),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              scan.ecoImpact,
+                              style: TextStyle(
+                                fontSize: 14,
+                                color: Colors.grey.shade800,
+                                height: 1.5,
                               ),
-                              const Spacer(),
-                              Text(
-                                DateFormat('dd/MM/yyyy').format(scan.scannedAt),
-                                style: const TextStyle(
-                                  color: Colors.grey,
-                                  fontSize: 14,
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Indicateurs d'impact
+                            _buildImpactIndicator(
+                              'Empreinte carbone', 
+                              scan.carbonFootprint, 
+                              Icons.cloud_outlined,
+                              const Color(0xFF4CAF50),
+                            ),
+                            const SizedBox(height: 12),
+                            _buildImpactIndicator(
+                              'Consommation d\'eau', 
+                              scan.waterFootprint, 
+                              Icons.water_drop_outlined,
+                              Colors.blue,
+                            ),
+                            const SizedBox(height: 12),
+                            _buildImpactIndicator(
+                              'Impact sur la déforestation', 
+                              scan.deforestationImpact, 
+                              Icons.forest_outlined,
+                              Colors.brown,
+                            ),
+                          ],
+                        ),
+                      ),
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Ingrédients
+                      if (scan.ingredients.isNotEmpty) ...[
+                        const Text(
+                          'Ingrédients',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: scan.ingredients.map((ingredient) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 4),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.fiber_manual_record,
+                                    size: 8,
+                                    color: Color(0xFF4CAF50),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Text(
+                                    ingredient,
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      color: Colors.grey.shade800,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Conseils écologiques
+                      if (scan.ecoTips.isNotEmpty) ...[
+                        const Text(
+                          'Conseils écologiques',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF4CAF50).withOpacity(0.05),
+                            borderRadius: BorderRadius.circular(16),
+                            border: Border.all(
+                              color: const Color(0xFF4CAF50).withOpacity(0.2),
+                              width: 1,
+                            ),
+                          ),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: scan.ecoTips.map((tip) => Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 8),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Icon(
+                                    Icons.eco_outlined,
+                                    size: 20,
+                                    color: Color(0xFF4CAF50),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Text(
+                                      tip,
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: Colors.grey.shade800,
+                                        height: 1.4,
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )).toList(),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                      ],
+                      
+                      // Alternatives écologiques
+                      if (scan.ecoAlternatives.isNotEmpty) ...[
+                        const Text(
+                          'Alternatives plus écologiques',
+                          style: TextStyle(
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        ...scan.ecoAlternatives.map((alternative) => Container(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.1),
+                                spreadRadius: 1,
+                                blurRadius: 5,
+                                offset: const Offset(0, 2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              // Image de l'alternative
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(12),
+                                child: Image.network(
+                                  alternative.imageUrl,
+                                  width: 80,
+                                  height: 80,
+                                  fit: BoxFit.cover,
+                                  errorBuilder: (context, error, stackTrace) {
+                                    return Container(
+                                      width: 80,
+                                      height: 80,
+                                      color: Colors.grey.shade200,
+                                      child: const Icon(
+                                        Icons.image_not_supported_outlined,
+                                        color: Colors.grey,
+                                        size: 30,
+                                      ),
+                                    );
+                                  },
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              
+                              // Informations de l'alternative
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      alternative.name,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      alternative.brand,
+                                      style: TextStyle(
+                                        color: Colors.grey.shade600,
+                                        fontSize: 14,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 8),
+                                    _buildEcoScoreBadge(alternative.ecoScore),
+                                  ],
                                 ),
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Code-barres',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  scan.barcode,
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Impact environnemental',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  scan.ecoImpact,
-                  style: TextStyle(
-                    color: Colors.grey[700],
-                    fontSize: 14,
-                  ),
-                ),
-                if (scan.ecoTips.isNotEmpty) ...[
-                  const SizedBox(height: 16),
-                  const Text(
-                    'Conseils écologiques',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  ...scan.ecoTips.map((tip) => Padding(
-                    padding: const EdgeInsets.only(bottom: 8),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.eco_outlined,
-                          color: AppColors.secondaryColor,
-                          size: 16,
-                        ),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            tip,
-                            style: TextStyle(
-                              color: Colors.grey[700],
-                              fontSize: 14,
-                            ),
+                        )).toList(),
+                      ],
+                      
+                      const SizedBox(height: 24),
+                      
+                      // Date de scan
+                      Center(
+                        child: Text(
+                          'Scanné le ${DateFormat('dd/MM/yyyy à HH:mm').format(scan.scanDate)}',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade500,
+                            fontStyle: FontStyle.italic,
                           ),
                         ),
-                      ],
-                    ),
-                  )),
-                ],
-                const SizedBox(height: 24),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    OutlinedButton.icon(
-                      onPressed: () => _showAlternatives(context, scan),
-                      icon: const Icon(Icons.swap_horiz),
-                      label: const Text('Alternatives'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: AppColors.primaryColor,
                       ),
-                    ),
-                    OutlinedButton.icon(
-                      onPressed: () {
-                        final controller = Provider.of<ProductScanController>(context, listen: false);
-                        controller.deleteScan(scan.id);
-                        Navigator.pop(context);
-                      },
-                      icon: const Icon(Icons.delete_outline),
-                      label: const Text('Supprimer'),
-                      style: OutlinedButton.styleFrom(
-                        foregroundColor: Colors.red,
-                      ),
-                    ),
-                  ],
+                      const SizedBox(height: 32),
+                    ],
+                  ),
                 ),
               ],
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
   }
-
-  void _showAlternatives(BuildContext context, ProductScan scan) {
-    if (scan.alternativeProductIds.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Aucune alternative disponible pour ce produit'),
-          backgroundColor: Colors.orange,
+  
+  Widget _buildImpactIndicator(String label, int value, IconData icon, Color color) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(icon, size: 16, color: color),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
         ),
-      );
-      return;
-    }
-    
-    final controller = Provider.of<ProductScanController>(context, listen: false);
-    final productController = Provider.of<ProductController>(context, listen: false);
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Alternatives écologiques'),
-        content: SizedBox(
-          width: double.maxFinite,
-          child: FutureBuilder(
-            future: controller.getAlternativeProducts(scan.alternativeProductIds),
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              
-              if (snapshot.hasError) {
-                return const Center(
-                  child: Text('Erreur lors du chargement des alternatives'),
-                );
-              }
-              
-              final alternatives = snapshot.data ?? [];
-              
-              if (alternatives.isEmpty) {
-                return const Center(
-                  child: Text('Aucune alternative disponible'),
-                );
-              }
-              
-              return ListView.builder(
-                shrinkWrap: true,
-                itemCount: alternatives.length,
-                itemBuilder: (context, index) {
-                  final product = alternatives[index];
-                  return ListTile(
-                    leading: ClipRRect(
-                      borderRadius: BorderRadius.circular(4),
-                      child: product.imageUrl != null
-                        ? Image.network(
-                            product.imageUrl!,
-                            width: 50,
-                            height: 50,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) {
-                              return Container(
-                                width: 50,
-                                height: 50,
-                                color: Colors.grey[300],
-                                child: const Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: Colors.grey,
-                                  size: 24,
-                                ),
-                              );
-                            },
-                          )
-                        : Container(
-                            width: 50,
-                            height: 50,
-                            color: Colors.grey[300],
-                            child: const Icon(
-                              Icons.image_not_supported_outlined,
-                              color: Colors.grey,
-                              size: 24,
-                            ),
-                          ),
-                    ),
-                    title: Text(product.name),
-                    subtitle: Text(product.brand),
-                    trailing: Text(
-                      '${product.price.toStringAsFixed(2)} €',
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onTap: () {
-                      Navigator.pop(context);
-                      productController.selectProduct(product);
-                      Navigator.pushNamed(context, '/products');
-                    },
-                  );
-                },
-              );
-            },
-          ),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(4),
+                child: LinearProgressIndicator(
+                  value: value / 5,
+                  backgroundColor: Colors.grey.shade200,
+                  valueColor: AlwaysStoppedAnimation<Color>(
+                    color.withOpacity(0.7),
+                  ),
+                  minHeight: 8,
+                ),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Text(
+              '$value/5',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.bold,
+                color: Colors.grey.shade700,
+              ),
+            ),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Fermer'),
-          ),
-        ],
-      ),
+      ],
     );
   }
 }

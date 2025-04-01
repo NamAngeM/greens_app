@@ -10,13 +10,14 @@ class GoalsView extends StatefulWidget {
   const GoalsView({Key? key}) : super(key: key);
 
   @override
-  State<GoalsView> createState() => _GoalsViewState();
+  _GoalsViewState createState() => _GoalsViewState();
 }
 
 class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TextEditingController _titleController = TextEditingController();
   final TextEditingController _descriptionController = TextEditingController();
+  final TextEditingController _targetController = TextEditingController();
   GoalType _selectedType = GoalType.waterSaving;
   GoalFrequency _selectedFrequency = GoalFrequency.daily;
   final _formKey = GlobalKey<FormState>();
@@ -42,6 +43,7 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
     _tabController.dispose();
     _titleController.dispose();
     _descriptionController.dispose();
+    _targetController.dispose();
     super.dispose();
   }
 
@@ -66,9 +68,9 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
         ),
         bottom: TabBar(
           controller: _tabController,
-          labelColor: AppColors.primaryColor,
+          labelColor: const Color(0xFF4CAF50),
           unselectedLabelColor: Colors.grey,
-          indicatorColor: AppColors.primaryColor,
+          indicatorColor: const Color(0xFF4CAF50),
           tabs: const [
             Tab(text: 'En cours'),
             Tab(text: 'Complétés'),
@@ -79,7 +81,11 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
       body: Consumer<EcoGoalController>(
         builder: (context, ecoGoalController, child) {
           if (ecoGoalController.isLoading) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+              )
+            );
           }
           
           return TabBarView(
@@ -92,13 +98,14 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
               _buildCompletedGoalsTab(ecoGoalController),
               
               // Onglet des statistiques
-              _buildStatsTab(ecoGoalController),
+              _buildStatisticsTab(),
             ],
           );
         },
       ),
       floatingActionButton: FloatingActionButton(
-        backgroundColor: AppColors.primaryColor,
+        backgroundColor: const Color(0xFF4CAF50),
+        elevation: 4,
         child: const Icon(Icons.add),
         onPressed: () {
           _showAddGoalDialog(context);
@@ -115,10 +122,17 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.eco,
-              size: 100,
-              color: Colors.grey,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: const Color(0xFF4CAF50).withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.eco,
+                size: 80,
+                color: Color(0xFF4CAF50),
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -143,11 +157,12 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
                 _showAddGoalDialog(context);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primaryColor,
+                backgroundColor: const Color(0xFF4CAF50),
                 padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(30),
                 ),
+                elevation: 4,
               ),
               child: const Text(
                 'Ajouter un objectif',
@@ -180,10 +195,17 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.check_circle_outline,
-              size: 100,
-              color: Colors.grey,
+            Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: Colors.amber.withOpacity(0.1),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.check_circle_outline,
+                size: 80,
+                color: Colors.amber,
+              ),
             ),
             const SizedBox(height: 16),
             const Text(
@@ -212,44 +234,78 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
       itemCount: completedGoals.length,
       itemBuilder: (context, index) {
         final goal = completedGoals[index];
-        return _buildCompletedGoalCard(goal, controller);
+        return _buildGoalCard(goal, controller);
       },
     );
   }
 
-  Widget _buildStatsTab(EcoGoalController controller) {
-    final totalGoals = controller.userGoals.length;
-    final completedGoals = controller.userGoals.where((goal) => goal.isCompleted).length;
-    final completionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
+  Widget _buildStatisticsTab() {
+    final controller = Provider.of<EcoGoalController>(context);
+    final goals = controller.userGoals;
     
-    // Regrouper les objectifs par type
-    final Map<GoalType, int> goalsByType = {};
-    for (var goal in controller.userGoals) {
-      if (goalsByType.containsKey(goal.type)) {
-        goalsByType[goal.type] = goalsByType[goal.type]! + 1;
-      } else {
-        goalsByType[goal.type] = 1;
-      }
+    if (goals.isEmpty) {
+      return const Center(
+        child: Text(
+          'Aucun objectif pour le moment',
+          style: TextStyle(
+            fontSize: 16,
+            color: Colors.grey,
+          ),
+        ),
+      );
     }
     
-    return SingleChildScrollView(
+    // Calcul des statistiques
+    final completedGoals = goals.where((goal) => goal.isCompleted).length;
+    final activeGoals = goals.where((goal) => !goal.isCompleted).length;
+    final totalGoals = goals.length;
+    final completionRate = totalGoals > 0 ? (completedGoals / totalGoals) * 100 : 0;
+    
+    // Répartition par type
+    final Map<GoalType, int> goalsByType = {};
+    for (var type in GoalType.values) {
+      goalsByType[type] = 0;
+    }
+    
+    for (var goal in goals) {
+      goalsByType[goal.type] = (goalsByType[goal.type] ?? 0) + 1;
+    }
+    
+    // Couleurs pour le graphique
+    final typeColors = [
+      Colors.blue,        // Water
+      Colors.yellow[800]!, // Energy
+      Colors.orange,      // Waste
+      Colors.purple,      // Shopping
+      Colors.teal,        // Transport
+      Colors.green,       // Custom
+    ];
+    
+    return Padding(
       padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Carte de résumé
-          Card(
-            elevation: 2,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Padding(
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Carte de résumé
+            Container(
               padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Résumé',
+                    'Résumé de vos objectifs',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -259,122 +315,335 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceAround,
                     children: [
-                      _buildStatItem('Total', totalGoals.toString(), Icons.list_alt),
-                      _buildStatItem('Complétés', completedGoals.toString(), Icons.check_circle),
-                      _buildStatItem(
-                        'Taux',
-                        '${completionRate.toStringAsFixed(1)}%',
-                        Icons.trending_up,
+                      _buildStatCard(
+                        'Total',
+                        totalGoals.toString(),
+                        Icons.list_alt,
+                        Colors.blue,
                       ),
+                      _buildStatCard(
+                        'Actifs',
+                        activeGoals.toString(),
+                        Icons.pending_actions,
+                        Colors.orange,
+                      ),
+                      _buildStatCard(
+                        'Complétés',
+                        completedGoals.toString(),
+                        Icons.check_circle_outline,
+                        Colors.green,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Taux de complétion: ${completionRate.toStringAsFixed(0)}%',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  LinearProgressIndicator(
+                    value: completionRate / 100,
+                    backgroundColor: Colors.grey.shade200,
+                    valueColor: const AlwaysStoppedAnimation<Color>(Colors.green),
+                    minHeight: 8,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                ],
+              ),
+            ),
+            
+            const SizedBox(height: 24),
+            
+            // Répartition par type
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.1),
+                    blurRadius: 10,
+                    spreadRadius: 0,
+                  ),
+                ],
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Répartition par type',
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  SizedBox(
+                    height: 200,
+                    child: CustomPaint(
+                      size: const Size(double.infinity, 200),
+                      painter: PieChartPainter(
+                        values: goalsByType.values.map((v) => v.toDouble()).toList(),
+                        colors: typeColors,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Wrap(
+                    spacing: 16,
+                    runSpacing: 8,
+                    children: [
+                      _buildLegendItem('Eau', Colors.blue),
+                      _buildLegendItem('Énergie', Colors.yellow[800]!),
+                      _buildLegendItem('Déchets', Colors.orange),
+                      _buildLegendItem('Achats', Colors.purple),
+                      _buildLegendItem('Transport', Colors.teal),
+                      _buildLegendItem('Autre', Colors.green),
                     ],
                   ),
                 ],
               ),
             ),
-          ),
-          const SizedBox(height: 24),
-          
-          // Graphique de progression
-          if (totalGoals > 0) ...[
-            const Text(
-              'Progression',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            SizedBox(
-              height: 150,
-              width: 150,
-              child: Stack(
-                alignment: Alignment.center,
-                children: [
-                  CustomPaint(
-                    size: const Size(150, 150),
-                    painter: PieChartPainter(
-                      completedValue: completedGoals.toDouble(),
-                      remainingValue: (totalGoals - completedGoals).toDouble(),
-                      completedColor: AppColors.primaryColor,
-                      remainingColor: Colors.grey.shade300,
-                    ),
-                  ),
-                  Center(
-                    child: Text(
-                      '${completionRate.toStringAsFixed(0)}%',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.black87,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-            // Legend
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                _buildLegendItem('Complétés', AppColors.primaryColor),
-                const SizedBox(width: 24),
-                _buildLegendItem('En cours', Colors.grey.shade300),
-              ],
-            ),
           ],
-          
-          const SizedBox(height: 24),
-          
-          // Distribution par type
-          if (goalsByType.isNotEmpty) ...[
-            const Text(
-              'Distribution par type',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            ...goalsByType.entries.map((entry) {
-              return Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: _buildTypeProgressBar(
-                  entry.key.toString().split('.').last,
-                  entry.value,
-                  totalGoals,
-                  _getColorForType(entry.key),
-                ),
-              );
-            }),
-          ],
-        ],
+        ),
       ),
     );
   }
 
-  Widget _buildStatItem(String label, String value, IconData icon) {
+  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
     return Column(
       children: [
-        Icon(
-          icon,
-          size: 32,
-          color: AppColors.primaryColor,
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: color.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: color,
+            size: 24,
+          ),
         ),
         const SizedBox(height: 8),
         Text(
           value,
           style: const TextStyle(
-            fontSize: 20,
+            fontSize: 18,
             fontWeight: FontWeight.bold,
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          label,
+          title,
           style: TextStyle(
             fontSize: 14,
             color: Colors.grey.shade600,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildGoalCard(EcoGoal goal, EcoGoalController controller) {
+    final IconData iconData = _getIconForType(goal.type);
+    final Color iconColor = _getColorForType(goal.type);
+    final double progress = goal.currentProgress / (goal.target > 0 ? goal.target : 1);
+    
+    return Container(
+      margin: const EdgeInsets.only(bottom: 16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.grey.withOpacity(0.15),
+            spreadRadius: 2,
+            blurRadius: 6,
+            offset: const Offset(0, 3),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          // En-tête avec icône et titre
+          Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              color: iconColor.withOpacity(0.1),
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(16),
+                topRight: Radius.circular(16),
+              ),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: iconColor.withOpacity(0.2),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    iconData,
+                    color: iconColor,
+                    size: 24,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        goal.title,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        _getFrequencyText(goal.frequency),
+                        style: TextStyle(
+                          color: Colors.grey.shade600,
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  icon: const Icon(Icons.more_vert),
+                  onPressed: () {
+                    _showGoalOptionsDialog(context, goal, controller);
+                  },
+                ),
+              ],
+            ),
+          ),
+          
+          // Corps avec description et progression
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  goal.description,
+                  style: TextStyle(
+                    color: Colors.grey.shade700,
+                    fontSize: 14,
+                    height: 1.4,
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 16),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Text(
+                                'Progression',
+                                style: TextStyle(
+                                  color: Colors.grey.shade600,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const Spacer(),
+                              Text(
+                                '${(progress * 100).toStringAsFixed(0)}%',
+                                style: TextStyle(
+                                  color: iconColor,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: progress,
+                              backgroundColor: Colors.grey.shade200,
+                              valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+                              minHeight: 8,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 16),
+                    ElevatedButton(
+                      onPressed: () {
+                        _showUpdateProgressDialog(context, goal, controller);
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: iconColor,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        elevation: 0,
+                      ),
+                      child: const Text(
+                        'Mettre à jour',
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Créé le ${DateFormat('dd/MM/yyyy').format(goal.createdAt)}',
+                  style: TextStyle(
+                    color: Colors.grey.shade500,
+                    fontSize: 11,
+                    fontStyle: FontStyle.italic,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildLegendItem(String label, Color color) {
+    return Row(
+      children: [
+        Container(
+          width: 16,
+          height: 16,
+          decoration: BoxDecoration(
+            color: color,
+            shape: BoxShape.circle,
+          ),
+        ),
+        const SizedBox(width: 8),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w500,
           ),
         ),
       ],
@@ -418,246 +687,194 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
     );
   }
 
+  void _showDeleteConfirmation(BuildContext context, EcoGoal goal, EcoGoalController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Supprimer l\'objectif'),
+        content: Text('Êtes-vous sûr de vouloir supprimer l\'objectif "${goal.title}" ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Annuler'),
+          ),
+          TextButton(
+            onPressed: () {
+              controller.deleteGoal(goal.id);
+              Navigator.of(context).pop();
+            },
+            child: const Text('Supprimer'),
+            style: TextButton.styleFrom(foregroundColor: Colors.red),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showUpdateProgressDialog(BuildContext context, EcoGoal goal, EcoGoalController controller) {
+    final TextEditingController progressController = TextEditingController();
+    progressController.text = goal.currentProgress.toString();
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Mettre à jour la progression'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              'Objectif: ${goal.title}',
+              style: const TextStyle(
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextFormField(
+              controller: progressController,
+              decoration: InputDecoration(
+                labelText: 'Progression actuelle',
+                border: const OutlineInputBorder(),
+                suffixText: '/ ${goal.target}',
+              ),
+              keyboardType: TextInputType.number,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Annuler'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              final newValue = int.tryParse(progressController.text);
+              if (newValue != null) {
+                controller.updateGoalProgress(
+                  goal.id,
+                  newValue,
+                );
+                Navigator.of(context).pop();
+              }
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF4CAF50),
+            ),
+            child: const Text('Mettre à jour'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showGoalOptionsDialog(BuildContext context, EcoGoal goal, EcoGoalController controller) {
+    showDialog(
+      context: context,
+      builder: (context) => SimpleDialog(
+        title: const Text('Options'),
+        children: [
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showUpdateProgressDialog(context, goal, controller);
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.update),
+                SizedBox(width: 12),
+                Text('Mettre à jour la progression'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.of(context).pop();
+              // Logique pour modifier l'objectif
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.edit),
+                SizedBox(width: 12),
+                Text('Modifier l\'objectif'),
+              ],
+            ),
+          ),
+          SimpleDialogOption(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _showDeleteConfirmation(context, goal, controller);
+            },
+            child: const Row(
+              children: [
+                Icon(Icons.delete, color: Colors.red),
+                SizedBox(width: 12),
+                Text('Supprimer', style: TextStyle(color: Colors.red)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   Color _getColorForType(GoalType type) {
     switch (type) {
       case GoalType.waterSaving:
         return Colors.blue;
       case GoalType.energySaving:
-        return Colors.orange;
+        return Colors.yellow.shade800;
       case GoalType.wasteReduction:
-        return Colors.green;
+        return Colors.orange;
       case GoalType.transportation:
-        return Colors.purple;
+        return Colors.teal;
       case GoalType.sustainableShopping:
-        return Colors.red;
+        return Colors.purple;
+      case GoalType.custom:
+        return Colors.green;
       default:
-        return AppColors.primaryColor;
+        return Colors.green;
     }
   }
 
-  Widget _buildGoalCard(EcoGoal goal, EcoGoalController controller) {
-    final progress = goal.currentProgress / goal.target;
-    final formattedProgress = (progress * 100).toStringAsFixed(0);
-    
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: _getColorForType(goal.type).withOpacity(0.2),
-                  child: Icon(
-                    _getIconForType(goal.type),
-                    color: _getColorForType(goal.type),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        goal.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        goal.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.more_vert),
-                  onPressed: () {
-                    _showGoalOptionsDialog(context, goal, controller);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            Row(
-              children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Progression: $formattedProgress%',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w500,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: progress.clamp(0.0, 1.0),
-                        backgroundColor: Colors.grey.shade200,
-                        valueColor: AlwaysStoppedAnimation<Color>(_getColorForType(goal.type)),
-                        minHeight: 8,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 16),
-                ElevatedButton(
-                  onPressed: () {
-                    _showUpdateProgressDialog(context, goal, controller);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryColor,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                  ),
-                  child: const Text('Mettre à jour'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Fréquence: ${goal.frequency.toString().split('.').last.capitalize()}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                Text(
-                  'Créé le: ${DateFormat('dd/MM/yyyy').format(goal.createdAt)}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCompletedGoalCard(EcoGoal goal, EcoGoalController controller) {
-    return Card(
-      elevation: 2,
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.green.withOpacity(0.2),
-                  child: const Icon(
-                    Icons.check,
-                    color: Colors.green,
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        goal.title,
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        goal.description,
-                        style: TextStyle(
-                          fontSize: 14,
-                          color: Colors.grey.shade600,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.delete_outline),
-                  onPressed: () {
-                    _showDeleteConfirmationDialog(context, goal, controller);
-                  },
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Type: ${goal.type.toString().split('.').last.capitalize()}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-                Text(
-                  'Complété le: ${goal.isCompleted ? DateFormat('dd/MM/yyyy').format(goal.updatedAt) : 'N/A'}',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                  ),
-                ),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
+  String _getFrequencyText(GoalFrequency frequency) {
+    switch (frequency) {
+      case GoalFrequency.daily:
+        return 'Quotidien';
+      case GoalFrequency.weekly:
+        return 'Hebdomadaire';
+      case GoalFrequency.monthly:
+        return 'Mensuel';
+      default:
+        return 'Personnalisé';
+    }
   }
 
   IconData _getIconForType(GoalType type) {
     switch (type) {
-      case GoalType.waterSaving:
-        return Icons.water_drop;
-      case GoalType.energySaving:
-        return Icons.bolt;
       case GoalType.wasteReduction:
-        return Icons.delete;
-      case GoalType.transportation:
-        return Icons.directions_bus;
+        return Icons.delete_outline;
+      case GoalType.waterSaving:
+        return Icons.water_drop_outlined;
+      case GoalType.energySaving:
+        return Icons.bolt_outlined;
       case GoalType.sustainableShopping:
-        return Icons.shopping_cart;
+        return Icons.shopping_bag_outlined;
+      case GoalType.transportation:
+        return Icons.directions_bus_outlined;
+      case GoalType.custom:
+        return Icons.eco_outlined;
       default:
-        return Icons.eco;
+        return Icons.eco_outlined;
     }
   }
 
   void _showAddGoalDialog(BuildContext context) {
     _titleController.clear();
     _descriptionController.clear();
+    _targetController.clear();
     _selectedType = GoalType.waterSaving;
     _selectedFrequency = GoalFrequency.daily;
-    
-    final TextEditingController targetController = TextEditingController();
     
     showDialog(
       context: context,
@@ -741,7 +958,7 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
                 ),
                 const SizedBox(height: 16),
                 TextFormField(
-                  controller: targetController,
+                  controller: _targetController,
                   decoration: const InputDecoration(
                     labelText: 'Valeur cible',
                     border: OutlineInputBorder(),
@@ -775,7 +992,7 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
                 final ecoGoalController = Provider.of<EcoGoalController>(context, listen: false);
                 
                 if (authController.currentUser != null) {
-                  final targetValue = double.parse(targetController.text);
+                  final targetValue = double.parse(_targetController.text);
                   
                   ecoGoalController.createGoal(
                     userId: authController.currentUser!.uid,
@@ -793,7 +1010,7 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
               }
             },
             style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
+              backgroundColor: const Color(0xFF4CAF50),
             ),
             child: const Text('Ajouter'),
           ),
@@ -801,207 +1018,46 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
       ),
     );
   }
-
-  void _showUpdateProgressDialog(BuildContext context, EcoGoal goal, EcoGoalController controller) {
-    final TextEditingController progressController = TextEditingController();
-    progressController.text = goal.currentProgress.toString();
-    
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Mettre à jour la progression'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Objectif: ${goal.title}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: progressController,
-              decoration: InputDecoration(
-                labelText: 'Progression actuelle',
-                border: const OutlineInputBorder(),
-                suffixText: '/ ${goal.target}',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              final newValue = double.tryParse(progressController.text);
-              if (newValue != null) {
-                controller.updateGoalProgress(
-                  goal.id,
-                  newValue.toInt(),
-                );
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primaryColor,
-            ),
-            child: const Text('Mettre à jour'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showGoalOptionsDialog(BuildContext context, EcoGoal goal, EcoGoalController controller) {
-    showDialog(
-      context: context,
-      builder: (context) => SimpleDialog(
-        title: const Text('Options'),
-        children: [
-          SimpleDialogOption(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showUpdateProgressDialog(context, goal, controller);
-            },
-            child: const Row(
-              children: [
-                Icon(Icons.update),
-                SizedBox(width: 12),
-                Text('Mettre à jour la progression'),
-              ],
-            ),
-          ),
-          SimpleDialogOption(
-            onPressed: () {
-              Navigator.of(context).pop();
-              // Logique pour modifier l'objectif
-            },
-            child: const Row(
-              children: [
-                Icon(Icons.edit),
-                SizedBox(width: 12),
-                Text('Modifier l\'objectif'),
-              ],
-            ),
-          ),
-          SimpleDialogOption(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _showDeleteConfirmationDialog(context, goal, controller);
-            },
-            child: const Row(
-              children: [
-                Icon(Icons.delete, color: Colors.red),
-                SizedBox(width: 12),
-                Text('Supprimer', style: TextStyle(color: Colors.red)),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  void _showDeleteConfirmationDialog(BuildContext context, EcoGoal goal, EcoGoalController controller) {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Supprimer l\'objectif'),
-        content: Text('Êtes-vous sûr de vouloir supprimer l\'objectif "${goal.title}" ?'),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              controller.deleteGoal(goal.id);
-              Navigator.of(context).pop();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-            ),
-            child: const Text('Supprimer'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildLegendItem(String label, Color color) {
-    return Row(
-      children: [
-        Container(
-          width: 16,
-          height: 16,
-          decoration: BoxDecoration(
-            color: color,
-            shape: BoxShape.circle,
-          ),
-        ),
-        const SizedBox(width: 8),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 14,
-            fontWeight: FontWeight.w500,
-          ),
-        ),
-      ],
-    );
-  }
 }
 
 class PieChartPainter extends CustomPainter {
-  final double completedValue;
-  final double remainingValue;
-  final Color completedColor;
-  final Color remainingColor;
+  final List<double> values;
+  final List<Color> colors;
 
   PieChartPainter({
-    required this.completedValue,
-    required this.remainingValue,
-    required this.completedColor,
-    required this.remainingColor,
+    required this.values,
+    required this.colors,
   });
 
   @override
   void paint(Canvas canvas, Size size) {
-    final total = completedValue + remainingValue;
+    final total = values.reduce((value, element) => value + element);
     if (total <= 0) return;
     
     final center = Offset(size.width / 2, size.height / 2);
     final radius = size.width / 2;
     
-    // Draw background circle (remaining)
-    final backgroundPaint = Paint()
-      ..color = remainingColor
-      ..style = PaintingStyle.fill;
-    canvas.drawCircle(center, radius, backgroundPaint);
+    double startAngle = -3.14159 / 2;
     
-    if (completedValue > 0) {
-      // Draw completed arc
-      final completedPaint = Paint()
-        ..color = completedColor
+    for (int i = 0; i < values.length; i++) {
+      final value = values[i];
+      final color = colors[i];
+      
+      final sweepAngle = (value / total) * 2 * 3.14159;
+      
+      final paint = Paint()
+        ..color = color
         ..style = PaintingStyle.fill;
       
-      final sweepAngle = (completedValue / total) * 2 * 3.14159;
       canvas.drawArc(
         Rect.fromCircle(center: center, radius: radius),
-        -3.14159 / 2, // Start from top
+        startAngle,
         sweepAngle,
         true,
-        completedPaint,
+        paint,
       );
+      
+      startAngle += sweepAngle;
     }
     
     // Draw center hole

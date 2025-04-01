@@ -21,7 +21,15 @@ class ProductScan {
   final String ecoImpact;
   final List<String> ecoTips;
   final List<String> alternativeProductIds;
-  final DateTime scannedAt;
+  final DateTime scanDate;
+  final String ecoScore;
+  final String category;
+  final List<String> ingredients;
+  final String origin;
+  final int carbonFootprint;
+  final int waterFootprint;
+  final int deforestationImpact;
+  final List<EcoAlternative> ecoAlternatives;
 
   ProductScan({
     required this.id,
@@ -34,7 +42,15 @@ class ProductScan {
     required this.ecoImpact,
     required this.ecoTips,
     required this.alternativeProductIds,
-    required this.scannedAt,
+    required this.scanDate,
+    this.ecoScore = 'C',
+    this.category = 'Non catégorisé',
+    this.ingredients = const [],
+    this.origin = 'Inconnu',
+    this.carbonFootprint = 3,
+    this.waterFootprint = 3,
+    this.deforestationImpact = 3,
+    this.ecoAlternatives = const [],
   });
 
   factory ProductScan.fromJson(Map<String, dynamic> json) {
@@ -52,7 +68,17 @@ class ProductScan {
       ecoImpact: json['ecoImpact'] ?? '',
       ecoTips: List<String>.from(json['ecoTips'] ?? []),
       alternativeProductIds: List<String>.from(json['alternativeProductIds'] ?? []),
-      scannedAt: (json['scannedAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      scanDate: (json['scanDate'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      ecoScore: json['ecoScore'] ?? 'C',
+      category: json['category'] ?? 'Non catégorisé',
+      ingredients: List<String>.from(json['ingredients'] ?? []),
+      origin: json['origin'] ?? 'Inconnu',
+      carbonFootprint: json['carbonFootprint'] ?? 3,
+      waterFootprint: json['waterFootprint'] ?? 3,
+      deforestationImpact: json['deforestationImpact'] ?? 3,
+      ecoAlternatives: (json['ecoAlternatives'] as List<dynamic>?)
+          ?.map((e) => EcoAlternative.fromJson(e))
+          .toList() ?? [],
     );
   }
 
@@ -68,7 +94,15 @@ class ProductScan {
       'ecoImpact': ecoImpact,
       'ecoTips': ecoTips,
       'alternativeProductIds': alternativeProductIds,
-      'scannedAt': scannedAt,
+      'scanDate': scanDate,
+      'ecoScore': ecoScore,
+      'category': category,
+      'ingredients': ingredients,
+      'origin': origin,
+      'carbonFootprint': carbonFootprint,
+      'waterFootprint': waterFootprint,
+      'deforestationImpact': deforestationImpact,
+      'ecoAlternatives': ecoAlternatives.map((e) => e.toJson()).toList(),
     };
   }
 
@@ -104,5 +138,41 @@ class ProductScan {
       case EcoRating.unknown:
         return 'Inconnu';
     }
+  }
+}
+
+class EcoAlternative {
+  final String id;
+  final String name;
+  final String brand;
+  final String imageUrl;
+  final String ecoScore;
+
+  EcoAlternative({
+    required this.id,
+    required this.name,
+    required this.brand,
+    required this.imageUrl,
+    required this.ecoScore,
+  });
+
+  factory EcoAlternative.fromJson(Map<String, dynamic> json) {
+    return EcoAlternative(
+      id: json['id'] ?? '',
+      name: json['name'] ?? '',
+      brand: json['brand'] ?? '',
+      imageUrl: json['imageUrl'] ?? '',
+      ecoScore: json['ecoScore'] ?? 'C',
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'name': name,
+      'brand': brand,
+      'imageUrl': imageUrl,
+      'ecoScore': ecoScore,
+    };
   }
 }

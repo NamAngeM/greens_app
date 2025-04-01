@@ -26,7 +26,7 @@ class ProductScanController extends ChangeNotifier {
       final snapshot = await _firestore
           .collection('product_scans')
           .where('userId', isEqualTo: userId)
-          .orderBy('scannedAt', descending: true)
+          .orderBy('scanDate', descending: true)
           .get();
       
       _scanHistory.clear();
@@ -83,7 +83,17 @@ class ProductScanController extends ChangeNotifier {
         ecoImpact: productData['ecoImpact'] ?? 'Impact environnemental non disponible',
         ecoTips: List<String>.from(productData['ecoTips'] ?? []),
         alternativeProductIds: List<String>.from(productData['alternativeProductIds'] ?? []),
-        scannedAt: now,
+        scanDate: now,
+        ecoScore: productData['ecoScore'] ?? 'C',
+        category: productData['category'] ?? 'Non catégorisé',
+        ingredients: List<String>.from(productData['ingredients'] ?? []),
+        origin: productData['origin'] ?? 'Inconnu',
+        carbonFootprint: productData['carbonFootprint'] ?? 3,
+        waterFootprint: productData['waterFootprint'] ?? 3,
+        deforestationImpact: productData['deforestationImpact'] ?? 3,
+        ecoAlternatives: (productData['ecoAlternatives'] as List<dynamic>?)
+            ?.map((e) => EcoAlternative.fromJson(e))
+            .toList() ?? [],
       );
       
       // Enregistrer le scan dans Firestore
@@ -103,6 +113,100 @@ class ProductScanController extends ChangeNotifier {
       _isScanning = false;
       notifyListeners();
     }
+  }
+  
+  Future<void> scanProduct(String barcode, String? userId) async {
+    _isScanning = true;
+    notifyListeners();
+    
+    try {
+      if (userId == null) {
+        // Créer un scan temporaire pour les utilisateurs non connectés
+        final mockData = _getMockProductData(barcode);
+        _lastScan = mockData;
+        notifyListeners();
+        return;
+      }
+      
+      final scan = await scanBarcode(barcode, userId);
+      if (scan == null) {
+        // Si le produit n'est pas trouvé, créer un scan avec des données fictives
+        final mockData = _getMockProductData(barcode);
+        _lastScan = mockData;
+      }
+    } catch (e) {
+      print('Error scanning product: $e');
+    } finally {
+      _isScanning = false;
+      notifyListeners();
+    }
+  }
+  
+  void resetLastScan() {
+    _lastScan = null;
+    notifyListeners();
+  }
+  
+  ProductScan _getMockProductData(String barcode) {
+    final uuid = const Uuid().v4();
+    final now = DateTime.now();
+    
+    // Liste d'ingrédients fictifs
+    final List<String> mockIngredients = [
+      'Eau',
+      'Sucre',
+      'Colorant naturel',
+      'Arôme naturel',
+      'Conservateur E330'
+    ];
+    
+    // Liste de conseils écologiques fictifs
+    final List<String> mockEcoTips = [
+      'Préférez les produits locaux pour réduire l\'empreinte carbone',
+      'Recyclez l\'emballage après utilisation',
+      'Optez pour des produits avec moins d\'emballage',
+      'Privilégiez les produits avec certification écologique'
+    ];
+    
+    // Alternatives écologiques fictives
+    final List<EcoAlternative> mockAlternatives = [
+      EcoAlternative(
+        id: '1',
+        name: 'Produit Eco-responsable',
+        brand: 'Marque Verte',
+        imageUrl: 'https://example.com/eco-product.jpg',
+        ecoScore: 'A',
+      ),
+      EcoAlternative(
+        id: '2',
+        name: 'Alternative Naturelle',
+        brand: 'Bio Nature',
+        imageUrl: 'https://example.com/natural-product.jpg',
+        ecoScore: 'B',
+      ),
+    ];
+    
+    return ProductScan(
+      id: uuid,
+      userId: 'anonymous',
+      barcode: barcode,
+      productName: 'Produit #$barcode',
+      brand: 'Marque Générique',
+      imageUrl: 'https://example.com/product-placeholder.jpg',
+      ecoRating: EcoRating.average,
+      ecoImpact: 'Ce produit a un impact moyen sur l\'environnement. Il utilise des matériaux partiellement recyclables et son processus de fabrication génère une empreinte carbone modérée.',
+      ecoTips: mockEcoTips,
+      alternativeProductIds: [],
+      scanDate: now,
+      ecoScore: 'C',
+      category: 'Alimentation',
+      ingredients: mockIngredients,
+      origin: 'France',
+      carbonFootprint: 3,
+      waterFootprint: 2,
+      deforestationImpact: 1,
+      ecoAlternatives: mockAlternatives,
+    );
   }
   
   Future<List<ProductModel>> getAlternativeProducts(List<String> productIds) async {

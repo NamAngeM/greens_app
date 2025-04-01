@@ -107,32 +107,33 @@ class _HomeViewState extends State<HomeView> {
 
   Widget _buildHomePage() {
     return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 16.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             
             // Section: Green tips of the day
             _buildSectionHeader('Green tips of the day'),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildTipCard(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             
             // Section: Latest articles
             _buildSectionHeader('Latest articles', showSeeAll: true),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildLatestArticleCard(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             
             // Section: Products you'll love
             _buildSectionHeader('Products you\'ll love', showSeeAll: true),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             _buildProductFilters(),
             const SizedBox(height: 16),
             _buildProductGrid(),
-            const SizedBox(height: 24),
+            const SizedBox(height: 32),
             
             // Keep exploring button
             Center(
@@ -155,13 +156,13 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
             ),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
             
             // Chatbot section with background image
             Container(
               height: 250,
               width: double.infinity,
-              margin: const EdgeInsets.only(bottom: 16),
+              margin: const EdgeInsets.only(bottom: 24),
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(16),
                 image: const DecorationImage(
@@ -170,7 +171,7 @@ class _HomeViewState extends State<HomeView> {
                 ),
               ),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
                 decoration: BoxDecoration(
                   borderRadius: BorderRadius.circular(16),
                   gradient: LinearGradient(
@@ -189,7 +190,7 @@ class _HomeViewState extends State<HomeView> {
                     Container(
                       width: 60,
                       height: 60,
-                      decoration: BoxDecoration(
+                      decoration: const BoxDecoration(
                         color: Colors.white,
                         shape: BoxShape.circle,
                       ),
@@ -243,7 +244,7 @@ class _HomeViewState extends State<HomeView> {
             
             // Footer
             _buildFooter(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 40),
           ],
         ),
       ),
@@ -399,7 +400,7 @@ class _HomeViewState extends State<HomeView> {
           title: 'Les avantages de passer aux énergies renouvelables',
           content: '''Les sources d'énergie renouvelable comme l'énergie solaire et éolienne peuvent aider à réduire les émissions de gaz à effet de serre et à lutter contre le changement climatique. Découvrez comment vous pouvez faire la transition dans votre maison.''',
           // Image illustrant des panneaux solaires et des éoliennes dans un paysage verdoyant
-          imageUrl: 'https://images.unsplash.com/photo-1508514177221-188b1cf16e9d?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
+          imageUrl: 'https://images.unsplash.com/photo-1508514177221-188c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
           categories: ['Énergie', 'Développement durable'],
           readTimeMinutes: 5,
           publishDate: DateTime.now().subtract(const Duration(days: 5)),
@@ -625,7 +626,7 @@ class _HomeViewState extends State<HomeView> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.7,
+        childAspectRatio: 0.6,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
@@ -668,7 +669,7 @@ class _HomeViewState extends State<HomeView> {
               child: Stack(
                 children: [
                   Container(
-                    height: 140,
+                    height: 130,
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
@@ -790,34 +791,35 @@ class _HomeViewState extends State<HomeView> {
             // Product info
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(12),
+                padding: const EdgeInsets.all(10),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       product.brand,
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 12,
+                        fontSize: 11,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       product.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 14,
+                        fontSize: 13,
                       ),
-                      maxLines: 2,
+                      maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 2),
                     Text(
                       product.description,
                       style: TextStyle(
                         color: Colors.grey.shade700,
-                        fontSize: 12,
+                        fontSize: 11,
                       ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -829,6 +831,7 @@ class _HomeViewState extends State<HomeView> {
                       children: [
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
                           children: [
                             if (product.discountPercentage != null)
                               Text(
@@ -839,6 +842,8 @@ class _HomeViewState extends State<HomeView> {
                                   fontSize: 12,
                                 ),
                               ),
+                            if (product.discountPercentage != null)
+                              const SizedBox(width: 8),
                             Text(
                               '\$${product.price.toStringAsFixed(2)}',
                               style: const TextStyle(
