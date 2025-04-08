@@ -111,7 +111,46 @@ class CommunityController extends ChangeNotifier {
     return _challenges.where((challenge) => challenge.status == ChallengeStatus.completed).toList();
   }
   
-  List<CommunityChallenge> getUserChallenges(String userId) {
-    return _challenges.where((challenge) => challenge.participants.contains(userId)).toList();
+  Future<List<CommunityChallenge>> getUserChallenges(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('community_challenges')
+          .where('participants', arrayContains: userId)
+          .get();
+      
+      final userChallenges = snapshot.docs
+          .map((doc) {
+            final data = doc.data();
+            data['id'] = doc.id;
+            return CommunityChallenge.fromJson(data);
+          })
+          .toList();
+      
+      return userChallenges;
+    } catch (e) {
+      print('Error fetching user challenges: $e');
+      return [];
+    }
+  }
+  
+  /// Récupère un défi communautaire par son ID
+  Future<CommunityChallenge?> getChallengeById(String challengeId) async {
+    try {
+      final doc = await _firestore
+          .collection('community_challenges')
+          .doc(challengeId)
+          .get();
+      
+      if (doc.exists) {
+        final data = doc.data()!;
+        data['id'] = doc.id;
+        return CommunityChallenge.fromJson(data);
+      }
+      
+      return null;
+    } catch (e) {
+      print('Error fetching challenge by ID: $e');
+      return null;
+    }
   }
 }

@@ -24,6 +24,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:greens_app/views/goals/goals_view.dart';
 import 'package:greens_app/views/community/community_view.dart';
 import 'package:greens_app/views/scanner/product_scanner_view.dart';
+import 'package:greens_app/views/methodology_view.dart';
+import 'package:greens_app/views/community_impact_view.dart';
+import 'package:greens_app/controllers/community_controller.dart';
+import 'package:greens_app/controllers/eco_goal_controller.dart';
 
 // Classe pour définir les constantes de routes
 class AppRoutes {
@@ -50,7 +54,12 @@ class AppRoutes {
   static const String legalNotice = '/legal_notice';
   static const String goals = '/goals';
   static const String community = '/community';
-static const String productScanner = '/product_scanner';
+  static const String productScanner = '/product_scanner';
+  static const String cart = '/cart';
+  static const String notifications = '/notifications';
+  static const String methodology = '/methodology';
+  static const String communityImpact = '/community_impact';
+  static const String onboardingNew = '/onboarding_new';
 }
 
 class AppRouter {
@@ -115,6 +124,36 @@ case AppRoutes.productScanner:
             appBar: AppBar(title: const Text('Aide')),
             body: const Center(child: Text('Page d\'aide - À implémenter')),
           ),
+        );
+      case AppRoutes.cart:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Panier')),
+            body: const Center(child: Text('Page du panier - À implémenter')),
+          ),
+        );
+      case AppRoutes.notifications:
+        return MaterialPageRoute(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: const Text('Notifications')),
+            body: const Center(child: Text('Page des notifications - À implémenter')),
+          ),
+        );
+      case AppRoutes.methodology:
+        return MaterialPageRoute(
+          builder: (_) => const MethodologyView(),
+        );
+      case AppRoutes.communityImpact:
+        String challengeId = '';
+        if (settings.arguments != null) {
+          challengeId = settings.arguments as String;
+        }
+        return MaterialPageRoute(
+          builder: (_) => CommunityImpactView(challengeId: challengeId),
+        );
+      case AppRoutes.onboardingNew:
+        return MaterialPageRoute(
+          builder: (_) => const OnboardingView(),
         );
       default:
         return MaterialPageRoute(

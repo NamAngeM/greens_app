@@ -7,13 +7,19 @@ import 'package:greens_app/controllers/eco_goal_controller.dart';
 import 'package:greens_app/controllers/community_controller.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/app_router.dart';
+import 'package:greens_app/utils/app_styles.dart';
 import 'package:greens_app/widgets/custom_button.dart';
 import 'package:greens_app/widgets/menu.dart';
+import 'package:greens_app/widgets/eco_progress_tree.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/services/cart_service.dart';
+import 'package:greens_app/services/eco_journey_service.dart';
+import 'package:greens_app/services/eco_metrics_service.dart';
 import 'package:greens_app/models/product_model.dart';
 import 'package:greens_app/models/eco_goal_model.dart';
+import 'package:greens_app/models/community_challenge_model.dart';
 import 'package:greens_app/models/article_model.dart';
+import 'package:greens_app/models/eco_badge.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -33,9 +39,18 @@ class _HomeViewState extends State<HomeView> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       final articleController = Provider.of<ArticleController>(context, listen: false);
       final productController = Provider.of<ProductController>(context, listen: false);
+      final ecoGoalController = Provider.of<EcoGoalController>(context, listen: false);
+      final communityController = Provider.of<CommunityController>(context, listen: false);
       
       articleController.getRecentArticles();
       productController.getEcoFriendlyProducts();
+      
+      // Charger les objectifs écologiques et défis communautaires
+      final authController = Provider.of<AuthController>(context, listen: false);
+      if (authController.currentUser != null) {
+        ecoGoalController.getUserGoals(authController.currentUser!.uid);
+        communityController.getUserChallenges(authController.currentUser!.uid);
+      }
     });
   }
 

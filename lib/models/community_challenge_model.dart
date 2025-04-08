@@ -17,6 +17,18 @@ enum ChallengeCategory {
   other
 }
 
+enum GoalType {
+  carbon,
+  water,
+  energy,
+  waste,
+  transportation,
+  food,
+  biodiversity,
+  community,
+  other
+}
+
 class CommunityChallenge {
   final String id;
   final String title;
@@ -29,6 +41,9 @@ class CommunityChallenge {
   final String imageUrl;
   final int carbonPointsReward;
   final List<String> participants;
+  final GoalType type;
+  final double impactPerParticipant;
+  final List<Map<String, dynamic>> topContributors;
   final DateTime createdAt;
   
   // Nouvelles propriétés
@@ -57,6 +72,9 @@ class CommunityChallenge {
     required this.imageUrl,
     required this.carbonPointsReward,
     required this.participants,
+    required this.type,
+    required this.impactPerParticipant,
+    this.topContributors = const [],
     required this.createdAt,
     this.creatorId = '',
     this.creatorName = '',
@@ -88,6 +106,12 @@ class CommunityChallenge {
       imageUrl: json['imageUrl'] ?? '',
       carbonPointsReward: json['carbonPointsReward'] ?? 0,
       participants: List<String>.from(json['participants'] ?? []),
+      type: GoalType.values.firstWhere(
+        (e) => e.toString() == 'GoalType.${json['type']}',
+        orElse: () => GoalType.carbon,
+      ),
+      impactPerParticipant: json['impactPerParticipant'] ?? 0.0,
+      topContributors: List<Map<String, dynamic>>.from(json['topContributors'] ?? []),
       createdAt: (json['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
       creatorId: json['creatorId'] ?? '',
       creatorName: json['creatorName'] ?? '',
@@ -122,6 +146,9 @@ class CommunityChallenge {
       'imageUrl': imageUrl,
       'carbonPointsReward': carbonPointsReward,
       'participants': participants,
+      'type': type.toString().split('.').last,
+      'impactPerParticipant': impactPerParticipant,
+      'topContributors': topContributors,
       'createdAt': createdAt,
       'creatorId': creatorId,
       'creatorName': creatorName,
@@ -150,6 +177,9 @@ class CommunityChallenge {
     String? imageUrl,
     int? carbonPointsReward,
     List<String>? participants,
+    GoalType? type,
+    double? impactPerParticipant,
+    List<Map<String, dynamic>>? topContributors,
     DateTime? createdAt,
     String? creatorId,
     String? creatorName,
@@ -176,6 +206,9 @@ class CommunityChallenge {
       imageUrl: imageUrl ?? this.imageUrl,
       carbonPointsReward: carbonPointsReward ?? this.carbonPointsReward,
       participants: participants ?? this.participants,
+      type: type ?? this.type,
+      impactPerParticipant: impactPerParticipant ?? this.impactPerParticipant,
+      topContributors: topContributors ?? this.topContributors,
       createdAt: createdAt ?? this.createdAt,
       creatorId: creatorId ?? this.creatorId,
       creatorName: creatorName ?? this.creatorName,
@@ -191,6 +224,10 @@ class CommunityChallenge {
       milestones: milestones ?? this.milestones,
     );
   }
+  
+  int get participantCount => participants.length;
+  int get daysLeft => endDate.difference(DateTime.now()).inDays;
+  double get completionPercentage => participantsCount / targetParticipants;
   
   String getStatusText() {
     switch (status) {

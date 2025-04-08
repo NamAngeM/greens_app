@@ -206,14 +206,6 @@ class _CommunityViewState extends State<CommunityView> with SingleTickerProvider
   }
 
   Widget _buildUserChallengesTab(CommunityController controller, AuthController authController) {
-    if (controller.isLoading) {
-      return const Center(
-        child: CircularProgressIndicator(
-          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-        ),
-      );
-    }
-    
     if (authController.currentUser == null) {
       return Center(
         child: Column(
@@ -222,43 +214,22 @@ class _CommunityViewState extends State<CommunityView> with SingleTickerProvider
             Container(
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
-                color: Colors.blue.withOpacity(0.1),
+                color: Colors.grey.withOpacity(0.1),
                 shape: BoxShape.circle,
               ),
               child: const Icon(
-                Icons.person_outlined,
+                Icons.person_off_outlined,
                 size: 80,
-                color: Colors.blue,
+                color: Colors.grey,
               ),
             ),
             const SizedBox(height: 16),
             const Text(
-              'Vous devez être connecté pour voir vos défis',
+              'Connectez-vous pour voir vos défis',
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                // Rediriger vers la page de connexion
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
-                ),
-                elevation: 4,
-              ),
-              child: const Text(
-                'Se connecter',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
-                ),
               ),
             ),
           ],
@@ -266,74 +237,89 @@ class _CommunityViewState extends State<CommunityView> with SingleTickerProvider
       );
     }
     
-    final userChallenges = controller.getUserChallenges(authController.currentUser!.uid);
-    
-    if (userChallenges.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: Colors.purple.withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.person_outlined,
-                size: 80,
-                color: Colors.purple,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Vous n\'avez pas encore rejoint de défis',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'Rejoignez un défi pour le voir apparaître ici',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-            const SizedBox(height: 24),
-            ElevatedButton(
-              onPressed: () {
-                _tabController.animateTo(0); // Aller à l'onglet des défis actifs
-              },
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFF4CAF50),
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(30),
+    return FutureBuilder<List<CommunityChallenge>>(
+      future: controller.getUserChallenges(authController.currentUser!.uid),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+        
+        if (snapshot.hasError) {
+          return Center(
+            child: Text('Erreur: ${snapshot.error}'),
+          );
+        }
+        
+        final userChallenges = snapshot.data ?? [];
+        
+        if (userChallenges.isEmpty) {
+          return Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.purple.withOpacity(0.1),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_outlined,
+                    size: 80,
+                    color: Colors.purple,
+                  ),
                 ),
-                elevation: 4,
-              ),
-              child: const Text(
-                'Voir les défis actifs',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w500,
+                const SizedBox(height: 16),
+                const Text(
+                  'Vous n\'avez pas encore rejoint de défis',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
+                  ),
                 ),
-              ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Rejoignez un défi pour le voir apparaître ici',
+                  style: TextStyle(
+                    fontSize: 16,
+                    color: Colors.grey,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                ElevatedButton(
+                  onPressed: () {
+                    _tabController.animateTo(0); // Aller à l'onglet des défis actifs
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CAF50),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: const Text(
+                    'Voir les défis actifs',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      );
-    }
-    
-    return ListView.builder(
-      padding: const EdgeInsets.all(16),
-      itemCount: userChallenges.length,
-      itemBuilder: (context, index) {
-        final challenge = userChallenges[index];
-        return _buildChallengeCard(challenge, controller, authController);
+          );
+        }
+        
+        return ListView.builder(
+          padding: const EdgeInsets.all(16),
+          itemCount: userChallenges.length,
+          itemBuilder: (context, index) {
+            final challenge = userChallenges[index];
+            return _buildChallengeCard(challenge, controller, authController);
+          },
+        );
       },
     );
   }
