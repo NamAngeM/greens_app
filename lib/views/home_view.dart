@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 // import 'package:carousel_slider/carousel_slider.dart';
 import 'package:greens_app/widgets/carbon_impact_visualization.dart';
 import 'package:greens_app/views/eco_challenge_view.dart';
+import 'package:greens_app/models/product.dart';
+import 'package:greens_app/views/product_detail_view.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -89,6 +91,66 @@ class _HomeViewState extends State<HomeView> {
     },
   ];
 
+    // Liste des produits recommandés
+  final List<Map<String, dynamic>> _recommendedProducts = [
+    {
+      'name': 'Gourde écologique',
+      'description': 'Gourde réutilisable en acier inoxydable, sans BPA',
+      'price': 19.99,
+      'imageAsset': 'assets/images/products/botle.png',
+      'category': 'Accessoires',
+      'isEcoFriendly': true,
+    },
+    {
+      'name': 'Brosse à dents bambou',
+      'description': 'Brosse à dents en bambou biodégradable avec poils végétaux',
+      'price': 6.50,
+      'imageAsset': 'assets/images/products/brosse-a-dents-en-bois.png',
+      'category': 'Hygiène',
+      'isEcoFriendly': true,
+    },
+    {
+      'name': 'Sacs fruits et légumes',
+      'description': 'Lot de 5 sacs réutilisables en filet pour vos achats en vrac',
+      'price': 9.99,
+      'imageAsset': 'assets/images/products/panier.png',
+      'category': 'Cuisine',
+      'isEcoFriendly': true,
+    },
+    {
+      'name': 'Coffret soin cheveux',
+      'description': 'Coffret de soins capillaires naturels et écologiques',
+      'price': 24.50,
+      'imageAsset': 'assets/images/products/coffret-soin-cheveux.png',
+      'category': 'Hygiène',
+      'isEcoFriendly': true,
+    },
+    {
+      'name': 'Sac en tissu',
+      'description': 'Sac réutilisable en coton bio pour vos courses',
+      'price': 12.99,
+      'imageAsset': 'assets/images/products/sac.png',
+      'category': 'Accessoires',
+      'isEcoFriendly': true,
+    },
+    {
+      'name': 'Dentifrice solide',
+      'description': 'Dentifrice en comprimés à croquer, zéro déchet',
+      'price': 7.90,
+      'imageAsset': 'assets/images/products/packshot-dentifrice.png',
+      'category': 'Hygiène',
+      'isEcoFriendly': true,
+    },
+    {
+      'name': 'Rouge à lèvres naturel',
+      'description': 'Rouge à lèvres fabriqué à partir d\'ingrédients naturels',
+      'price': 14.95,
+      'imageAsset': 'assets/images/products/rouge-a-levres.png',
+      'category': 'Cosmétiques',
+      'isEcoFriendly': true,
+    },
+  ];
+  
   Future<void> _refreshData() async {
     setState(() {
       _isRefreshing = true;
@@ -153,6 +215,10 @@ class _HomeViewState extends State<HomeView> {
                     _buildSectionTitle('Événements communautaires'),
                     const SizedBox(height: 16),
                     _buildCommunityEvents(),
+                    const SizedBox(height: 24),
+                    _buildSectionTitle('Produits recommandés'),
+                    const SizedBox(height: 16),
+                    _buildRecommendedProducts(),
                     const SizedBox(height: 24),
                   ],
                 ),
@@ -626,4 +692,174 @@ class _HomeViewState extends State<HomeView> {
       ],
     );
   }
-} 
+
+  Widget _buildRecommendedProducts() {
+    return Column(
+      children: [
+        for (var product in _recommendedProducts)
+          Container(
+            margin: const EdgeInsets.only(bottom: 12),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () {
+                    final productData = product;
+                    final productObj = Product(
+                      id: productData['name'].hashCode.toString(),
+                      name: productData['name'],
+                      description: productData['description'],
+                      price: productData['price'],
+                      imageAsset: productData['imageAsset'],
+                      category: productData['category'],
+                      isEcoFriendly: productData['isEcoFriendly'],
+                    );
+                    
+                    // Ajouter un retour haptique pour une meilleure expérience utilisateur
+                    HapticFeedback.lightImpact();
+                    
+                    // Utiliser une transition PageRouteBuilder pour une animation personnalisée
+                    Navigator.push(
+                      context,
+                      PageRouteBuilder(
+                        transitionDuration: const Duration(milliseconds: 300),
+                        pageBuilder: (context, animation, secondaryAnimation) => 
+                          ProductDetailView(product: productObj),
+                        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                          var begin = const Offset(1.0, 0.0);
+                          var end = Offset.zero;
+                          var curve = Curves.easeInOut;
+                          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+                          return SlideTransition(
+                            position: animation.drive(tween),
+                            child: child,
+                          );
+                        },
+                      ),
+                    ).then((value) {
+                      // Rafraîchir l'interface si nécessaire après le retour
+                      if (value == true) {
+                        // Afficher le panier ou effectuer une autre action
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Panier mis à jour'),
+                            duration: Duration(seconds: 1),
+                          ),
+                        );
+                      }
+                    });
+                  },
+                  child: Row(
+                    children: [
+                      Hero(
+                        tag: 'product-${product['name']}',
+                        child: Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                            image: DecorationImage(
+                              image: AssetImage(product['imageAsset']),
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(12),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                product['name'],
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Text(
+                                product['description'],
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                              const SizedBox(height: 4),
+                              Row(
+                                children: [
+                                  Text(
+                                    '${product['price']} €',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Color(0xFF4CAF50),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 4),
+                                  if (product['isEcoFriendly'])
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                      decoration: BoxDecoration(
+                                        color: Colors.green.withOpacity(0.1),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Icon(
+                                            Icons.eco,
+                                            size: 12,
+                                            color: Colors.green,
+                                          ),
+                                          SizedBox(width: 2),
+                                          Text(
+                                            'Éco',
+                                            style: TextStyle(
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                    ),
+                                ],
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        child: const Icon(
+                          Icons.arrow_forward_ios,
+                          size: 16,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+}

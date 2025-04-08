@@ -12,9 +12,11 @@ import 'package:greens_app/widgets/custom_button.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/widgets/eco_progress_tree.dart';
 import 'package:greens_app/views/products/products_view.dart';
+import 'package:greens_app/views/product_detail_view.dart';
 import 'package:greens_app/services/cart_service.dart';
 import 'package:greens_app/services/eco_journey_service.dart';
 import 'package:greens_app/services/eco_metrics_service.dart';
+import 'package:greens_app/models/product.dart';
 import 'package:greens_app/models/product_model.dart';
 import 'package:greens_app/models/eco_goal_model.dart';
 import 'package:greens_app/models/community_challenge_model.dart';
@@ -582,56 +584,104 @@ class _HomeViewState extends State<HomeView> {
     }
     
     // Use test products if no products are available
-    List<ProductModel> productsToShow = productController.ecoFriendlyProducts;
+    List<Product> productsToShow = [];
     
+    // Convertir les ProductModel en Product
+    if (productController.ecoFriendlyProducts.isNotEmpty) {
+      for (var product in productController.ecoFriendlyProducts) {
+        if (product is ProductModel) {
+          productsToShow.add(
+            Product(
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              imageAsset: product.imageUrl ?? 'assets/images/placeholder.png',
+              category: product.categories.isNotEmpty ? product.categories[0] : 'Divers',
+              isEcoFriendly: product.isEcoFriendly,
+            )
+          );
+        } else {
+          productsToShow.add(
+            Product(
+              id: product.id,
+              name: product.name,
+              description: product.description,
+              price: product.price,
+              imageAsset: product.imageUrl ?? 'assets/images/placeholder.png',
+              category: product.categories.isNotEmpty ? product.categories[0] : 'Divers',
+              isEcoFriendly: product.isEcoFriendly,
+            )
+          );
+        }
+      }
+    }
+    
+    // Si la liste est toujours vide, utiliser les produits de test
     if (productsToShow.isEmpty) {
-      // Test products data
       productsToShow = [
-        ProductModel(
-          id: 'test-product-1',
-          name: 'Brosse à dents en bambou',
-          brand: 'EcoSmile',
-          description: 'Set de 4 brosses à dents en bambou biologique avec des poils au charbon.',
-          price: 12.99,
-          imageUrl: 'https://images.unsplash.com/photo-1607613009820-a29f7bb81c04?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          categories: ['Bathroom', 'Personal Care'],
-          isEcoFriendly: true,
-          hasCoupon: false,
-        ),
-        ProductModel(
-          id: 'test-product-2',
-          name: 'Sacs de fruits et légumes réutilisables',
-          brand: 'GreenCarry',
-          description: 'Set de 5 sacs de fruits et légumes en mesh fabriqués à partir de matériaux recyclés. Parfait pour faire les courses.',
-          price: 9.99,
-          imageUrl: 'https://images.unsplash.com/photo-1542838132-92c53300491e?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          categories: ['Kitchen', 'Shopping'],
-          isEcoFriendly: true,
-          discountPercentage: 15,
-          hasCoupon: true,
-        ),
-        ProductModel(
-          id: 'test-product-3',
-          name: 'Bouteille d\'eau en acier inoxydable',
-          brand: 'HydroEco',
-          description: 'Bouteille d\'eau à double paroi isolée qui garde les boissons froides pendant 24 heures ou chaudes pendant 12 heures.',
-          price: 24.99,
-          imageUrl: 'https://images.unsplash.com/photo-1602143407151-7111542de6e8?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          categories: ['Kitchen', 'Outdoor'],
-          isEcoFriendly: true,
-          hasCoupon: false,
-        ),
-        ProductModel(
-          id: 'test-product-4',
-          name: 'T-shirt en coton biologique',
-          brand: 'NatureWear',
-          description: 'T-shirt doux et respirant fabriqué à partir de 100% de coton biologique. Produit de manière éthique et teint avec des couleurs naturelles.',
+        Product(
+          id: 'product-1',
+          name: 'Gourde écologique',
+          description: 'Gourde réutilisable en acier inoxydable, sans BPA',
           price: 19.99,
-          imageUrl: 'https://images.unsplash.com/photo-1581655353564-df123a1eb820?ixlib=rb-1.2.1&auto=format&fit=crop&w=500&q=60',
-          categories: ['Fashion', 'Clothing'],
+          imageAsset: 'assets/images/products/botle.png',
+          category: 'Accessoires',
           isEcoFriendly: true,
-          discountPercentage: 10,
-          hasCoupon: true,
+        ),
+        Product(
+          id: 'product-2',
+          name: 'Brosse à dents bambou',
+          description: 'Brosse à dents en bambou biodégradable avec poils végétaux',
+          price: 6.50,
+          imageAsset: 'assets/images/products/brosse-a-dents-en-bois.png',
+          category: 'Hygiène',
+          isEcoFriendly: true,
+        ),
+        Product(
+          id: 'product-3',
+          name: 'Sacs fruits et légumes',
+          description: 'Lot de 5 sacs réutilisables en filet pour vos achats en vrac',
+          price: 9.99,
+          imageAsset: 'assets/images/products/panier.png',
+          category: 'Cuisine',
+          isEcoFriendly: true,
+        ),
+        Product(
+          id: 'product-4',
+          name: 'Coffret soin cheveux',
+          description: 'Coffret de soins capillaires naturels et écologiques',
+          price: 24.50,
+          imageAsset: 'assets/images/products/coffret-soin-cheveux.png',
+          category: 'Hygiène',
+          isEcoFriendly: true,
+        ),
+        Product(
+          id: 'product-5',
+          name: 'Sac en tissu',
+          description: 'Sac réutilisable en coton bio pour vos courses',
+          price: 12.99,
+          imageAsset: 'assets/images/products/sac.png',
+          category: 'Accessoires',
+          isEcoFriendly: true,
+        ),
+        Product(
+          id: 'product-6',
+          name: 'Dentifrice solide',
+          description: 'Dentifrice en comprimés à croquer, zéro déchet',
+          price: 7.90,
+          imageAsset: 'assets/images/products/packshot-dentifrice.png',
+          category: 'Hygiène',
+          isEcoFriendly: true,
+        ),
+        Product(
+          id: 'product-7',
+          name: 'Rouge à lèvres naturel',
+          description: 'Rouge à lèvres fabriqué à partir d\'ingrédients naturels et biologiques',
+          price: 14.95,
+          imageAsset: 'assets/images/products/rouge-a-levres.png',
+          category: 'Beauté',
+          isEcoFriendly: true,
         ),
       ];
     }
@@ -653,7 +703,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  Widget _buildProductCard(ProductModel product) {
+  Widget _buildProductCard(Product product) {
     return GestureDetector(
       onTap: () {
         // Navigate to product details
@@ -689,22 +739,10 @@ class _HomeViewState extends State<HomeView> {
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
                     ),
-                    child: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                        ? Image.network(
-                            product.imageUrl!,
+                    child: product.imageAsset != null && product.imageAsset!.isNotEmpty
+                        ? Image.asset(
+                            product.imageAsset!,
                             fit: BoxFit.cover,
-                            loadingBuilder: (context, child, loadingProgress) {
-                              if (loadingProgress == null) return child;
-                              return Center(
-                                child: CircularProgressIndicator(
-                                  value: loadingProgress.expectedTotalBytes != null
-                                      ? loadingProgress.cumulativeBytesLoaded / 
-                                          loadingProgress.expectedTotalBytes!
-                                      : null,
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-                                ),
-                              );
-                            },
                           )
                         : const Icon(
                             Icons.image_not_supported_outlined,
@@ -746,60 +784,6 @@ class _HomeViewState extends State<HomeView> {
                         ),
                       ),
                     ),
-                  if (product.discountPercentage != null)
-                    Positioned(
-                      top: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 8,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.red.shade600,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          '-${product.discountPercentage!.toInt()}%',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 12,
-                          ),
-                        ),
-                      ),
-                    ),
-                  if (product.hasCoupon)
-                    Positioned(
-                      bottom: 8,
-                      left: 8,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade700,
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: const [
-                            Icon(
-                              Icons.local_offer_outlined,
-                              color: Colors.white,
-                              size: 12,
-                            ),
-                            SizedBox(width: 4),
-                            Text(
-                              'Coupon',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w500,
-                                fontSize: 10,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
                 ],
               ),
             ),
@@ -812,7 +796,7 @@ class _HomeViewState extends State<HomeView> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
-                      product.brand,
+                      product.category,
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontSize: 11,
@@ -848,17 +832,6 @@ class _HomeViewState extends State<HomeView> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
-                            if (product.discountPercentage != null)
-                              Text(
-                                '\$${(product.price * (1 + product.discountPercentage! / 100)).toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey.shade500,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            if (product.discountPercentage != null)
-                              const SizedBox(width: 8),
                             Text(
                               '\$${product.price.toStringAsFixed(2)}',
                               style: const TextStyle(
@@ -896,7 +869,7 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void _showAddToCartOptions(ProductModel product) {
+  void _showAddToCartOptions(Product product) {
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
@@ -946,12 +919,15 @@ class _HomeViewState extends State<HomeView> {
                     height: 80,
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(12),
-                      image: DecorationImage(
-                        image: product.imageUrl != null && product.imageUrl!.isNotEmpty
-                            ? NetworkImage(product.imageUrl!)
-                            : const AssetImage('assets/images/backgrounds/latest_article_background.png') as ImageProvider,
-                        fit: BoxFit.cover,
-                      ),
+                      image: product.imageAsset != null && product.imageAsset!.isNotEmpty
+                          ? DecorationImage(
+                              image: AssetImage(product.imageAsset!),
+                              fit: BoxFit.cover,
+                            )
+                          : const DecorationImage(
+                              image: AssetImage('assets/images/backgrounds/latest_article_background.png'),
+                              fit: BoxFit.cover,
+                            ),
                     ),
                   ),
                   const SizedBox(width: 16),
@@ -971,7 +947,7 @@ class _HomeViewState extends State<HomeView> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          product.brand,
+                          product.category,
                           style: TextStyle(
                             color: Colors.grey.shade600,
                             fontSize: 14,
@@ -980,17 +956,6 @@ class _HomeViewState extends State<HomeView> {
                         const SizedBox(height: 4),
                         Row(
                           children: [
-                            if (product.discountPercentage != null)
-                              Text(
-                                '\$${(product.price * (1 + product.discountPercentage! / 100)).toStringAsFixed(2)}',
-                                style: TextStyle(
-                                  decoration: TextDecoration.lineThrough,
-                                  color: Colors.grey.shade500,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            if (product.discountPercentage != null)
-                              const SizedBox(width: 8),
                             Text(
                               '\$${product.price.toStringAsFixed(2)}',
                               style: const TextStyle(
@@ -1200,8 +1165,35 @@ class _HomeViewState extends State<HomeView> {
     );
   }
 
-  void _showProductDetails(ProductModel product) {
-    // Implement product details view navigation
+  void _showProductDetails(Product product) {
+    // Naviguer vers la vue détaillée du produit avec une transition fluide
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) {
+          return ProductDetailView(
+            product: product,
+          );
+        },
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          const begin = Offset(0.0, 0.1);
+          const end = Offset.zero;
+          const curve = Curves.easeInOut;
+          var tween = Tween(begin: begin, end: end).chain(CurveTween(curve: curve));
+          var offsetAnimation = animation.drive(tween);
+          return SlideTransition(
+            position: offsetAnimation,
+            child: FadeTransition(
+              opacity: animation,
+              child: child,
+            ),
+          );
+        },
+        transitionDuration: const Duration(milliseconds: 300),
+      ),
+    ).then((_) {
+      // Rafraîchir l'interface après le retour de la vue détaillée
+      setState(() {});
+    });
   }
 
   Widget _buildProfilePage(AuthController authController) {
