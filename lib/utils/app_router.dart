@@ -8,6 +8,7 @@ import 'package:greens_app/views/onboarding/onboarding_view.dart';
 import 'package:greens_app/views/splash_view.dart';
 import 'package:greens_app/views/splash_view_connect.dart';
 import 'package:greens_app/views/carbon/carbon_calculator_view.dart';
+import 'package:greens_app/views/carbon/carbon_dashboard_view.dart';
 import 'package:greens_app/views/questions/question_1_view.dart';
 import 'package:greens_app/views/questions/question_2_view.dart';
 import 'package:greens_app/views/questions/question_3_view.dart';
@@ -38,6 +39,7 @@ class AppRoutes {
   static const String onboarding = '/onboarding';
   static const String home = '/home';
   static const String carbonCalculator = '/carbon_calculator';
+  static const String carbonDashboard = '/carbon_dashboard';
   static const String products = '/products';
   static const String rewards = '/rewards';
   static const String profile = '/profile';
@@ -79,6 +81,8 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const HomeView());
       case AppRoutes.carbonCalculator:
         return MaterialPageRoute(builder: (_) => const CarbonCalculatorView());
+      case AppRoutes.carbonDashboard:
+        return MaterialPageRoute(builder: (_) => const CarbonDashboardView());
       case AppRoutes.question1:
         return MaterialPageRoute(builder: (_) => const Question1View());
       case AppRoutes.question2:
@@ -201,7 +205,16 @@ case AppRoutes.productScanner:
   static Future<bool> _hasCompletedQuestions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      return prefs.getBool('has_completed_questions') ?? false;
+      // Pour les nouveaux utilisateurs, vérifier les deux flags
+      final isNewUser = prefs.getBool('is_new_user') ?? false;
+      final hasCompleted = prefs.getBool('has_completed_questions') ?? false;
+      
+      // Si c'est un nouvel utilisateur et qu'il n'a pas complété les questions
+      if (isNewUser && !hasCompleted) {
+        return false;
+      }
+      
+      return hasCompleted;
     } catch (e) {
       print('Erreur lors de la vérification des questions: $e');
       return false;

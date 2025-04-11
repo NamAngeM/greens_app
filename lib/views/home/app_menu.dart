@@ -90,6 +90,12 @@ class AppMenu extends StatelessWidget {
                   ),
                   _buildMenuItem(
                     context, 
+                    'Tableau de bord carbone', 
+                    Icons.bar_chart, 
+                    AppRoutes.carbonDashboard,
+                  ),
+                  _buildMenuItem(
+                    context, 
                     'Scanner de produits', 
                     Icons.qr_code_scanner, 
                     AppRoutes.productScanner,

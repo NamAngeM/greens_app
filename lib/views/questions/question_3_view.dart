@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/views/questions/question_4_view.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../utils/app_router.dart';
 
@@ -36,9 +37,12 @@ class _Question3ViewState extends State<Question3View> {
     Navigator.pushNamed(context, AppRoutes.question4);
   }
 
-  void _saveAnswer(String answer) {
-    // TODO: Implémenter la sauvegarde de la réponse
-    // Cela pourrait être fait avec SharedPreferences, Firebase, ou un autre service
+  void _saveAnswer(String answer) async {
+    // Enregistrer la réponse dans SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('question3_answer', answer);
+    
+    // Utiliser un print pour le débogage
     print('Réponse à la question 3: $answer');
   }
 

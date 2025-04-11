@@ -45,9 +45,15 @@ class _Question5ViewState extends State<Question5View> {
     );
   }
 
-  void _saveAnswer(String answer) {
-    // TODO: Implémenter la sauvegarde de la réponse
-    // Cela pourrait être fait avec SharedPreferences, Firebase, ou un autre service
+  void _saveAnswer(String answer) async {
+    // Enregistrer la réponse dans SharedPreferences
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('question5_answer', answer);
+    
+    // Assurer que le flag is_new_user est réinitialisé
+    await prefs.setBool('is_new_user', false);
+    
+    // Utiliser un print pour le débogage
     print('Réponse à la question 5: $answer');
   }
 

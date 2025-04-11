@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/models/user_model.dart';
 import 'package:greens_app/services/auth_service.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:google_sign_in/google_sign_in.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/user_model.dart';
 import '../services/auth_service.dart';
@@ -54,6 +57,12 @@ class AuthController extends ChangeNotifier {
       );
 
       _currentUser = await _authService.getCurrentUser();
+      
+      // Marquer comme nouvel utilisateur qui doit compléter les questions
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.setBool('is_new_user', true);
+      await prefs.setBool('has_completed_questions', false);
+      
       return true;
     } catch (e) {
       _errorMessage = 'Erreur lors de l\'inscription: $e';
@@ -89,6 +98,63 @@ class AuthController extends ChangeNotifier {
       notifyListeners();
     }
   }
+  
+  // S'inscrire ou se connecter avec Google
+  Future<bool> signInWithGoogle() async {
+    _isLoading = true;
+    _errorMessage = null;
+    notifyListeners();
+
+    try {
+      // Initialiser le processus de connexion Google
+      final GoogleSignIn googleSignIn = GoogleSignIn();
+      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      
+      if (googleUser == null) {
+        _errorMessage = 'Connexion Google annulée';
+        return false;
+      }
+      
+      // Obtenir les détails d'authentification
+      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final credential = GoogleAuthProvider.credential(
+        accessToken: googleAuth.accessToken,
+        idToken: googleAuth.idToken,
+      );
+      
+      // Connexion à Firebase
+      final UserCredential userCredential = 
+          await FirebaseAuth.instance.signInWithCredential(credential);
+      
+      // Vérifier si c'est un nouvel utilisateur
+      final bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+      
+      if (isNewUser) {
+        // Créer le document utilisateur pour un nouvel utilisateur
+        await _authService.createUserFromSocial(
+          uid: userCredential.user!.uid,
+          email: userCredential.user!.email ?? '',
+          firstName: userCredential.user!.displayName?.split(' ').first ?? '',
+          lastName: userCredential.user!.displayName?.split(' ').last ?? '',
+          photoUrl: userCredential.user!.photoURL,
+        );
+        
+        // Marquer comme nouvel utilisateur pour le questionnaire
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setBool('is_new_user', true);
+        await prefs.setBool('has_completed_questions', false);
+      }
+      
+      _currentUser = await _authService.getCurrentUser();
+      return true;
+    } catch (e) {
+      _errorMessage = 'Erreur lors de la connexion avec Google: $e';
+      return false;
+    } finally {
+      _isLoading = false;
+      notifyListeners();
+    }
+  }
 
   // Se déconnecter
   Future<void> signOut() async {
@@ -97,6 +163,17 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
+      // Déconnexion de Google si connecté
+      try {
+        final GoogleSignIn googleSignIn = GoogleSignIn();
+        if (await googleSignIn.isSignedIn()) {
+          await googleSignIn.signOut();
+        }
+      } catch (e) {
+        // Ignorer les erreurs de déconnexion Google
+        print('Erreur lors de la déconnexion Google: $e');
+      }
+      
       await _authService.signOut();
       _currentUser = null;
     } catch (e) {
@@ -149,7 +226,7 @@ class AuthController extends ChangeNotifier {
       _currentUser = await _authService.getCurrentUser();
       return true;
     } catch (e) {
-      _errorMessage = 'Erreur lors de la mise à jour des points: $e';
+      _errorMessage = 'Erreur lors de la mise à jour des points carbone: $e';
       return false;
     } finally {
       _isLoading = false;

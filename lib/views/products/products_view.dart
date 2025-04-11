@@ -60,6 +60,7 @@ class _ProductsViewState extends State<ProductsView> {
     _products = [
       // Health & Food products
       Product(
+        id: 'amoseeds-1',
         name: 'Amoseeds',
         description: 'Healthy Premium Organic Chia Seeds',
         price: 21.99,
@@ -68,6 +69,7 @@ class _ProductsViewState extends State<ProductsView> {
         isEcoFriendly: true,
       ),
       Product(
+        id: 'juneshine-1',
         name: 'June Shine',
         description: 'Hard Kombucha Acai Berry',
         price: 14,
@@ -75,6 +77,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Health & Food',
       ),
       Product(
+        id: 'jens-sorbet-1',
         name: 'Jen\'s Sorbet',
         description: 'Fruit sorbet with pear & strawberry',
         price: 9,
@@ -82,6 +85,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Health & Food',
       ),
       Product(
+        id: 'amoseeds-2',
         name: 'Amoseeds',
         description: 'Zen Bio Complex Vitamins & Minerals (60ct)',
         price: 17.99,
@@ -92,6 +96,7 @@ class _ProductsViewState extends State<ProductsView> {
       
       // Fashion products
       Product(
+        id: 'allbirds-1',
         name: 'Allbirds',
         description: 'Women\'s Tree Runners Shoes',
         price: 69,
@@ -99,6 +104,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Fashion',
       ),
       Product(
+        id: 'organic-basics-1',
         name: 'Organic Basics',
         description: 'Organic Cotton Tee',
         price: 14,
@@ -106,6 +112,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Fashion',
       ),
       Product(
+        id: 'qapel-1',
         name: 'Qapel',
         description: 'Red Leather Bag Sustainable print',
         price: 79.99,
@@ -113,6 +120,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Fashion',
       ),
       Product(
+        id: 'organic-basics-2',
         name: 'Organic Basics',
         description: 'Organic Cotton Tee Black',
         price: 14,
@@ -122,6 +130,7 @@ class _ProductsViewState extends State<ProductsView> {
       
       // Essentials
       Product(
+        id: 'ecobottle-1',
         name: 'EcoBottle',
         description: 'Bottle/Thunk EcoBottle (500ml)',
         price: 16,
@@ -129,6 +138,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Essentials',
       ),
       Product(
+        id: 'lift-1',
         name: 'Lift',
         description: 'Ergonomic Lift Keyboard Mouse',
         price: 79.99,
@@ -136,6 +146,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Essentials',
       ),
       Product(
+        id: 'mofpw-1',
         name: 'MOFPW',
         description: 'Eco Mechanical Keyboard Cherry 7',
         price: 99.99,
@@ -143,6 +154,7 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Essentials',
       ),
       Product(
+        id: 'lenovo-1',
         name: 'Lenovo ThinkPad',
         description: 'X1 Carbon G12 i7-1355U 32GB RAM',
         price: 1099.99,
@@ -173,7 +185,7 @@ class _ProductsViewState extends State<ProductsView> {
       brand: 'GreenMinds', // À adapter selon vos besoins
       description: product.description,
       price: product.price,
-      imageUrl: product.imageAsset,
+      imageUrl: product.imageAsset ?? '',
       categories: [product.category],
       isEcoFriendly: product.isEcoFriendly,
     );
@@ -734,9 +746,38 @@ class _ProductsViewState extends State<ProductsView> {
                               ),
                               child: ClipRRect(
                                 borderRadius: BorderRadius.circular(8),
-                                child: Image.asset(
-                                  item.product.imageUrl ?? 'assets/images/placeholder.png',
-                                  fit: BoxFit.cover,
+                                child: Column(
+                                  children: [
+                                    Expanded(
+                                      child: item.product.imageUrl != null
+                                          ? item.product.imageUrl!.startsWith('http')
+                                              ? Image.network(
+                                                  item.product.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) => 
+                                                    Icon(
+                                                      Icons.broken_image,
+                                                      color: Colors.grey,
+                                                      size: 64,
+                                                    ),
+                                                )
+                                              : Image.asset(
+                                                  item.product.imageUrl!,
+                                                  fit: BoxFit.cover,
+                                                  errorBuilder: (context, error, stackTrace) => 
+                                                    Icon(
+                                                      Icons.broken_image,
+                                                      color: Colors.grey,
+                                                      size: 64,
+                                                    ),
+                                                )
+                                          : Icon(
+                                              Icons.image_not_supported_outlined,
+                                              color: Colors.grey,
+                                              size: 64,
+                                            ),
+                                    ),
+                                  ],
                                 ),
                               ),
                             ),
@@ -1012,11 +1053,21 @@ class _ProductsViewState extends State<ProductsView> {
                       topLeft: Radius.circular(12),
                       topRight: Radius.circular(12),
                     ),
-                    child: Image.asset(
-                      product.imageAsset,
-                      height: 140,
-                      width: double.infinity,
-                      fit: BoxFit.cover,
+                    child: Column(
+                      children: [
+                        Expanded(
+                          child: product.imageAsset != null
+                              ? Image.asset(
+                                  product.imageAsset!,
+                                  fit: BoxFit.cover,
+                                )
+                              : Icon(
+                                  Icons.image_not_supported_outlined,
+                                  color: Colors.grey,
+                                  size: 64,
+                                ),
+                        ),
+                      ],
                     ),
                   ),
                 ),

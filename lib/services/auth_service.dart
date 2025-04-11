@@ -73,6 +73,7 @@ class AuthService {
     required String email,
     required String firstName,
     required String lastName,
+    String? photoUrl,
   }) async {
     try {
       final userModel = UserModel(
@@ -80,6 +81,7 @@ class AuthService {
         email: email,
         firstName: firstName,
         lastName: lastName,
+        photoUrl: photoUrl,
         carbonPoints: 0,
         interests: [],
       );
@@ -87,6 +89,34 @@ class AuthService {
       await _firestore.collection('users').doc(uid).set(userModel.toJson());
     } catch (e) {
       debugPrint('Erreur lors de la création du document utilisateur: $e');
+      rethrow;
+    }
+  }
+
+  // Méthode pour créer un utilisateur à partir d'une connexion sociale
+  Future<void> createUserFromSocial({
+    required String uid,
+    required String email,
+    required String firstName,
+    required String lastName,
+    String? photoUrl,
+  }) async {
+    try {
+      // Vérifier si l'utilisateur existe déjà
+      final docSnapshot = await _firestore.collection('users').doc(uid).get();
+      
+      if (!docSnapshot.exists) {
+        // Créer un nouveau document utilisateur s'il n'existe pas
+        await _createUserDocument(
+          uid: uid,
+          email: email,
+          firstName: firstName,
+          lastName: lastName,
+          photoUrl: photoUrl,
+        );
+      }
+    } catch (e) {
+      debugPrint('Erreur lors de la création de l\'utilisateur social: $e');
       rethrow;
     }
   }
@@ -136,10 +166,10 @@ class AuthService {
   Future<void> updateCarbonPoints(String uid, int points) async {
     try {
       await _firestore.collection('users').doc(uid).update({
-        'carbonPoints': FieldValue.increment(points),
+        'carbonPoints': points,
       });
     } catch (e) {
-      debugPrint('Erreur lors de la mise à jour des points: $e');
+      debugPrint('Erreur lors de la mise à jour des points carbone: $e');
       rethrow;
     }
   }

@@ -117,45 +117,18 @@ class _ProductDetailViewState extends State<ProductDetailView> with SingleTicker
               children: [
                 Hero(
                   tag: 'product-${widget.product.name}',
-                  child: Image.asset(
-                    widget.product.imageAsset,
-                    width: double.infinity,
-                    height: MediaQuery.of(context).size.height * 0.45,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      // Afficher une image de remplacement en cas d'erreur
-                      return Container(
+                  child: widget.product.imageAsset != null 
+                    ? Image.asset(
+                        widget.product.imageAsset!,
                         width: double.infinity,
                         height: MediaQuery.of(context).size.height * 0.45,
-                        color: Colors.grey[300],
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(
-                              Icons.image_not_supported_outlined,
-                              size: 64,
-                              color: Colors.grey[600],
-                            ),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Image non disponible',
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              widget.product.name,
-                              style: TextStyle(
-                                color: Colors.grey[700],
-                              ),
-                            ),
-                          ],
-                        ),
-                      );
-                    },
-                  ),
+                        fit: BoxFit.cover,
+                        errorBuilder: (context, error, stackTrace) {
+                          // Afficher une image de remplacement en cas d'erreur
+                          return _buildPlaceholderImage();
+                        },
+                      )
+                    : _buildPlaceholderImage(),
                 ),
                 // Gradient pour améliorer la lisibilité du texte
                 Container(
@@ -515,6 +488,39 @@ class _ProductDetailViewState extends State<ProductDetailView> with SingleTicker
                 fontSize: 14,
                 color: Colors.grey.shade800,
               ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPlaceholderImage() {
+    return Container(
+      width: double.infinity,
+      height: MediaQuery.of(context).size.height * 0.45,
+      color: Colors.grey[300],
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.image_not_supported_outlined,
+            size: 64,
+            color: Colors.grey[600],
+          ),
+          const SizedBox(height: 16),
+          Text(
+            'Image non disponible',
+            style: TextStyle(
+              color: Colors.grey[700],
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            widget.product.name,
+            style: TextStyle(
+              color: Colors.grey[700],
             ),
           ),
         ],

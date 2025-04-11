@@ -12,7 +12,20 @@
           "package_name": "com.greensapp.greens_app"
         }
       },
-      "oauth_client": [],
+      "oauth_client": [
+        {
+          "client_id": "52406500094-5c78897lscunr537qts8l87ptjd6kg12.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.greensapp.greens_app",
+            "certificate_hash": "35b5a216a5ec220e4570f930588d2a7ce69dfe58"
+          }
+        },
+        {
+          "client_id": "52406500094-isu1sph4lj0h3jd3lh65m09jr8jg24do.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
       "api_key": [
         {
           "current_key": "AIzaSyBOComehLBkIiTvsQP-vDWv3RNMC-xQ_bM"
@@ -20,7 +33,12 @@
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": []
+          "other_platform_oauth_client": [
+            {
+              "client_id": "52406500094-isu1sph4lj0h3jd3lh65m09jr8jg24do.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
         }
       }
     }

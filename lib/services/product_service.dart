@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:greens_app/models/product_model.dart';
+import 'package:geolocator/geolocator.dart';
 
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -125,6 +126,157 @@ class ProductService {
     } catch (e) {
       debugPrint('Erreur lors de l\'application du coupon: $e');
       return null;
+    }
+  }
+
+  Future<Map<String, dynamic>?> getProductInfo(String barcode) async {
+    try {
+      final doc = await _firestore
+          .collection('products')
+          .doc(barcode)
+          .get();
+
+      if (!doc.exists) {
+        return null;
+      }
+
+      return doc.data();
+    } catch (e) {
+      print('Erreur lors de la récupération des informations du produit: $e');
+      return null;
+    }
+  }
+
+  Future<List<Map<String, dynamic>>> getLocalAlternatives(String productId, {double maxDistance = 10.0}) async {
+    try {
+      final Position currentPosition = await _getCurrentPosition();
+      
+      final QuerySnapshot snapshot = await _firestore
+          .collection('local_stores')
+          .get();
+
+      final List<Map<String, dynamic>> alternatives = [];
+      
+      for (var doc in snapshot.docs) {
+        final storeData = doc.data() as Map<String, dynamic>;
+        final storeLocation = storeData['location'] as GeoPoint;
+        
+        final distance = Geolocator.distanceBetween(
+          currentPosition.latitude,
+          currentPosition.longitude,
+          storeLocation.latitude,
+          storeLocation.longitude,
+        ) / 1000; // Convertir en kilomètres
+
+        if (distance <= maxDistance) {
+          final productInfo = await _getStoreProductInfo(doc.id, productId);
+          if (productInfo != null) {
+            alternatives.add({
+              ...storeData,
+              'distance': distance,
+              'product': productInfo,
+            });
+          }
+        }
+      }
+
+      alternatives.sort((a, b) => (a['distance'] as double).compareTo(b['distance'] as double));
+      return alternatives;
+    } catch (e) {
+      print('Erreur lors de la récupération des alternatives locales: $e');
+      return [];
+    }
+  }
+
+  Future<Map<String, dynamic>?> _getStoreProductInfo(String storeId, String productId) async {
+    try {
+      final doc = await _firestore
+          .collection('local_stores')
+          .doc(storeId)
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (!doc.exists) {
+        return null;
+      }
+
+      return doc.data();
+    } catch (e) {
+      print('Erreur lors de la récupération des informations du produit en magasin: $e');
+      return null;
+    }
+  }
+
+  Future<Position> _getCurrentPosition() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception('Les services de localisation sont désactivés.');
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        throw Exception('Les permissions de localisation ont été refusées.');
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception('Les permissions de localisation sont définitivement refusées.');
+    }
+
+    return await Geolocator.getCurrentPosition();
+  }
+
+  Future<List<String>> getProductCertifications(String productId) async {
+    try {
+      final doc = await _firestore
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (!doc.exists) {
+        return [];
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      return List<String>.from(data['certifications'] ?? []);
+    } catch (e) {
+      print('Erreur lors de la récupération des certifications: $e');
+      return [];
+    }
+  }
+
+  Future<double> calculateEcoRating(String productId) async {
+    try {
+      final doc = await _firestore
+          .collection('products')
+          .doc(productId)
+          .get();
+
+      if (!doc.exists) {
+        return 0.0;
+      }
+
+      final data = doc.data() as Map<String, dynamic>;
+      final Map<String, double> criteria = Map<String, double>.from(data['eco_criteria'] ?? {});
+      
+      double totalScore = 0.0;
+      int criteriaCount = 0;
+
+      criteria.forEach((key, value) {
+        totalScore += value;
+        criteriaCount++;
+      });
+
+      return criteriaCount > 0 ? totalScore / criteriaCount : 0.0;
+    } catch (e) {
+      print('Erreur lors du calcul de la note écologique: $e');
+      return 0.0;
     }
   }
 }
