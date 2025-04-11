@@ -25,10 +25,16 @@ class _ProductsViewState extends State<ProductsView> {
   // Affichage du panier
   bool _isCartVisible = false;
   final TextEditingController _promoController = TextEditingController();
+  bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    print('Initialisation de ProductsView');
+    setState(() {
+      _isLoading = true;
+    });
+    
     _initializeProducts();
     
     // Charger le panier depuis le service
@@ -47,6 +53,10 @@ class _ProductsViewState extends State<ProductsView> {
           });
         }
       }
+      
+      setState(() {
+        _isLoading = false;
+      });
     });
   }
 
@@ -57,6 +67,10 @@ class _ProductsViewState extends State<ProductsView> {
   }
 
   void _initializeProducts() {
+    print('Initialisation des produits');
+    
+    _categories = ['All', 'Health & Food', 'Fashion', 'Essentials'];
+    
     _products = [
       // Health & Food products
       Product(
@@ -162,7 +176,15 @@ class _ProductsViewState extends State<ProductsView> {
         category: 'Essentials',
       ),
     ];
-    _filteredProducts = _products;
+    
+    print('Nombre total de produits chargés: ${_products.length}');
+    
+    setState(() {
+      _filteredProducts = _products;
+      _selectedCategory = 'All';
+    });
+    
+    print('Produits filtrés: ${_filteredProducts.length}');
   }
 
   void _filterProductsByCategory(String category) {
@@ -308,6 +330,8 @@ class _ProductsViewState extends State<ProductsView> {
 
   @override
   Widget build(BuildContext context) {
+    print('Building ProductsView, isLoading: $_isLoading, products: ${_products.length}, filtered: ${_filteredProducts.length}');
+    
     return Scaffold(
       backgroundColor: Colors.white,
       appBar: AppBar(
@@ -332,7 +356,6 @@ class _ProductsViewState extends State<ProductsView> {
           ],
         ),
         actions: [
-          // Ajouter un bouton pour afficher le panier avec un design amélioré
           Stack(
             alignment: Alignment.center,
             children: [
@@ -343,10 +366,8 @@ class _ProductsViewState extends State<ProductsView> {
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(
-                  icon: Image.asset(
-                    'assets/images/icons/basket.png',
-                    width: 24,
-                    height: 24,
+                  icon: Icon(
+                    Icons.shopping_cart,
                     color: _isCartVisible ? const Color(0xFF4CAF50) : const Color(0xFF1F3140),
                   ),
                   onPressed: () {
@@ -410,158 +431,96 @@ class _ProductsViewState extends State<ProductsView> {
       ),
       body: _isCartVisible
           ? _buildCartView()
-          : Column(
-        children: [
-          // Category filter
-          Container(
-            height: 50,
-            padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              itemCount: _categories.length,
-              itemBuilder: (context, index) {
-                final category = _categories[index];
-                final isSelected = category == _selectedCategory;
-                
-                return Padding(
-                  padding: const EdgeInsets.only(right: 16),
-                  child: GestureDetector(
-                    onTap: () => _filterProductsByCategory(category),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                      decoration: BoxDecoration(
-                        color: isSelected ? const Color(0xFF4CAF50) : Colors.grey.shade200,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Center(
-                        child: Text(
-                          category,
-                          style: TextStyle(
-                            color: isSelected ? Colors.white : Colors.black,
-                            fontWeight: FontWeight.w500,
-                          ),
+          : _isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                  ),
+                )
+              : RefreshIndicator(
+                  onRefresh: () async {
+                    setState(() {
+                      _isLoading = true;
+                    });
+                    _initializeProducts();
+                    setState(() {
+                      _isLoading = false;
+                    });
+                  },
+                  child: Column(
+                    children: [
+                      // Category filter
+                      Container(
+                        height: 50,
+                        padding: const EdgeInsets.symmetric(horizontal: 16),
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: _categories.length,
+                          itemBuilder: (context, index) {
+                            final category = _categories[index];
+                            final isSelected = category == _selectedCategory;
+                            
+                            return Padding(
+                              padding: const EdgeInsets.only(right: 16),
+                              child: GestureDetector(
+                                onTap: () => _filterProductsByCategory(category),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                  decoration: BoxDecoration(
+                                    color: isSelected ? const Color(0xFF4CAF50) : Colors.grey.shade200,
+                                    borderRadius: BorderRadius.circular(20),
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      category,
+                                      style: TextStyle(
+                                        color: isSelected ? Colors.white : Colors.black,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            );
+                          },
                         ),
                       ),
-                    ),
+                      
+                      // Products grid
+                      Expanded(
+                        child: _filteredProducts.isEmpty
+                            ? const Center(
+                                child: Text(
+                                  'Aucun produit disponible',
+                                  style: TextStyle(
+                                    fontSize: 16,
+                                    color: Colors.grey,
+                                  ),
+                                ),
+                              )
+                            : GridView.builder(
+                                padding: const EdgeInsets.all(16),
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  childAspectRatio: 0.75,
+                                  crossAxisSpacing: 16,
+                                  mainAxisSpacing: 16,
+                                ),
+                                itemCount: _filteredProducts.length,
+                                itemBuilder: (context, index) {
+                                  final product = _filteredProducts[index];
+                                  print('Construction du produit ${product.name} à l\'index $index');
+                                  return _buildProductCard(product);
+                                },
+                              ),
+                      ),
+                    ],
                   ),
-                );
-              },
-            ),
-          ),
-          
-          // Subcategory (Health & Food)
-          if (_selectedCategory == 'Health & Food' || _selectedCategory == 'All')
-            Container(
-              padding: const EdgeInsets.only(left: 16, top: 16, bottom: 8),
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                "Health & Food",
-                style: TextStyle(
-                  color: Color(0xFF1F3140),
-                  fontSize: 18,
-                  fontWeight: FontWeight.bold,
                 ),
-              ),
-            ),
-          
-          // Products grid
-          Expanded(
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              children: [
-                // Health & Food products grid
-                if (_selectedCategory == 'Health & Food' || _selectedCategory == 'All')
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _filteredProducts.where((p) => p.category == 'Health & Food').length,
-                    itemBuilder: (context, index) {
-                      final products = _filteredProducts.where((p) => p.category == 'Health & Food').toList();
-                      return _buildProductCard(products[index]);
-                    },
-                  ),
-                
-                // Fashion category title
-                if (_selectedCategory == 'Fashion' || _selectedCategory == 'All')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 24, bottom: 8),
-                    child: Text(
-                      "Fashion",
-                      style: TextStyle(
-                        color: const Color(0xFF1F3140),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                
-                // Fashion products grid
-                if (_selectedCategory == 'Fashion' || _selectedCategory == 'All')
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _filteredProducts.where((p) => p.category == 'Fashion').length,
-                    itemBuilder: (context, index) {
-                      final products = _filteredProducts.where((p) => p.category == 'Fashion').toList();
-                      return _buildProductCard(products[index]);
-                    },
-                  ),
-                
-                // Essentials category title
-                if (_selectedCategory == 'All')
-                  Padding(
-                    padding: const EdgeInsets.only(top: 24, bottom: 8),
-                    child: Text(
-                      "Essentials",
-                      style: TextStyle(
-                        color: const Color(0xFF1F3140),
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                
-                // Essentials products grid
-                if (_selectedCategory == 'All')
-                  GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 0.75,
-                      crossAxisSpacing: 16,
-                      mainAxisSpacing: 16,
-                    ),
-                    itemCount: _filteredProducts.where((p) => p.category == 'Essentials').length,
-                    itemBuilder: (context, index) {
-                      final products = _filteredProducts.where((p) => p.category == 'Essentials').toList();
-                      return _buildProductCard(products[index]);
-                    },
-                  ),
-                
-                // Bottom padding
-                const SizedBox(height: 80),
-              ],
-            ),
-          ),
-        ],
-      ),
       bottomNavigationBar: CustomMenu(
-        currentIndex: 2, // Index correct pour la page products
+        currentIndex: 2,
         onTap: (index) {
-          if (index != 2) { // Ne pas recharger si on est déjà sur cette page
+          if (index != 2) {
             setState(() {
               _currentIndex = index;
             });
@@ -1044,58 +1003,72 @@ class _ProductsViewState extends State<ProductsView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             // Product image
-            Stack(
-              children: [
-                Hero(
-                  tag: 'product-${product.name}',
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(12),
-                      topRight: Radius.circular(12),
-                    ),
-                    child: Column(
-                      children: [
-                        Expanded(
-                          child: product.imageAsset != null
-                              ? Image.asset(
-                                  product.imageAsset!,
-                                  fit: BoxFit.cover,
-                                )
-                              : Icon(
+            Expanded(
+              flex: 3,
+              child: Stack(
+                children: [
+                  Hero(
+                    tag: 'product-${product.id}',
+                    child: ClipRRect(
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(12),
+                        topRight: Radius.circular(12),
+                      ),
+                      child: Container(
+                        width: double.infinity,
+                        color: Colors.grey.shade100,
+                        child: product.imageAsset != null
+                            ? Image.asset(
+                                product.imageAsset!,
+                                fit: BoxFit.cover,
+                                errorBuilder: (context, error, stackTrace) {
+                                  print('Erreur de chargement de l\'image produit: ${product.name}, erreur: $error');
+                                  return Center(
+                                    child: Icon(
+                                      Icons.image_not_supported_outlined,
+                                      color: Colors.grey,
+                                      size: 48,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Center(
+                                child: Icon(
                                   Icons.image_not_supported_outlined,
                                   color: Colors.grey,
-                                  size: 64,
+                                  size: 48,
                                 ),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (product.isEcoFriendly)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF4CAF50),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.eco,
-                          color: Colors.white,
-                          size: 16,
-                        ),
+                              ),
                       ),
                     ),
                   ),
-              ],
+                  if (product.isEcoFriendly)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        width: 28,
+                        height: 28,
+                        decoration: const BoxDecoration(
+                          color: Color(0xFF4CAF50),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.eco,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                        ),
+                      ),
+                    ),
+                ],
+              ),
             ),
             
             // Product info
             Expanded(
+              flex: 2,
               child: Padding(
                 padding: const EdgeInsets.all(12),
                 child: Column(
@@ -1135,7 +1108,7 @@ class _ProductsViewState extends State<ProductsView> {
                             color: Color(0xFF1F3140),
                           ),
                         ),
-                        // Bouton d'ajout au panier avec design amélioré
+                        // Bouton d'ajout au panier
                         InkWell(
                           onTap: () => _addToCart(product),
                           child: Container(
@@ -1151,10 +1124,9 @@ class _ProductsViewState extends State<ProductsView> {
                                 ),
                               ],
                             ),
-                            child: Image.asset(
-                              'assets/images/icons/basket.png',
-                              width: 18,
-                              height: 18,
+                            child: Icon(
+                              Icons.shopping_cart,
+                              size: 18,
                               color: Colors.white,
                             ),
                           ),
