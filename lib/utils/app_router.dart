@@ -205,19 +205,33 @@ case AppRoutes.productScanner:
   static Future<bool> _hasCompletedQuestions() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      // Pour les nouveaux utilisateurs, vérifier les deux flags
+      
+      // Pour les nouveaux utilisateurs, vérifier explicitement les deux drapeaux
       final isNewUser = prefs.getBool('is_new_user') ?? false;
       final hasCompleted = prefs.getBool('has_completed_questions') ?? false;
       
-      // Si c'est un nouvel utilisateur et qu'il n'a pas complété les questions
+      // Afficher pour le débogage
+      print('isNewUser: $isNewUser, hasCompleted: $hasCompleted');
+      
+      // Si c'est un nouvel utilisateur et qu'il n'a pas complété les questions, 
+      // retourner false pour rediriger vers les questions
       if (isNewUser && !hasCompleted) {
         return false;
+      }
+      
+      // Sinon, si l'utilisateur existe déjà et qu'il n'a pas encore
+      // de drapeau has_completed_questions, on considère qu'il l'a fait
+      // pour ne pas bloquer les utilisateurs existants
+      if (!isNewUser && !hasCompleted) {
+        await prefs.setBool('has_completed_questions', true);
+        return true;
       }
       
       return hasCompleted;
     } catch (e) {
       print('Erreur lors de la vérification des questions: $e');
-      return false;
+      // En cas d'erreur, on retourne true pour ne pas bloquer l'utilisateur
+      return true;
     }
   }
 }

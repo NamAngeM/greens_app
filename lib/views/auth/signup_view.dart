@@ -146,53 +146,46 @@ class _SignupViewState extends State<SignupView> with SingleTickerProviderStateM
     });
     
     try {
-      // Initialiser le processus de connexion Google
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      print('Début de l\'inscription avec Google...');
+      final authController = Provider.of<AuthController>(context, listen: false);
+      final success = await authController.signInWithGoogle();
       
-      if (googleUser == null) {
-        // L'utilisateur a annulé la connexion
-        setState(() {
-          _isSigningUpWithGoogle = false;
-        });
-        return;
-      }
+      print('Résultat de l\'inscription Google: $success');
+      print('Message d\'erreur éventuel: ${authController.errorMessage}');
       
-      // Obtenir les détails d'authentification
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
-      final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
-      );
-      
-      // Connexion à Firebase
-      final UserCredential userCredential = 
-          await FirebaseAuth.instance.signInWithCredential(credential);
-          
-      // Vérifier si c'est un nouvel utilisateur
-      final bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
-      
-      if (mounted) {
-        // Configurer les préférences utilisateur
+      if (success && mounted) {
+        // Vérifier si l'utilisateur est un nouvel inscrit
         final prefs = await SharedPreferences.getInstance();
+        final isNewUser = prefs.getBool('is_new_user') ?? false;
+        final hasCompletedQuestions = prefs.getBool('has_completed_questions') ?? false;
         
-        if (isNewUser) {
-          // Marquer comme nouvel utilisateur pour le questionnaire
-          await prefs.setBool('is_new_user', true);
-          
-          // Rediriger directement vers le questionnaire
+        print('isNewUser: $isNewUser, hasCompletedQuestions: $hasCompletedQuestions');
+        
+        if (isNewUser && !hasCompletedQuestions) {
+          // Si c'est un nouvel utilisateur qui n'a pas encore répondu aux questions
+          print('Redirection vers le questionnaire');
+          // Naviguer vers la première page de questions
           Navigator.pushReplacementNamed(context, AppRoutes.question1);
         } else {
-          // Utilisateur existant, rediriger vers la page d'accueil
+          // Sinon, rediriger directement vers la page d'accueil
+          print('Redirection vers la page d\'accueil');
           Navigator.pushReplacementNamed(context, AppRoutes.home);
         }
+      } else if (mounted) {
+        print('Affichage du message d\'erreur: ${authController.errorMessage}');
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(authController.errorMessage ?? 'Erreur d\'inscription avec Google'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
-      print('Erreur d\'inscription avec Google: $e');
+      print('Erreur dans signup_view._signUpWithGoogle: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur d\'inscription avec Google: ${e.toString()}'),
+            content: Text('Erreur d\'inscription avec Google: $e'),
             backgroundColor: Colors.red,
           ),
         );

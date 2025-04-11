@@ -106,48 +106,113 @@ class AuthController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      // Initialiser le processus de connexion Google
-      final GoogleSignIn googleSignIn = GoogleSignIn();
-      final GoogleSignInAccount? googleUser = await googleSignIn.signIn();
+      // Configuration spécifique pour Google Sign-In
+      final GoogleSignIn googleSignIn = GoogleSignIn(
+        // Ajout de scopes nécessaires
+        scopes: [
+          'email',
+          'profile',
+        ],
+      );
       
-      if (googleUser == null) {
-        _errorMessage = 'Connexion Google annulée';
+      // Déconnexion préalable pour éviter les problèmes d'état
+      try {
+        if (await googleSignIn.isSignedIn()) {
+          await googleSignIn.disconnect();
+          await googleSignIn.signOut();
+        }
+      } catch (e) {
+        print('Erreur lors de la déconnexion Google préalable: $e');
+      }
+      
+      // Lancer la connexion Google avec gestion explicite des erreurs
+      final GoogleSignInAccount? googleUser;
+      try {
+        googleUser = await googleSignIn.signIn();
+      } catch (error) {
+        print('Erreur lors de la tentative de connexion Google: $error');
+        _errorMessage = 'Erreur de connexion Google: $error';
         return false;
       }
       
+      // Si l'utilisateur a annulé la connexion
+      if (googleUser == null) {
+        _errorMessage = 'Connexion Google annulée par l\'utilisateur';
+        return false;
+      }
+      
+      print('Google Sign-In réussi pour: ${googleUser.email}');
+      
       // Obtenir les détails d'authentification
-      final GoogleSignInAuthentication googleAuth = await googleUser.authentication;
+      final GoogleSignInAuthentication googleAuth;
+      try {
+        googleAuth = await googleUser.authentication;
+      } catch (error) {
+        print('Erreur lors de l\'authentification Google: $error');
+        _errorMessage = 'Erreur d\'authentification Google: $error';
+        return false;
+      }
+      
+      if (googleAuth.accessToken == null || googleAuth.idToken == null) {
+        _errorMessage = 'Impossible d\'obtenir les tokens d\'authentification Google';
+        return false;
+      }
+      
+      // Créer les credentials pour Firebase
       final credential = GoogleAuthProvider.credential(
-        accessToken: googleAuth.accessToken,
-        idToken: googleAuth.idToken,
+        accessToken: googleAuth.accessToken!,
+        idToken: googleAuth.idToken!,
       );
       
-      // Connexion à Firebase
-      final UserCredential userCredential = 
-          await FirebaseAuth.instance.signInWithCredential(credential);
+      // Connexion à Firebase avec gestion explicite des erreurs
+      final UserCredential userCredential;
+      try {
+        userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+      } catch (error) {
+        print('Erreur lors de la connexion Firebase avec Google: $error');
+        _errorMessage = 'Erreur de connexion Firebase: $error';
+        return false;
+      }
       
       // Vérifier si c'est un nouvel utilisateur
       final bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+      print('Est un nouvel utilisateur: $isNewUser');
+      
+      // Marquer les préférences utilisateur
+      final prefs = await SharedPreferences.getInstance();
       
       if (isNewUser) {
+        print('Création du profil utilisateur pour: ${userCredential.user!.email}');
         // Créer le document utilisateur pour un nouvel utilisateur
-        await _authService.createUserFromSocial(
-          uid: userCredential.user!.uid,
-          email: userCredential.user!.email ?? '',
-          firstName: userCredential.user!.displayName?.split(' ').first ?? '',
-          lastName: userCredential.user!.displayName?.split(' ').last ?? '',
-          photoUrl: userCredential.user!.photoURL,
-        );
+        try {
+          await _authService.createUserFromSocial(
+            uid: userCredential.user!.uid,
+            email: userCredential.user!.email ?? '',
+            firstName: userCredential.user!.displayName?.split(' ').first ?? '',
+            lastName: userCredential.user!.displayName?.split(' ').last ?? '',
+            photoUrl: userCredential.user!.photoURL,
+          );
+        } catch (error) {
+          print('Erreur lors de la création du profil utilisateur: $error');
+          // On continue même si cette étape échoue
+        }
         
         // Marquer comme nouvel utilisateur pour le questionnaire
-        final prefs = await SharedPreferences.getInstance();
         await prefs.setBool('is_new_user', true);
         await prefs.setBool('has_completed_questions', false);
       }
       
-      _currentUser = await _authService.getCurrentUser();
+      // Récupérer les informations utilisateur
+      try {
+        _currentUser = await _authService.getCurrentUser();
+      } catch (error) {
+        print('Erreur lors de la récupération des données utilisateur: $error');
+        // On continue même si cette étape échoue
+      }
+      
       return true;
     } catch (e) {
+      print('Erreur globale lors de la connexion avec Google: $e');
       _errorMessage = 'Erreur lors de la connexion avec Google: $e';
       return false;
     } finally {
