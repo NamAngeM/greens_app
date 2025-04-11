@@ -1,7 +1,7 @@
 // File: lib/services/eco_purchase_integration_service.dart
 import 'package:greens_app/models/eco_goal_model.dart';
 import 'package:greens_app/models/product_model.dart';
-import 'package:greens_app/models/cart_item_model.dart';
+import 'package:greens_app/models/favorite_item_model.dart';
 import 'package:greens_app/controllers/eco_goal_controller.dart';
 import 'package:greens_app/services/eco_impact_service.dart';
 
@@ -76,7 +76,7 @@ class EcoPurchaseIntegrationService {
   }
   
   /// Met à jour les progrès des objectifs écologiques basés sur les achats
-  Future<void> updateGoalsFromPurchase(String userId, List<CartItemModel> purchasedItems) async {
+  Future<void> updateGoalsFromPurchase(String userId, List<FavoriteItemModel> purchasedItems) async {
     // Récupérer les objectifs actifs de l'utilisateur
     final activeGoals = await _goalController.getUserGoals(userId);
     

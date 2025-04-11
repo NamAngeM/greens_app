@@ -8,12 +8,13 @@ import 'package:greens_app/controllers/community_controller.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_styles.dart';
+import 'package:greens_app/utils/merchant_urls.dart';
 import 'package:greens_app/widgets/custom_button.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/widgets/eco_progress_tree.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/views/product_detail_view.dart';
-import 'package:greens_app/services/cart_service.dart';
+import 'package:greens_app/services/favorites_service.dart';
 import 'package:greens_app/services/eco_journey_service.dart';
 import 'package:greens_app/services/eco_metrics_service.dart';
 import 'package:greens_app/models/product.dart';
@@ -22,6 +23,7 @@ import 'package:greens_app/models/eco_goal_model.dart';
 import 'package:greens_app/models/community_challenge_model.dart';
 import 'package:greens_app/models/article_model.dart';
 import 'package:greens_app/models/eco_badge.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -1010,7 +1012,7 @@ class _HomeViewState extends State<HomeView> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Ajouter au panier',
+                    'Ajouter aux favoris',
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -1090,46 +1092,6 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
             const SizedBox(height: 24),
-            // Quantity selector
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'Quantité',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      _buildQuantityButton(Icons.remove),
-                      Container(
-                        width: 60,
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 12),
-                        decoration: BoxDecoration(
-                          border: Border.all(color: Colors.grey.shade300),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '1',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 16,
-                          ),
-                        ),
-                      ),
-                      _buildQuantityButton(Icons.add),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
             // Options
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 20),
@@ -1161,52 +1123,145 @@ class _HomeViewState extends State<HomeView> {
               ),
             ),
             const Spacer(),
-            // Add to cart button
+            // Buttons
             Padding(
               padding: const EdgeInsets.all(20),
-              child: ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text('${product.name} ajouté au panier'),
-                      backgroundColor: const Color(0xFF4CAF50),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+              child: Row(
+                children: [
+                  // Bouton Acheter directement
+                  Expanded(
+                    flex: 1,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // Récupérer l'URL du marchand pour ce produit
+                        final merchantInfo = MerchantUrls.getMerchantForProduct(product.id);
+                        if (merchantInfo != null) {
+                          _openMerchantUrl(merchantInfo.url);
+                        } else {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Aucun marchand disponible pour ce produit'),
+                              backgroundColor: Colors.red,
+                            ),
+                          );
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF1F2937),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
                       ),
-                      action: SnackBarAction(
-                        label: 'Voir',
-                        textColor: Colors.white,
-                        onPressed: () {
-                          // Navigate to cart
-                        },
+                      child: const Text(
+                        'Acheter',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                     ),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: const Color(0xFF4CAF50),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
                   ),
-                  minimumSize: const Size(double.infinity, 56),
-                ),
-                child: const Text(
-                  'Ajouter au panier',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
+                  const SizedBox(width: 12),
+                  // Bouton Ajouter aux favoris
+                  Expanded(
+                    flex: 2,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(context);
+                        // Convertir le Product en ProductModel
+                        final productModel = ProductModel(
+                          id: product.id,
+                          name: product.name,
+                          brand: product.brand,
+                          description: product.description,
+                          price: product.price,
+                          imageUrl: product.imageAsset,
+                          categories: [product.category],
+                          isEcoFriendly: product.isEcoFriendly,
+                          merchantUrl: product.merchantUrl,
+                        );
+                        
+                        // Ajouter aux favoris
+                        Provider.of<FavoritesService>(context, listen: false).addItem(productModel);
+                        
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(
+                            content: Text('${product.name} ajouté aux favoris'),
+                            backgroundColor: const Color(0xFF4CAF50),
+                            behavior: SnackBarBehavior.floating,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            action: SnackBarAction(
+                              label: 'Voir',
+                              textColor: Colors.white,
+                              onPressed: () {
+                                // Naviguer vers la vue des favoris
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(builder: (context) => const ProductsView()),
+                                );
+                              },
+                            ),
+                          ),
+                        );
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFF4CAF50),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Ajouter aux favoris',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
                   ),
-                ),
+                ],
               ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  // Fonction pour ouvrir l'URL du marchand
+  Future<void> _openMerchantUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Impossible d'ouvrir le site marchand"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Erreur lors de l\'ouverture de l\'URL: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Widget _buildQuantityButton(IconData icon) {

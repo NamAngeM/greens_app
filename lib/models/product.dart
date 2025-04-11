@@ -22,6 +22,7 @@ class Product {
   final double carbonFootprint;
   final Map<String, dynamic> manufacturingInfo;
   final double price;
+  final String? merchantUrl;
 
   Product({
     required this.id,
@@ -44,6 +45,7 @@ class Product {
     this.carbonFootprint = 0.0,
     this.manufacturingInfo = const {},
     this.price = 0.0,
+    this.merchantUrl,
   });
 
   factory Product.fromFirestore(DocumentSnapshot doc) {
@@ -69,6 +71,7 @@ class Product {
       carbonFootprint: (data['carbonFootprint'] ?? 0.0).toDouble(),
       manufacturingInfo: data['manufacturingInfo'] ?? {},
       price: (data['price'] ?? 0.0).toDouble(),
+      merchantUrl: data['merchantUrl'],
     );
   }
 
@@ -93,6 +96,7 @@ class Product {
       'carbonFootprint': carbonFootprint,
       'manufacturingInfo': manufacturingInfo,
       'price': price,
+      'merchantUrl': merchantUrl,
     };
   }
 
@@ -117,6 +121,7 @@ class Product {
     double? carbonFootprint,
     Map<String, dynamic>? manufacturingInfo,
     double? price,
+    String? merchantUrl,
   }) {
     return Product(
       id: id ?? this.id,
@@ -139,6 +144,7 @@ class Product {
       carbonFootprint: carbonFootprint ?? this.carbonFootprint,
       manufacturingInfo: manufacturingInfo ?? this.manufacturingInfo,
       price: price ?? this.price,
+      merchantUrl: merchantUrl ?? this.merchantUrl,
     );
   }
 }

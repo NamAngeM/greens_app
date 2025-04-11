@@ -78,7 +78,7 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
   }
 
   void _nextPage() {
-    if (_currentPage < _questions.length) {
+    if (_currentPage < _questions.length - 1) {
       _pageController.nextPage(
         duration: const Duration(milliseconds: 300),
         curve: Curves.easeInOut,
@@ -102,10 +102,18 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
       _answers.add(option);
     }
     
-    // Passer à la question suivante après un court délai
-    Future.delayed(const Duration(milliseconds: 300), () {
-      _nextPage();
-    });
+    // Vérifier si c'est la dernière question
+    if (questionIndex == _questions.length - 1) {
+      // Si c'est la dernière question, calculer directement les résultats
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _calculateResults();
+      });
+    } else {
+      // Sinon, passer à la question suivante après un court délai
+      Future.delayed(const Duration(milliseconds: 300), () {
+        _nextPage();
+      });
+    }
   }
 
   void _calculateResults() {
@@ -136,12 +144,20 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: AppColors.backgroundColor,
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text('Calculateur d\'empreinte carbone'),
-        backgroundColor: AppColors.primaryColor,
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Calculateur d\'Empreinte Carbone',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
           onPressed: () {
             if (_currentPage > 0) {
               _previousPage();
@@ -157,7 +173,7 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
           LinearProgressIndicator(
             value: (_currentPage + 1) / (_questions.length + 1),
             backgroundColor: Colors.grey.withOpacity(0.2),
-            color: AppColors.secondaryColor,
+            color: const Color(0xFF4CAF50),
           ),
           
           // Questions
@@ -185,36 +201,38 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
     final question = _questions[index];
     final options = question['options'] as List<Map<String, dynamic>>;
     
-    return Padding(
-      padding: const EdgeInsets.all(24.0),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Numéro de question
-          Text(
-            'Question ${index + 1}/${_questions.length}',
-            style: const TextStyle(
-              color: AppColors.primaryColor,
-              fontWeight: FontWeight.bold,
-              fontSize: 16,
+    return SingleChildScrollView(
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Numéro de question
+            Text(
+              'Question ${index + 1}/${_questions.length}',
+              style: const TextStyle(
+                color: Color(0xFF4CAF50),
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
+              ),
             ),
-          ),
-          const SizedBox(height: 16),
-          
-          // Question
-          Text(
-            question['question'] as String,
-            style: const TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: AppColors.textColor,
+            const SizedBox(height: 16),
+            
+            // Question
+            Text(
+              question['question'] as String,
+              style: const TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: Colors.black87,
+              ),
             ),
-          ),
-          const SizedBox(height: 32),
-          
-          // Options
-          Expanded(
-            child: ListView.builder(
+            const SizedBox(height: 24),
+            
+            // Options
+            ListView.builder(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
               itemCount: options.length,
               itemBuilder: (context, optionIndex) {
                 final option = options[optionIndex];
@@ -223,14 +241,14 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
                                        _answers[index] == option;
                 
                 return Padding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsets.only(bottom: 12),
                   child: InkWell(
                     onTap: () => _selectOption(option, index),
                     borderRadius: BorderRadius.circular(12),
                     child: Container(
                       padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
-                        color: isSelected ? AppColors.primaryColor : Colors.white,
+                        color: isSelected ? const Color(0xFF4CAF50) : Colors.white,
                         borderRadius: BorderRadius.circular(12),
                         boxShadow: [
                           BoxShadow(
@@ -243,32 +261,32 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
                       child: Row(
                         children: [
                           Container(
-                            width: 48,
-                            height: 48,
+                            width: 40,
+                            height: 40,
                             decoration: BoxDecoration(
                               color: isSelected 
                                   ? Colors.white.withOpacity(0.2) 
-                                  : AppColors.primaryColor.withOpacity(0.1),
+                                  : const Color(0xFF4CAF50).withOpacity(0.1),
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Icon(
                               option['icon'] as IconData,
                               color: isSelected 
                                   ? Colors.white 
-                                  : AppColors.primaryColor,
-                              size: 24,
+                                  : const Color(0xFF4CAF50),
+                              size: 20,
                             ),
                           ),
-                          const SizedBox(width: 16),
+                          const SizedBox(width: 12),
                           Expanded(
                             child: Text(
                               option['text'] as String,
                               style: TextStyle(
-                                fontSize: 16,
+                                fontSize: 14,
                                 fontWeight: FontWeight.w500,
                                 color: isSelected 
                                     ? Colors.white 
-                                    : AppColors.textColor,
+                                    : Colors.black87,
                               ),
                             ),
                           ),
@@ -276,7 +294,7 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
                             const Icon(
                               Icons.check_circle,
                               color: Colors.white,
-                              size: 24,
+                              size: 20,
                             ),
                         ],
                       ),
@@ -285,8 +303,9 @@ class _CarbonCalculatorViewState extends State<CarbonCalculatorView> {
                 );
               },
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+          ],
+        ),
       ),
     );
   }

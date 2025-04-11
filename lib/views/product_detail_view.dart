@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:greens_app/models/product_model.dart';
-import 'package:greens_app/services/cart_service.dart';
+import 'package:greens_app/services/favorites_service.dart';
 import 'package:provider/provider.dart';
 import 'package:greens_app/models/product.dart';
+import 'package:greens_app/widgets/menu.dart';
+import 'package:greens_app/utils/merchant_urls.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProductDetailView extends StatefulWidget {
   final Product product;
@@ -312,51 +315,142 @@ class _ProductDetailViewState extends State<ProductDetailView> with SingleTicker
                           
                           const SizedBox(height: 24),
                           
-                          // Sélecteur de quantité
-                          Row(
-                            children: [
-                              const Text(
-                                'Quantité',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.bold,
-                                  color: Color(0xFF1F3140),
+                          // Boutons d'action (favoris et achat)
+                          Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 24),
+                            child: Row(
+                              children: [
+                                // Sélecteur de quantité
+                                Container(
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey.shade100,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      IconButton(
+                                        icon: const Icon(Icons.remove),
+                                        onPressed: _decrementQuantity,
+                                        color: _quantity > 1 ? const Color(0xFF1F3140) : Colors.grey,
+                                      ),
+                                      Text(
+                                        _quantity.toString(),
+                                        style: const TextStyle(
+                                          fontSize: 16,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                      IconButton(
+                                        icon: const Icon(Icons.add),
+                                        onPressed: _incrementQuantity,
+                                        color: const Color(0xFF1F3140),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
-                              const SizedBox(width: 16),
-                              Container(
-                                decoration: BoxDecoration(
-                                  border: Border.all(color: Colors.grey.shade300),
-                                  borderRadius: BorderRadius.circular(8),
-                                ),
-                                child: Row(
-                                  children: [
-                                    IconButton(
-                                      icon: const Icon(Icons.remove),
-                                      onPressed: _decrementQuantity,
-                                      color: _quantity > 1 ? const Color(0xFF4CAF50) : Colors.grey,
-                                      iconSize: 20,
-                                    ),
-                                    Text(
-                                      '$_quantity',
-                                      style: const TextStyle(
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
+                                const SizedBox(width: 16),
+                                // Bouton d'ajout aux favoris
+                                Expanded(
+                                  child: ElevatedButton.icon(
+                                    onPressed: () {
+                                      final favoritesService = Provider.of<FavoritesService>(context, listen: false);
+                                      
+                                      // Convertir le Product en ProductModel
+                                      final productModel = ProductModel(
+                                        id: widget.product.id,
+                                        name: widget.product.name,
+                                        brand: widget.product.brand,
+                                        description: widget.product.description,
+                                        price: widget.product.price,
+                                        imageUrl: widget.product.imageAsset,
+                                        categories: [widget.product.category],
+                                        isEcoFriendly: widget.product.isEcoFriendly,
+                                        merchantUrl: widget.product.merchantUrl,
+                                      );
+                                      
+                                      // Ajouter aux favoris avec la quantité sélectionnée
+                                      for (int i = 0; i < _quantity; i++) {
+                                        favoritesService.addItem(productModel);
+                                      }
+                                      
+                                      ScaffoldMessenger.of(context).showSnackBar(
+                                        SnackBar(
+                                          content: Text('${widget.product.name} ajouté aux favoris (x$_quantity)'),
+                                          duration: const Duration(seconds: 1),
+                                          action: SnackBarAction(
+                                            label: 'VOIR FAVORIS',
+                                            onPressed: () {
+                                              Navigator.pop(context, true);
+                                            },
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                    icon: const Icon(Icons.favorite),
+                                    label: const Text('Ajouter aux favoris'),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF4CAF50),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(vertical: 16),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
                                       ),
                                     ),
-                                    IconButton(
-                                      icon: const Icon(Icons.add),
-                                      onPressed: _incrementQuantity,
-                                      color: const Color(0xFF4CAF50),
-                                      iconSize: 20,
-                                    ),
-                                  ],
+                                  ),
                                 ),
-                              ),
-                            ],
+                                // Bouton "Acheter" si merchantUrl existe
+                                Builder(
+                                  builder: (context) {
+                                    final merchantInfo = MerchantUrls.getMerchantForProduct(widget.product.id);
+                                    if (merchantInfo == null) return const SizedBox.shrink();
+                                    
+                                    return Padding(
+                                      padding: const EdgeInsets.only(left: 16),
+                                      child: ElevatedButton.icon(
+                                        onPressed: () async {
+                                          try {
+                                            final url = Uri.parse(merchantInfo.url);
+                                            if (await canLaunchUrl(url)) {
+                                              await launchUrl(
+                                                url,
+                                                mode: LaunchMode.externalApplication,
+                                              );
+                                            } else {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                const SnackBar(
+                                                  content: Text("Impossible d'ouvrir le site marchand"),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          } catch (e) {
+                                            print('Erreur lors de l\'ouverture de l\'URL: $e');
+                                            ScaffoldMessenger.of(context).showSnackBar(
+                                              SnackBar(
+                                                content: Text('Erreur: $e'),
+                                                backgroundColor: Colors.red,
+                                              ),
+                                            );
+                                          }
+                                        },
+                                        icon: const Icon(Icons.shopping_bag),
+                                        label: const Text('Acheter'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: const Color(0xFF1F2937),
+                                          foregroundColor: Colors.white,
+                                          padding: const EdgeInsets.symmetric(vertical: 16),
+                                          shape: RoundedRectangleBorder(
+                                            borderRadius: BorderRadius.circular(12),
+                                          ),
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                ),
+                              ],
+                            ),
                           ),
-                          
-                          const SizedBox(height: 32),
                         ],
                       ),
                     ),
@@ -366,106 +460,6 @@ class _ProductDetailViewState extends State<ProductDetailView> with SingleTicker
             ),
           ),
         ],
-      ),
-      bottomNavigationBar: Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, -5),
-            ),
-          ],
-        ),
-        child: SafeArea(
-          child: Row(
-            children: [
-              // Prix total
-              Expanded(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Prix total',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey,
-                      ),
-                    ),
-                    Text(
-                      '${(widget.product.price * _quantity).toStringAsFixed(2)} €',
-                      style: const TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: Color(0xFF4CAF50),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              // Bouton d'ajout au panier
-              Expanded(
-                flex: 2,
-                child: ElevatedButton(
-                  onPressed: () {
-                    // Ajouter au panier
-                    final cartService = Provider.of<CartService>(context, listen: false);
-                    final productModel = ProductModel(
-                      id: widget.product.id,
-                      name: widget.product.name,
-                      brand: 'GreenMinds',
-                      description: widget.product.description,
-                      price: widget.product.price,
-                      imageUrl: widget.product.imageAsset,
-                      categories: [widget.product.category],
-                      isEcoFriendly: widget.product.isEcoFriendly,
-                    );
-                    
-                    // Ajouter la quantité sélectionnée
-                    for (int i = 0; i < _quantity; i++) {
-                      cartService.addItem(productModel);
-                    }
-                    
-                    // Retour haptique
-                    HapticFeedback.mediumImpact();
-                    
-                    // Notification
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(
-                        content: Text('${_quantity} ${widget.product.name} ajouté${_quantity > 1 ? 's' : ''} au panier'),
-                        duration: const Duration(seconds: 2),
-                        action: SnackBarAction(
-                          label: 'VOIR',
-                          onPressed: () {
-                            Navigator.pop(context, true); // Retourner à la page précédente avec showCart = true
-                          },
-                        ),
-                      ),
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFF4CAF50),
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                  ),
-                  child: const Text(
-                    'Ajouter au panier',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
       ),
     );
   }

@@ -9,6 +9,7 @@ class ProductModel {
   final bool isEcoFriendly;
   final double? discountPercentage;
   final bool hasCoupon;
+  final String? merchantUrl;
 
   ProductModel({
     required this.id,
@@ -21,6 +22,7 @@ class ProductModel {
     this.isEcoFriendly = false,
     this.discountPercentage,
     this.hasCoupon = false,
+    this.merchantUrl,
   });
 
   factory ProductModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,7 @@ class ProductModel {
       isEcoFriendly: json['isEcoFriendly'] ?? false,
       discountPercentage: json['discountPercentage']?.toDouble(),
       hasCoupon: json['hasCoupon'] ?? false,
+      merchantUrl: json['merchantUrl'],
     );
   }
 
@@ -52,6 +55,7 @@ class ProductModel {
       'isEcoFriendly': isEcoFriendly,
       'discountPercentage': discountPercentage,
       'hasCoupon': hasCoupon,
+      'merchantUrl': merchantUrl,
     };
   }
 }

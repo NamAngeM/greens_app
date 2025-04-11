@@ -67,13 +67,44 @@ class _CarbonDashboardViewState extends State<CarbonDashboardView> with SingleTi
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: EcoAppBar(
-        title: 'Suivi de Performance',
-        showBackButton: true,
+      backgroundColor: Colors.white,
+      appBar: AppBar(
+        elevation: 0,
+        backgroundColor: Colors.white,
+        title: const Text(
+          'Tableau de Bord Carbone',
+          style: TextStyle(
+            color: Colors.black87,
+            fontSize: 20,
+            fontWeight: FontWeight.bold,
+          ),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black87),
+          onPressed: () => Navigator.pop(context),
+        ),
+        bottom: TabBar(
+          controller: _tabController,
+          labelColor: const Color(0xFF4CAF50),
+          unselectedLabelColor: Colors.grey,
+          indicatorColor: const Color(0xFF4CAF50),
+          tabs: const [
+            Tab(text: 'Résumé'),
+            Tab(text: 'Évolution'),
+            Tab(text: 'Conseils'),
+          ],
+        ),
       ),
       body: _isLoading 
         ? const Center(child: EcoLoadingIndicator()) 
-        : _buildContent(),
+        : TabBarView(
+            controller: _tabController,
+            children: [
+              _buildContent(),
+              _buildEvolutionTab(),
+              _buildAdviceTab(),
+            ],
+          ),
     );
   }
   
@@ -203,9 +234,9 @@ class _CarbonDashboardViewState extends State<CarbonDashboardView> with SingleTi
               'Visualisez vos progrès au fil du temps',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             SizedBox(
-              height: 200,
+              height: MediaQuery.of(context).size.height * 0.25,
               child: filteredData.length < 2 
                 ? _buildEmptyState('Collectez plus de données pour afficher le graphique d\'évolution')
                 : _buildLineChart(spots, filteredData),
@@ -349,28 +380,63 @@ class _CarbonDashboardViewState extends State<CarbonDashboardView> with SingleTi
     
     final isImproving = trendPercentage < 0;
     
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.spaceAround,
-      children: [
-        _buildSummaryItem(
-          'Dernier enregistrement',
-          '${latestScore.toStringAsFixed(1)} kg CO₂',
-          Icons.calendar_today,
-          AppColors.primaryColor,
-        ),
-        _buildSummaryItem(
-          'Moyenne',
-          '${averageScore.toStringAsFixed(1)} kg CO₂',
-          Icons.bar_chart,
-          Colors.amber,
-        ),
-        _buildSummaryItem(
-          'Tendance',
-          '${trendPercentage.abs().toStringAsFixed(1)}%',
-          isImproving ? Icons.trending_down : Icons.trending_up,
-          isImproving ? Colors.green : Colors.red,
-        ),
-      ],
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmallScreen = constraints.maxWidth < 350;
+        
+        if (isSmallScreen) {
+          // Affichage vertical pour petits écrans
+          return Column(
+            children: [
+              _buildSummaryItem(
+                'Dernier enregistrement',
+                '${latestScore.toStringAsFixed(1)} kg CO₂',
+                Icons.calendar_today,
+                AppColors.primaryColor,
+              ),
+              const SizedBox(height: 12),
+              _buildSummaryItem(
+                'Moyenne',
+                '${averageScore.toStringAsFixed(1)} kg CO₂',
+                Icons.bar_chart,
+                Colors.amber,
+              ),
+              const SizedBox(height: 12),
+              _buildSummaryItem(
+                'Tendance',
+                '${trendPercentage.abs().toStringAsFixed(1)}%',
+                isImproving ? Icons.trending_down : Icons.trending_up,
+                isImproving ? Colors.green : Colors.red,
+              ),
+            ],
+          );
+        } else {
+          // Affichage horizontal pour écrans normaux
+          return Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildSummaryItem(
+                'Dernier',
+                '${latestScore.toStringAsFixed(1)} kg CO₂',
+                Icons.calendar_today,
+                AppColors.primaryColor,
+              ),
+              _buildSummaryItem(
+                'Moyenne',
+                '${averageScore.toStringAsFixed(1)} kg CO₂',
+                Icons.bar_chart,
+                Colors.amber,
+              ),
+              _buildSummaryItem(
+                'Tendance',
+                '${trendPercentage.abs().toStringAsFixed(1)}%',
+                isImproving ? Icons.trending_down : Icons.trending_up,
+                isImproving ? Colors.green : Colors.red,
+              ),
+            ],
+          );
+        }
+      }
     );
   }
   
@@ -428,29 +494,64 @@ class _CarbonDashboardViewState extends State<CarbonDashboardView> with SingleTi
               'Votre empreinte carbone convertie en équivalents concrets',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 24),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: [
-                _buildEquivalentItem(
-                  'Arbres plantés',
-                  treesPlanted.toString(),
-                  Icons.forest,
-                  Colors.green,
-                ),
-                _buildEquivalentItem(
-                  'Litres d\'eau économisés',
-                  '$waterSaved L',
-                  Icons.water_drop,
-                  Colors.blue,
-                ),
-                _buildEquivalentItem(
-                  'Km en voiture évités',
-                  '$carKm km',
-                  Icons.directions_car,
-                  Colors.orange,
-                ),
-              ],
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmallScreen = constraints.maxWidth < 350;
+                
+                if (isSmallScreen) {
+                  // Affichage vertical pour petits écrans
+                  return Column(
+                    children: [
+                      _buildEquivalentItem(
+                        'Arbres plantés',
+                        treesPlanted.toString(),
+                        Icons.forest,
+                        Colors.green,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEquivalentItem(
+                        'Litres d\'eau économisés',
+                        '$waterSaved L',
+                        Icons.water_drop,
+                        Colors.blue,
+                      ),
+                      const SizedBox(height: 12),
+                      _buildEquivalentItem(
+                        'Km en voiture évités',
+                        '$carKm km',
+                        Icons.directions_car,
+                        Colors.orange,
+                      ),
+                    ],
+                  );
+                } else {
+                  // Affichage horizontal pour écrans normaux
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildEquivalentItem(
+                        'Arbres plantés',
+                        treesPlanted.toString(),
+                        Icons.forest,
+                        Colors.green,
+                      ),
+                      _buildEquivalentItem(
+                        'Litres d\'eau économisés',
+                        '$waterSaved L',
+                        Icons.water_drop,
+                        Colors.blue,
+                      ),
+                      _buildEquivalentItem(
+                        'Km en voiture évités',
+                        '$carKm km',
+                        Icons.directions_car,
+                        Colors.orange,
+                      ),
+                    ],
+                  );
+                }
+              }
             ),
             const SizedBox(height: 16),
             const Divider(),
@@ -543,89 +644,147 @@ class _CarbonDashboardViewState extends State<CarbonDashboardView> with SingleTi
               'Découvrez les domaines qui contribuent le plus à votre empreinte',
               style: Theme.of(context).textTheme.bodySmall,
             ),
-            const SizedBox(height: 24),
-            Row(
-              children: [
-                Expanded(
-                  flex: 3,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
+            const SizedBox(height: 16),
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isSmallScreen = constraints.maxWidth < 400;
+                
+                if (isSmallScreen) {
+                  // Affichage vertical pour petits écrans
+                  return Column(
                     children: [
-                      _buildBreakdownRow('Transport', transportPercent, Colors.blue),
-                      const SizedBox(height: 12),
-                      _buildBreakdownRow('Énergie', energyPercent, Colors.orange),
-                      const SizedBox(height: 12),
-                      _buildBreakdownRow('Alimentation', foodPercent, Colors.green),
-                      const SizedBox(height: 12),
-                      _buildBreakdownRow('Consommation', consumptionPercent, Colors.purple),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 24),
-                Expanded(
-                  flex: 2,
-                  child: SizedBox(
-                    height: 150,
-                    child: PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 30,
-                        sections: [
-                          PieChartSectionData(
-                            color: Colors.blue,
-                            value: latestFootprint.transportScore,
-                            title: '$transportPercent%',
-                            radius: 50,
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            color: Colors.orange,
-                            value: latestFootprint.energyScore,
-                            title: '$energyPercent%',
-                            radius: 50,
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            color: Colors.green,
-                            value: latestFootprint.foodScore,
-                            title: '$foodPercent%',
-                            radius: 50,
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
-                          PieChartSectionData(
-                            color: Colors.purple,
-                            value: latestFootprint.consumptionScore,
-                            title: '$consumptionPercent%',
-                            radius: 50,
-                            titleStyle: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.bold,
-                              color: Colors.white,
-                            ),
-                          ),
+                      // D'abord les catégories
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildBreakdownRow('Transport', transportPercent, Colors.blue),
+                          const SizedBox(height: 8),
+                          _buildBreakdownRow('Énergie', energyPercent, Colors.orange),
+                          const SizedBox(height: 8),
+                          _buildBreakdownRow('Alimentation', foodPercent, Colors.green),
+                          const SizedBox(height: 8),
+                          _buildBreakdownRow('Consommation', consumptionPercent, Colors.purple),
                         ],
                       ),
-                    ),
-                  ),
-                ),
-              ],
+                      const SizedBox(height: 16),
+                      // Puis le graphique
+                      SizedBox(
+                        height: 150,
+                        child: PieChart(
+                          PieChartData(
+                            sectionsSpace: 2,
+                            centerSpaceRadius: 25,
+                            sections: _buildPieSections(
+                              transportPercent, energyPercent, 
+                              foodPercent, consumptionPercent,
+                              latestFootprint
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                } else {
+                  // Affichage horizontal pour écrans normaux
+                  return Row(
+                    children: [
+                      Expanded(
+                        flex: 3,
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _buildBreakdownRow('Transport', transportPercent, Colors.blue),
+                            const SizedBox(height: 8),
+                            _buildBreakdownRow('Énergie', energyPercent, Colors.orange),
+                            const SizedBox(height: 8),
+                            _buildBreakdownRow('Alimentation', foodPercent, Colors.green),
+                            const SizedBox(height: 8),
+                            _buildBreakdownRow('Consommation', consumptionPercent, Colors.purple),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        flex: 2,
+                        child: SizedBox(
+                          height: 150,
+                          child: PieChart(
+                            PieChartData(
+                              sectionsSpace: 2,
+                              centerSpaceRadius: 25,
+                              sections: _buildPieSections(
+                                transportPercent, energyPercent, 
+                                foodPercent, consumptionPercent,
+                                latestFootprint
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  );
+                }
+              }
             ),
           ],
         ),
       ),
     );
+  }
+  
+  List<PieChartSectionData> _buildPieSections(
+    int transportPercent, 
+    int energyPercent, 
+    int foodPercent, 
+    int consumptionPercent,
+    CarbonFootprintModel footprint
+  ) {
+    return [
+      PieChartSectionData(
+        color: Colors.blue,
+        value: footprint.transportScore,
+        title: '$transportPercent%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: Colors.orange,
+        value: footprint.energyScore,
+        title: '$energyPercent%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: Colors.green,
+        value: footprint.foodScore,
+        title: '$foodPercent%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+      PieChartSectionData(
+        color: Colors.purple,
+        value: footprint.consumptionScore,
+        title: '$consumptionPercent%',
+        radius: 50,
+        titleStyle: const TextStyle(
+          fontSize: 12,
+          fontWeight: FontWeight.bold,
+          color: Colors.white,
+        ),
+      ),
+    ];
   }
   
   Widget _buildBreakdownRow(String label, int percentage, Color color) {
@@ -799,5 +958,37 @@ class _CarbonDashboardViewState extends State<CarbonDashboardView> with SingleTi
   double _getMaxY(List<FlSpot> spots) {
     if (spots.isEmpty) return 10.0;
     return spots.fold<double>(0, (max, spot) => spot.y > max ? spot.y : max);
+  }
+  
+  Widget _buildEvolutionTab() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildPeriodSelector(),
+            const SizedBox(height: 24),
+            _buildComparisonChart(),
+          ],
+        ),
+      ),
+    );
+  }
+  
+  Widget _buildAdviceTab() {
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: Padding(
+        padding: const EdgeInsets.all(16.0),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            _buildRecommendations(),
+          ],
+        ),
+      ),
+    );
   }
 } 

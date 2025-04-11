@@ -2,11 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:provider/provider.dart';
-import 'package:greens_app/services/cart_service.dart';
+import 'package:greens_app/services/favorites_service.dart';
 import 'package:greens_app/models/product_model.dart';
-import 'package:greens_app/models/cart_item_model.dart';
+import 'package:greens_app/models/favorite_item_model.dart';
 import 'package:greens_app/views/product_detail_view.dart';
 import 'package:greens_app/models/product.dart';
+import 'package:greens_app/utils/merchant_urls.dart';
+import 'package:greens_app/views/favorites/favorites_view.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 class ProductsView extends StatefulWidget {
   const ProductsView({Key? key}) : super(key: key);
@@ -17,14 +20,13 @@ class ProductsView extends StatefulWidget {
 
 class _ProductsViewState extends State<ProductsView> {
   String _selectedCategory = 'All';
-  List<String> _categories = ['All', 'Health & Food', 'Fashion'];
+  List<String> _categories = ['All', 'Health & Food', 'Fashion', 'Essentials'];
   List<Product> _products = [];
   List<Product> _filteredProducts = [];
   int _currentIndex = 2; // Index pour la page products (2 = Shop)
   
-  // Affichage du panier
-  bool _isCartVisible = false;
-  final TextEditingController _promoController = TextEditingController();
+  // Affichage des favoris
+  bool _isFavoritesVisible = false;
   bool _isLoading = true;
 
   @override
@@ -37,19 +39,19 @@ class _ProductsViewState extends State<ProductsView> {
     
     _initializeProducts();
     
-    // Charger le panier depuis le service
+    // Charger les favoris depuis le service
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      Provider.of<CartService>(context, listen: false).loadCart();
+      Provider.of<FavoritesService>(context, listen: false).loadFavorites();
       
-      // Vérifier les arguments de navigation pour l'ajout au panier
+      // Vérifier les arguments de navigation pour l'ajout aux favoris
       final arguments = ModalRoute.of(context)?.settings.arguments;
       if (arguments != null && arguments is Map<String, dynamic>) {
         final productToAdd = arguments['addToCart'];
         if (productToAdd != null && productToAdd is Product) {
-          _addToCart(productToAdd);
-          // Afficher le panier
+          _addToFavorites(productToAdd);
+          // Afficher les favoris
           setState(() {
-            _isCartVisible = true;
+            _isFavoritesVisible = true;
           });
         }
       }
@@ -62,7 +64,6 @@ class _ProductsViewState extends State<ProductsView> {
 
   @override
   void dispose() {
-    _promoController.dispose();
     super.dispose();
   }
 
@@ -198,132 +199,89 @@ class _ProductsViewState extends State<ProductsView> {
     });
   }
 
-  // Ajouter un produit au panier
-  void _addToCart(Product product) {
-    // Convertir le Product local en ProductModel
-    final productModel = ProductModel(
-      id: product.name.hashCode.toString(), // Génère un ID basé sur le nom
-      name: product.name,
-      brand: 'GreenMinds', // À adapter selon vos besoins
-      description: product.description,
-      price: product.price,
-      imageUrl: product.imageAsset ?? '',
-      categories: [product.category],
-      isEcoFriendly: product.isEcoFriendly,
-    );
-    
-    // Ajouter au service de panier
-    final cartService = Provider.of<CartService>(context, listen: false);
-    cartService.addItem(productModel);
-    
-    // Afficher un message de confirmation
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('${product.name} ajouté au panier'),
-        duration: const Duration(seconds: 1),
-        action: SnackBarAction(
-          label: 'VOIR PANIER',
-          onPressed: () {
-            setState(() {
-              _isCartVisible = true;
-            });
-          },
+  // Ajouter un produit aux favoris
+  void _addToFavorites(Product product) {
+    try {
+      final favoriteService = Provider.of<FavoritesService>(context, listen: false);
+      
+      // Convertir le Product en ProductModel
+      final productModel = ProductModel(
+        id: product.id,
+        name: product.name,
+        brand: product.brand,
+        description: product.description,
+        price: product.price,
+        imageUrl: product.imageAsset,
+        categories: [product.category],
+        isEcoFriendly: product.isEcoFriendly,
+      );
+      
+      favoriteService.addItem(productModel);
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${product.name} ajouté aux favoris'),
+          backgroundColor: Colors.green,
+          action: SnackBarAction(
+            label: 'VOIR',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const FavoritesView()),
+              );
+            },
+          ),
         ),
-      ),
-    );
+      );
+    } catch (e) {
+      print('Erreur lors de l\'ajout aux favoris: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur lors de l\'ajout aux favoris: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
-  // Supprimer un élément du panier
-  void _removeFromCart(int index) {
-    final cartService = Provider.of<CartService>(context, listen: false);
-    final removedItem = cartService.removeItem(index);
+  // Supprimer un élément des favoris
+  void _removeFromFavorites(int index) {
+    final favoritesService = Provider.of<FavoritesService>(context, listen: false);
+    final removedItem = favoritesService.removeItem(index);
     
     // Afficher un message de confirmation avec option d'annulation
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('${removedItem.product.name} supprimé du panier'),
+        content: Text('${removedItem.product.name} supprimé des favoris'),
         duration: const Duration(seconds: 2),
         action: SnackBarAction(
           label: 'ANNULER',
           onPressed: () {
-            final cartService = Provider.of<CartService>(context, listen: false);
-            cartService.addItem(removedItem.product);
+            final favoritesService = Provider.of<FavoritesService>(context, listen: false);
+            favoritesService.addItem(removedItem.product);
           },
         ),
       ),
     );
   }
 
-  // Mettre à jour la quantité d'un élément du panier
-  void _updateQuantity(int index, int newQuantity) {
-    final cartService = Provider.of<CartService>(context, listen: false);
-    cartService.updateQuantity(index, newQuantity);
-  }
-
-  // Mettre à jour la quantité directement
-  void _updateQuantityDirectly(int index, String value) {
-    final parsedValue = int.tryParse(value);
-    if (parsedValue != null && parsedValue > 0) {
-      _updateQuantity(index, parsedValue);
-    }
-  }
-
-  // Appliquer un code promo
-  void _applyPromoCode() {
-    final cartService = Provider.of<CartService>(context);
-    
-    setState(() {
-      // Utiliser le promoCode du TextEditingController
-      cartService.applyPromoCode(_promoController.text).then((isValid) {
-        // Afficher un message selon la validité du code
-        if (isValid) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Code promo appliqué avec succès'),
-              backgroundColor: Color(0xFF4CAF50),
-            ),
-          );
-        } else {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('Code promo invalide'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      });
-    });
-  }
-
-  // Vider le panier
-  void _clearCart() {
-    final cartService = Provider.of<CartService>(context, listen: false);
-    final oldItems = cartService.clearCart();
+  // Vider les favoris
+  void _clearFavorites() {
+    final favoritesService = Provider.of<FavoritesService>(context, listen: false);
+    final oldItems = favoritesService.clearFavorites();
     
     // Afficher un message avec option d'annulation
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Text('Panier vidé'),
+        content: const Text('Favoris vidés'),
         duration: const Duration(seconds: 3),
         action: SnackBarAction(
           label: 'ANNULER',
           onPressed: () {
-            final cartService = Provider.of<CartService>(context, listen: false);
-            cartService.restoreItems(oldItems);
+            final favoritesService = Provider.of<FavoritesService>(context, listen: false);
+            favoritesService.restoreItems(oldItems);
           },
         ),
-      ),
-    );
-  }
-
-  // Sauvegarder le panier pour plus tard
-  void _saveCartForLater() {
-    // Ici, vous pourriez implémenter la sauvegarde du panier dans un compte utilisateur
-    // Pour l'instant, nous affichons simplement un message
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Panier sauvegardé pour plus tard'),
-        duration: Duration(seconds: 2),
       ),
     );
   }
@@ -362,23 +320,23 @@ class _ProductsViewState extends State<ProductsView> {
               Container(
                 margin: const EdgeInsets.only(right: 8),
                 decoration: BoxDecoration(
-                  color: _isCartVisible ? const Color(0xFF4CAF50).withOpacity(0.1) : Colors.transparent,
+                  color: _isFavoritesVisible ? const Color(0xFF4CAF50).withOpacity(0.1) : Colors.transparent,
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: IconButton(
                   icon: Icon(
-                    Icons.shopping_cart,
-                    color: _isCartVisible ? const Color(0xFF4CAF50) : const Color(0xFF1F3140),
+                    Icons.favorite,
+                    color: _isFavoritesVisible ? const Color(0xFF4CAF50) : const Color(0xFF1F3140),
                   ),
                   onPressed: () {
                     setState(() {
-                      _isCartVisible = !_isCartVisible;
+                      _isFavoritesVisible = !_isFavoritesVisible;
                     });
                   },
-                  tooltip: 'Voir mon panier',
+                  tooltip: 'Voir mes favoris',
                 ),
               ),
-              if (Provider.of<CartService>(context).itemCount > 0)
+              if (Provider.of<FavoritesService>(context).itemCount > 0)
                 Positioned(
                   top: 8,
                   right: 8,
@@ -400,7 +358,7 @@ class _ProductsViewState extends State<ProductsView> {
                       minHeight: 16,
                     ),
                     child: Text(
-                      Provider.of<CartService>(context).itemCount.toString(),
+                      Provider.of<FavoritesService>(context).itemCount.toString(),
                       style: const TextStyle(
                         color: Colors.white,
                         fontSize: 10,
@@ -429,7 +387,7 @@ class _ProductsViewState extends State<ProductsView> {
           ),
         ),
       ),
-      body: _isCartVisible
+      body: _isFavoritesVisible
           ? _buildCartView()
           : _isLoading
               ? const Center(
@@ -530,10 +488,10 @@ class _ProductsViewState extends State<ProductsView> {
     );
   }
 
-  // Construire la vue du panier avec un design amélioré
+  // Construire la vue des favoris avec un design amélioré
   Widget _buildCartView() {
-    final cartService = Provider.of<CartService>(context);
-    final cartItems = cartService.items;
+    final favoritesService = Provider.of<FavoritesService>(context);
+    final favoriteItems = favoritesService.items;
     
     return Column(
       children: [
@@ -572,7 +530,7 @@ class _ProductsViewState extends State<ProductsView> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Mon Panier',
+                        'Mes Favoris',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -580,7 +538,7 @@ class _ProductsViewState extends State<ProductsView> {
                         ),
                       ),
                       Text(
-                        '${cartService.itemCount} article${cartService.itemCount > 1 ? 's' : ''}',
+                        '${favoritesService.itemCount} article${favoritesService.itemCount > 1 ? 's' : ''}',
                         style: TextStyle(
                           fontSize: 12,
                           color: Colors.grey.shade600,
@@ -599,7 +557,7 @@ class _ProductsViewState extends State<ProductsView> {
                 ),
                 onPressed: () {
                   setState(() {
-                    _isCartVisible = false;
+                    _isFavoritesVisible = false;
                   });
                 },
               ),
@@ -607,7 +565,7 @@ class _ProductsViewState extends State<ProductsView> {
           ),
         ),
         Expanded(
-          child: cartItems.isEmpty
+          child: favoriteItems.isEmpty
               ? Center(
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.center,
@@ -627,7 +585,7 @@ class _ProductsViewState extends State<ProductsView> {
                       ),
                       const SizedBox(height: 24),
                       Text(
-                        'Votre panier est vide',
+                        'Votre liste de favoris est vide',
                         style: TextStyle(
                           fontSize: 18,
                           fontWeight: FontWeight.bold,
@@ -636,12 +594,12 @@ class _ProductsViewState extends State<ProductsView> {
                       ),
                       const SizedBox(height: 8),
                       Text(
-                        'Ajoutez des produits pour commencer vos achats',
+                        'Ajoutez des produits à vos favoris\npour les retrouver ici',
+                        textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 14,
                           color: Colors.grey.shade600,
                         ),
-                        textAlign: TextAlign.center,
                       ),
                       const SizedBox(height: 32),
                       ElevatedButton.icon(
@@ -655,7 +613,7 @@ class _ProductsViewState extends State<ProductsView> {
                         ),
                         onPressed: () {
                           setState(() {
-                            _isCartVisible = false;
+                            _isFavoritesVisible = false;
                           });
                         },
                         style: ElevatedButton.styleFrom(
@@ -671,10 +629,10 @@ class _ProductsViewState extends State<ProductsView> {
                   ),
                 )
               : ListView.builder(
-                  itemCount: cartItems.length,
+                  itemCount: favoriteItems.length,
                   padding: const EdgeInsets.symmetric(vertical: 12),
                   itemBuilder: (context, index) {
-                    final item = cartItems[index];
+                    final item = favoriteItems[index];
                     return Container(
                       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       decoration: BoxDecoration(
@@ -785,62 +743,22 @@ class _ProductsViewState extends State<ProductsView> {
                                 ],
                               ),
                             ),
-                            // Contrôles de quantité avec design amélioré
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade50,
-                                borderRadius: BorderRadius.circular(8),
-                                border: Border.all(
-                                  color: Colors.grey.shade200,
-                                  width: 1,
-                                ),
-                              ),
-                              child: Row(
-                                children: [
-                                  IconButton(
-                                    icon: const Icon(Icons.remove, size: 18),
-                                    onPressed: () {
-                                      _updateQuantity(index, item.quantity - 1);
-                                    },
-                                    color: Colors.grey.shade600,
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
-                                    ),
-                                  ),
-                                  Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8),
-                                    child: Text(
-                                      item.quantity.toString(),
-                                      style: TextStyle(
-                                        fontWeight: FontWeight.bold,
-                                        color: const Color(0xFF1F3140),
-                                      ),
-                                    ),
-                                  ),
-                                  IconButton(
-                                    icon: const Icon(Icons.add, size: 18),
-                                    onPressed: () {
-                                      _updateQuantity(index, item.quantity + 1);
-                                    },
-                                    color: const Color(0xFF4CAF50),
-                                    padding: EdgeInsets.zero,
-                                    constraints: const BoxConstraints(
-                                      minWidth: 32,
-                                      minHeight: 32,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                            // Bouton d'achat
+                            IconButton(
+                              icon: const Icon(Icons.shopping_bag_outlined),
+                              color: Colors.blue,
+                              onPressed: () {
+                                _openMerchantUrl(item.product.merchantUrl);
+                              },
+                              tooltip: 'Acheter',
                             ),
                             // Bouton de suppression
                             IconButton(
                               icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
                               onPressed: () {
-                                _removeFromCart(index);
+                                _removeFromFavorites(index);
                               },
-                              tooltip: 'Supprimer du panier',
+                              tooltip: 'Supprimer des favoris',
                             ),
                           ],
                         ),
@@ -849,8 +767,8 @@ class _ProductsViewState extends State<ProductsView> {
                   },
                 ),
         ),
-        // Résumé du panier et bouton de paiement avec design amélioré
-        if (cartItems.isNotEmpty)
+        // Bouton pour acheter tous les produits favoris
+        if (favoriteItems.isNotEmpty)
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
@@ -863,113 +781,120 @@ class _ProductsViewState extends State<ProductsView> {
                 ),
               ],
             ),
-            child: Column(
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Sous-total:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      '\$${cartService.subtotal.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF1F3140),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      'Livraison:',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
-                    ),
-                    Text(
-                      'Gratuite',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF4CAF50),
-                      ),
-                    ),
-                  ],
-                ),
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 12),
-                  child: Divider(),
-                ),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    const Text(
-                      'Total:',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    Text(
-                      '\$${cartService.total.toStringAsFixed(2)}',
-                      style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: const Color(0xFF4CAF50),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                SizedBox(
-                  width: double.infinity,
-                  child: ElevatedButton.icon(
-                    icon: const Icon(Icons.payment),
-                    label: const Text(
-                      'Procéder au paiement',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    onPressed: () {
-                      // Implémenter la logique de paiement ici
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Paiement en cours de traitement...'),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-                    },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF4CAF50),
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
-                      elevation: 2,
+            child: SafeArea(
+              child: Row(
+                children: [
+                  // Nombre de produits
+                  Text(
+                    '${favoritesService.itemCount} produit${favoritesService.itemCount > 1 ? 's' : ''}',
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                      color: Colors.grey.shade700,
                     ),
                   ),
-                ),
-              ],
+                  const SizedBox(width: 16),
+                  // Bouton "Acheter tout"
+                  Expanded(
+                    child: ElevatedButton.icon(
+                      icon: const Icon(Icons.shopping_bag),
+                      label: const Text('Acheter tout'),
+                      onPressed: favoritesService.isEmpty ? null : _buyAllFavorites,
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.blue,
+                        foregroundColor: Colors.white,
+                        disabledBackgroundColor: Colors.grey.shade300,
+                        padding: const EdgeInsets.symmetric(vertical: 16),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(8),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
       ],
     );
   }
 
+  // Ouvrir l'URL du marchand
+  Future<void> _openMerchantUrl(String? url) async {
+    if (url == null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune URL de marchand disponible'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Impossible d'ouvrir le site marchand"),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      print('Erreur lors de l\'ouverture de l\'URL: $e');
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Erreur: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  // Acheter tous les produits favoris
+  Future<void> _buyAllFavorites() async {
+    final favoritesService = Provider.of<FavoritesService>(context, listen: false);
+    final urls = favoritesService.getBuyUrls();
+    
+    if (urls.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Aucune URL de marchand disponible'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Ouvrir seulement la première URL pour l'instant
+    await _openMerchantUrl(urls.first);
+    
+    // Afficher un message pour indiquer combien d'URLs restent à ouvrir
+    if (urls.length > 1 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${urls.length - 1} autres produits à acheter'),
+          action: SnackBarAction(
+            label: 'SUIVANT',
+            onPressed: () {
+              _openMerchantUrl(urls[1]);
+            },
+          ),
+        ),
+      );
+    }
+  }
+
   Widget _buildProductCard(Product product) {
+    final merchantInfo = MerchantUrls.getMerchantForProduct(product.id);
+    
     return GestureDetector(
       onTap: () {
         // Navigation vers la page de détail du produit
@@ -979,10 +904,10 @@ class _ProductsViewState extends State<ProductsView> {
             builder: (context) => ProductDetailView(product: product),
           ),
         ).then((showCart) {
-          // Si showCart est true, afficher le panier
+          // Si showCart est true, afficher les favoris
           if (showCart == true) {
             setState(() {
-              _isCartVisible = true;
+              _isFavoritesVisible = true;
             });
           }
         });
@@ -1108,28 +1033,91 @@ class _ProductsViewState extends State<ProductsView> {
                             color: Color(0xFF1F3140),
                           ),
                         ),
-                        // Bouton d'ajout au panier
-                        InkWell(
-                          onTap: () => _addToCart(product),
-                          child: Container(
-                            padding: const EdgeInsets.all(6),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF4CAF50),
-                              borderRadius: BorderRadius.circular(8),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: const Color(0xFF4CAF50).withOpacity(0.3),
-                                  blurRadius: 4,
-                                  offset: const Offset(0, 2),
+                        Row(
+                          children: [
+                            // Bouton d'ajout aux favoris
+                            InkWell(
+                              onTap: () => _addToFavorites(product),
+                              child: Container(
+                                padding: const EdgeInsets.all(6),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4CAF50),
+                                  borderRadius: BorderRadius.circular(8),
+                                  boxShadow: [
+                                    BoxShadow(
+                                      color: const Color(0xFF4CAF50).withOpacity(0.3),
+                                      blurRadius: 4,
+                                      offset: const Offset(0, 2),
+                                    ),
+                                  ],
                                 ),
-                              ],
+                                child: Icon(
+                                  Icons.favorite,
+                                  size: 18,
+                                  color: Colors.white,
+                                ),
+                              ),
                             ),
-                            child: Icon(
-                              Icons.shopping_cart,
-                              size: 18,
-                              color: Colors.white,
-                            ),
-                          ),
+                            // Si un marchand existe pour ce produit, montrer le bouton Acheter
+                            if (merchantInfo != null) 
+                              Padding(
+                                padding: const EdgeInsets.only(left: 8),
+                                child: InkWell(
+                                  onTap: () async {
+                                    try {
+                                      final url = Uri.parse(merchantInfo.url);
+                                      if (await canLaunchUrl(url)) {
+                                        await launchUrl(
+                                          url,
+                                          mode: LaunchMode.externalApplication,
+                                        );
+                                      } else {
+                                        if (mounted) {
+                                          ScaffoldMessenger.of(context).showSnackBar(
+                                            const SnackBar(
+                                              content: Text("Impossible d'ouvrir le site marchand"),
+                                              backgroundColor: Colors.red,
+                                            ),
+                                          );
+                                        }
+                                      }
+                                    } catch (e) {
+                                      print('Erreur lors de l\'ouverture de l\'URL: $e');
+                                      if (mounted) {
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('Erreur: $e'),
+                                            backgroundColor: Colors.red,
+                                          ),
+                                        );
+                                      }
+                                    }
+                                  },
+                                  child: Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue,
+                                      borderRadius: BorderRadius.circular(8),
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.blue.withOpacity(0.3),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
+                                    ),
+                                    child: const Text(
+                                      'Acheter',
+                                      style: TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 12,
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
                       ],
                     ),
