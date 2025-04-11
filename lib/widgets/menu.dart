@@ -189,8 +189,12 @@ class CustomMenu extends StatelessWidget {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
+      isScrollControlled: true,
       builder: (context) => Container(
         padding: const EdgeInsets.all(20),
+        constraints: BoxConstraints(
+          maxHeight: MediaQuery.of(context).size.height * 0.7,
+        ),
         decoration: BoxDecoration(
           color: AppColors.cardColor,
           borderRadius: const BorderRadius.only(
@@ -219,27 +223,53 @@ class CustomMenu extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 20),
-            _buildMoreMenuItem(
-              context,
-              Icons.eco,
-              'Objectifs écologiques',
-              () => Navigator.pushNamed(context, AppRoutes.goals),
+            Expanded(
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    // Section Empreinte Carbone
+                    _buildMoreMenuItem(
+                      context,
+                      Icons.calculate,
+                      'Calculateur d\'empreinte carbone',
+                      () => Navigator.pushNamed(context, AppRoutes.carbonCalculator),
+                    ),
+                    const Divider(),
+                    _buildMoreMenuItem(
+                      context,
+                      Icons.bar_chart,
+                      'Tableau de bord carbone',
+                      () => Navigator.pushNamed(context, AppRoutes.carbonDashboard),
+                    ),
+                    const Divider(),
+                    // Section Objectifs et Défis
+                    _buildMoreMenuItem(
+                      context,
+                      Icons.eco,
+                      'Objectifs écologiques',
+                      () => Navigator.pushNamed(context, AppRoutes.goals),
+                    ),
+                    const Divider(),
+                    _buildMoreMenuItem(
+                      context,
+                      Icons.people,
+                      'Défis communautaires',
+                      () => Navigator.pushNamed(context, AppRoutes.community),
+                    ),
+                    const Divider(),
+                    // Section Scanner
+                    _buildMoreMenuItem(
+                      context,
+                      Icons.qr_code_scanner,
+                      'Scanner de produits',
+                      () => Navigator.pushNamed(context, AppRoutes.productScanner),
+                    ),
+                    const SizedBox(height: 20),
+                  ],
+                ),
+              ),
             ),
-            const Divider(),
-            _buildMoreMenuItem(
-              context,
-              Icons.people,
-              'Défis communautaires',
-              () => Navigator.pushNamed(context, AppRoutes.community),
-            ),
-            const Divider(),
-            _buildMoreMenuItem(
-              context,
-              Icons.qr_code_scanner,
-              'Scanner de produits',
-              () => Navigator.pushNamed(context, AppRoutes.productScanner),
-            ),
-            const SizedBox(height: 20),
           ],
         ),
       ),

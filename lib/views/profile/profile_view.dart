@@ -183,18 +183,7 @@ class _ProfileViewState extends State<ProfileView> {
                     ),
                     const SizedBox(height: 32),
                     
-                    _buildStatisticsSection(),
-                    const SizedBox(height: 32),
-                    
                     if (!_isEditing) ...[
-                      CustomButton(
-                        text: 'Calculer mon empreinte carbone',
-                        icon: Icons.eco_outlined,
-                        onPressed: () {
-                          Navigator.pushNamed(context, AppRoutes.carbonCalculator);
-                        },
-                      ),
-                      const SizedBox(height: 16),
                       CustomButton(
                         text: 'Mes récompenses',
                         icon: Icons.card_giftcard_outlined,
@@ -210,22 +199,56 @@ class _ProfileViewState extends State<ProfileView> {
                           Navigator.pushNamed(context, AppRoutes.settings);
                         },
                       ),
-                      const SizedBox(height: 24),
-                      TextButton.icon(
-                        icon: const Icon(Icons.logout, color: Colors.red),
-                        label: const Text(
-                          'Déconnexion',
-                          style: TextStyle(color: Colors.red),
+                      const SizedBox(height: 32),
+                      Container(
+                        decoration: BoxDecoration(
+                          color: Colors.red.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: Colors.red.withOpacity(0.3),
+                            width: 1,
+                          ),
                         ),
-                        onPressed: () {
-                          authController.signOut().then((_) {
-                            Navigator.pushNamedAndRemoveUntil(
-                              context,
-                              AppRoutes.login,
-                              (route) => false,
+                        child: ListTile(
+                          leading: const Icon(Icons.logout, color: Colors.red),
+                          title: const Text(
+                            'Déconnexion',
+                            style: TextStyle(
+                              color: Colors.red,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          onTap: () {
+                            showDialog(
+                              context: context,
+                              builder: (context) => AlertDialog(
+                                title: const Text('Déconnexion'),
+                                content: const Text('Êtes-vous sûr de vouloir vous déconnecter ?'),
+                                actions: [
+                                  TextButton(
+                                    onPressed: () => Navigator.pop(context),
+                                    child: const Text('Annuler'),
+                                  ),
+                                  TextButton(
+                                    onPressed: () {
+                                      authController.signOut().then((_) {
+                                        Navigator.pushNamedAndRemoveUntil(
+                                          context,
+                                          AppRoutes.login,
+                                          (route) => false,
+                                        );
+                                      });
+                                    },
+                                    child: const Text(
+                                      'Déconnexion',
+                                      style: TextStyle(color: Colors.red),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             );
-                          });
-                        },
+                          },
+                        ),
                       ),
                     ],
                   ],
@@ -233,107 +256,6 @@ class _ProfileViewState extends State<ProfileView> {
               ),
             ),
       bottomNavigationBar: const CustomMenu(currentIndex: 3),
-    );
-  }
-
-  Widget _buildStatisticsSection() {
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.1),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text(
-            'Mes statistiques',
-            style: TextStyle(
-              fontSize: 18,
-              fontWeight: FontWeight.bold,
-              color: AppColors.profilePrimaryColor,
-            ),
-          ),
-          const SizedBox(height: 16),
-          _buildStatItem(
-            icon: Icons.eco,
-            title: 'Empreinte carbone',
-            value: '2.5 tonnes CO2/an',
-            color: AppColors.secondaryColor,
-          ),
-          const Divider(),
-          _buildStatItem(
-            icon: Icons.recycling,
-            title: 'Déchets évités',
-            value: '15 kg',
-            color: Colors.green,
-          ),
-          const Divider(),
-          _buildStatItem(
-            icon: Icons.star,
-            title: 'Points de récompense',
-            value: '350 points',
-            color: Colors.amber,
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStatItem({
-    required IconData icon,
-    required String title,
-    required String value,
-    required Color color,
-  }) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8),
-      child: Row(
-        children: [
-          Container(
-            padding: const EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: Icon(
-              icon,
-              color: color,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textColor,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
     );
   }
 }
