@@ -19,6 +19,7 @@ import 'package:greens_app/views/blogs/blog_view.dart';
 import 'package:greens_app/views/legale/legale_notice_view.dart';
 import 'package:greens_app/views/settings/setting_view.dart';
 import 'package:greens_app/views/chatbot/chatbot_view.dart';
+import 'package:greens_app/views/chatbot/eco_chatbot_view.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/views/profile/profile_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -47,6 +48,7 @@ class AppRoutes {
   static const String settings = '/settings';
   static const String help = '/help';
   static const String chatbot = '/chatbot';
+  static const String ecoChatbot = '/eco_chatbot';
   static const String question1 = '/question1';
   static const String question2 = '/question2';
   static const String question3 = '/question3';
@@ -105,19 +107,15 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ProductsView());
       case AppRoutes.chatbot:
         return MaterialPageRoute(builder: (_) => const ChatbotView());
+      case AppRoutes.ecoChatbot:
+        return MaterialPageRoute(builder: (_) => const EcoChatbotView());
       case AppRoutes.rewards:
       case AppRoutes.goals:
-  return MaterialPageRoute(builder: (_) => const GoalsView());
-case AppRoutes.community:
-  return MaterialPageRoute(builder: (_) => const CommunityView());
-case AppRoutes.productScanner:
-  return MaterialPageRoute(builder: (_) => const ProductScannerView());
-        return MaterialPageRoute(
-          builder: (_) => Scaffold(
-            appBar: AppBar(title: const Text('Récompenses')),
-            body: const Center(child: Text('Page des récompenses - À implémenter')),
-          ),
-        );
+        return MaterialPageRoute(builder: (_) => const GoalsView());
+      case AppRoutes.community:
+        return MaterialPageRoute(builder: (_) => const CommunityView());
+      case AppRoutes.productScanner:
+        return MaterialPageRoute(builder: (_) => const ProductScannerView());
       case AppRoutes.profile:
         return MaterialPageRoute(
           builder: (_) => const ProfileView(), 

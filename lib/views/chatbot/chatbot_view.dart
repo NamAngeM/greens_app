@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
+import 'package:greens_app/services/llm_service.dart';
+import 'package:greens_app/utils/llm_config.dart';
+import 'package:greens_app/views/chatbot/llm_settings_view.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widgets/menu.dart';
@@ -18,15 +21,51 @@ class _ChatbotViewState extends State<ChatbotView> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
+  late LlmService _llmService;
+  bool _isModelAvailable = false;
 
   @override
   void initState() {
     super.initState();
-    // Ajouter des messages initiaux pour correspondre à l'image
-    _addBotMessage("Hi there! How can I help you today ?");
-    _addUserMessage("Hi, I want to learn how to reduce waste and make my daily habits more eco-friendly.");
-    _addBotMessage("That's a great start!");
-    _addUserMessage("I'm ready to start small but meaningful changes — any tips for beginners?");
+    _initLlmService();
+    
+    // Message initial pour expliquer la fonctionnalité
+    _addBotMessage("Bonjour ! Je suis GreenBot, votre assistant spécialisé en écologie. Je peux vous aider sur des sujets comme le développement durable, la réduction des déchets, ou la conservation de l'énergie. Que souhaitez-vous savoir aujourd'hui ?");
+    
+    // Vérifier après un court délai si le modèle est disponible
+    Future.delayed(const Duration(seconds: 2), () {
+      if (!_isModelAvailable && mounted) {
+        _addBotMessage("⚠️ Je remarque que je ne suis pas connecté à mon modèle de langage local (Gemma). Pour profiter de mes capacités complètes, veuillez configurer le modèle local via le bouton Paramètres en haut à droite.");
+      }
+    });
+  }
+  
+  Future<void> _initLlmService() async {
+    try {
+      if (!mounted) return;
+      
+      // Utiliser le singleton du service LLM
+      await LlmService.initialize();
+      _llmService = LlmService.instance;
+      
+      // Vérifier si le modèle est disponible
+      try {
+        final testResponse = await _llmService.testConnection();
+        setState(() {
+          _isModelAvailable = testResponse.contains("Service actif");
+        });
+      } catch (e) {
+        print('Erreur lors du test de connectivité: $e');
+        setState(() {
+          _isModelAvailable = false;
+        });
+      }
+    } catch (e) {
+      print('Erreur lors de l\'initialisation du service LLM: $e');
+      setState(() {
+        _isModelAvailable = false;
+      });
+    }
   }
 
   @override
@@ -74,24 +113,46 @@ class _ChatbotViewState extends State<ChatbotView> {
     });
   }
 
-  void _handleSubmit() {
+  Future<void> _handleSubmit() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
     
     _addUserMessage(text);
     _messageController.clear();
     
-    // Simuler une réponse du bot
+    // Indiquer que le bot est en train d'écrire
     setState(() {
       _isTyping = true;
     });
     
-    Future.delayed(const Duration(seconds: 1), () {
+    if (!_isModelAvailable) {
+      await Future.delayed(const Duration(seconds: 1));
+      _addBotMessage("Désolé, je ne peux pas me connecter au modèle Gemma local. Veuillez vérifier les paramètres de connexion ou lancer le serveur Gemma sur votre ordinateur.");
       setState(() {
         _isTyping = false;
       });
-      // Ici, vous pourriez implémenter une vraie logique de réponse
-    });
+      return;
+    }
+    
+    try {
+      // Vérifier si la question est liée à l'écologie
+      final isEcoRelated = await _llmService.isEcoRelated(text);
+      
+      if (!isEcoRelated) {
+        _addBotMessage("Je suis spécialisé dans les sujets liés à l'écologie et au développement durable. Pourriez-vous me poser une question sur ces thèmes ?");
+      } else {
+        // Obtenir une réponse du service LLM
+        final response = await _llmService.askEcoQuestion(text);
+        _addBotMessage(response);
+      }
+    } catch (e) {
+      print('Erreur lors de la communication avec le modèle: $e');
+      _addBotMessage("Désolé, une erreur s'est produite lors de la communication avec le modèle. Veuillez réessayer plus tard.");
+    } finally {
+      setState(() {
+        _isTyping = false;
+      });
+    }
   }
 
   @override
@@ -123,12 +184,19 @@ class _ChatbotViewState extends State<ChatbotView> {
         ),
         actions: [
           IconButton(
-            icon: const Icon(
+            icon: Icon(
               Icons.settings,
               color: Colors.white,
+              // Indicateur visuel si le modèle n'est pas disponible
+              size: _isModelAvailable ? 24 : 28,
             ),
+            color: _isModelAvailable ? Colors.white : Colors.red,
             onPressed: () {
-              // Action pour les paramètres
+              // Naviguer vers les paramètres du LLM
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const LlmSettingsView()),
+              ).then((_) => _initLlmService());
             },
           ),
         ],
@@ -137,14 +205,36 @@ class _ChatbotViewState extends State<ChatbotView> {
           child: Container(
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 16, bottom: 16),
-            child: const Text(
-              "Ask me anything !",
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-                fontFamily: 'RethinkSans',
-              ),
+            child: Row(
+              children: [
+                const Text(
+                  "Ask me about ecology!",
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    fontFamily: 'RethinkSans',
+                  ),
+                ),
+                if (!_isModelAvailable) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      borderRadius: BorderRadius.circular(16),
+                    ),
+                    child: const Text(
+                      "Offline",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
             ),
           ),
         ),
@@ -232,7 +322,7 @@ class _ChatbotViewState extends State<ChatbotView> {
                       Icons.send,
                       color: Color(0xFF1E3246),
                     ),
-                    onPressed: _handleSubmit,
+                    onPressed: () => _handleSubmit(),
                   ),
                 ),
               ],

@@ -124,6 +124,12 @@ class AppMenu extends StatelessWidget {
                     Icons.article, 
                     AppRoutes.articles,
                   ),
+                  _buildMenuItem(
+                    context, 
+                    'Assistant écologique', 
+                    Icons.chat, 
+                    AppRoutes.ecoChatbot,
+                  ),
                   const Divider(),
                   _buildMenuItem(
                     context, 

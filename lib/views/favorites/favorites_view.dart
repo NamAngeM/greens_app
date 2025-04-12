@@ -4,6 +4,7 @@ import 'package:greens_app/services/favorites_service.dart';
 import 'package:greens_app/models/favorite_item_model.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:greens_app/utils/merchant_urls.dart';
 
 class FavoritesView extends StatefulWidget {
   const FavoritesView({Key? key}) : super(key: key);
@@ -23,8 +24,16 @@ class _FavoritesViewState extends State<FavoritesView> {
   }
 
   // Ouvrir l'URL du marchand
-  Future<void> _openMerchantUrl(String? url) async {
-    if (url == null) {
+  Future<void> _openMerchantUrl(String? url, {String? productId}) async {
+    // Si l'URL est null et que l'ID du produit est fourni, tenter de récupérer l'URL via MerchantUrls
+    if ((url == null || url.isEmpty) && productId != null) {
+      final merchantInfo = MerchantUrls.getMerchantForProduct(productId);
+      if (merchantInfo != null) {
+        url = merchantInfo.url;
+      }
+    }
+    
+    if (url == null || url.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Aucune URL de marchand disponible'),
@@ -76,18 +85,69 @@ class _FavoritesViewState extends State<FavoritesView> {
       return;
     }
 
-    // Ouvrir seulement la première URL pour l'instant (on pourrait en ouvrir plusieurs si nécessaire)
+    // Ouvrir la première URL
     await _openMerchantUrl(urls.first);
     
-    // Afficher un message pour indiquer combien d'URLs restent à ouvrir
+    // Si plusieurs URLs, proposer à l'utilisateur de voir les suivantes
     if (urls.length > 1 && mounted) {
+      // Créer une liste des URLs restantes
+      final remainingUrls = urls.sublist(1);
+      // Index actuel pour suivre notre progression
+      int currentIndex = 0;
+      
+      // Afficher une snackbar avec le nombre de produits restants
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('${urls.length - 1} autres produits à acheter'),
+          content: Text('${remainingUrls.length} autres produits à acheter'),
+          duration: const Duration(seconds: 10),
           action: SnackBarAction(
             label: 'SUIVANT',
             onPressed: () {
-              _openMerchantUrl(urls[1]);
+              // Ouvrir la prochaine URL
+              _openMerchantUrl(remainingUrls[currentIndex]);
+              currentIndex++;
+              
+              // Si d'autres URLs restent après celle-ci, afficher une nouvelle snackbar
+              if (currentIndex < remainingUrls.length && mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('${remainingUrls.length - currentIndex} produits restants'),
+                    duration: const Duration(seconds: 10),
+                    action: SnackBarAction(
+                      label: 'SUIVANT',
+                      onPressed: () {
+                        // Utiliser une fonction récursive pour continuer la séquence
+                        _openNextUrl(remainingUrls, currentIndex);
+                      },
+                    ),
+                  ),
+                );
+              }
+            },
+          ),
+        ),
+      );
+    }
+  }
+  
+  // Fonction auxiliaire pour ouvrir les URLs restantes de manière séquentielle
+  Future<void> _openNextUrl(List<String> urls, int index) async {
+    if (index >= urls.length || !mounted) return;
+    
+    // Ouvrir l'URL actuelle
+    await _openMerchantUrl(urls[index]);
+    
+    // Si d'autres URLs restent, afficher une snackbar
+    if (index + 1 < urls.length && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('${urls.length - (index + 1)} produits restants'),
+          duration: const Duration(seconds: 10),
+          action: SnackBarAction(
+            label: 'SUIVANT',
+            onPressed: () {
+              // Continuer la séquence
+              _openNextUrl(urls, index + 1);
             },
           ),
         ),
@@ -362,13 +422,20 @@ class _FavoritesViewState extends State<FavoritesView> {
                 ),
               ),
               // Bouton d'achat
-              IconButton(
-                icon: const Icon(Icons.shopping_bag_outlined),
-                color: Colors.blue,
+              ElevatedButton.icon(
+                icon: const Icon(Icons.shopping_bag_outlined, size: 16),
+                label: const Text('Acheter'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF1F2937),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                ),
                 onPressed: () {
-                  _openMerchantUrl(item.product.merchantUrl);
+                  _openMerchantUrl(item.product.merchantUrl, productId: item.product.id);
                 },
-                tooltip: 'Acheter',
               ),
             ],
           ),

@@ -115,7 +115,7 @@ class CustomMenu extends StatelessWidget {
         if (onTap != null) {
           onTap!(4); // Index spécial pour le chatbot
         }
-        Navigator.pushNamed(context, AppRoutes.chatbot);
+        Navigator.pushNamed(context, AppRoutes.ecoChatbot);
       },
       customBorder: const CircleBorder(),
       child: Container(
@@ -264,6 +264,13 @@ class CustomMenu extends StatelessWidget {
                       Icons.qr_code_scanner,
                       'Scanner de produits',
                       () => Navigator.pushNamed(context, AppRoutes.productScanner),
+                    ),
+                    const Divider(),
+                    _buildMoreMenuItem(
+                      context,
+                      Icons.chat,
+                      'Assistant écologique',
+                      () => Navigator.pushNamed(context, AppRoutes.ecoChatbot),
                     ),
                     const SizedBox(height: 20),
                   ],

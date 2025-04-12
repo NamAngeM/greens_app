@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:greens_app/models/favorite_item_model.dart';
 import 'package:greens_app/models/product_model.dart';
+import 'package:greens_app/utils/merchant_urls.dart';
 
 class FavoritesService extends ChangeNotifier {
   List<FavoriteItemModel> _items = [];
@@ -99,10 +100,24 @@ class FavoritesService extends ChangeNotifier {
   
   // Acheter tous les produits favoris (obtenir les URLs)
   List<String> getBuyUrls() {
-    return _items
-        .map((item) => item.product.merchantUrl)
-        .where((url) => url != null)
-        .map((url) => url!)
-        .toList();
+    final List<String> urls = [];
+    
+    for (final item in _items) {
+      String? url = item.product.merchantUrl;
+      
+      // Si l'URL n'est pas disponible directement dans le produit, essayer de la récupérer via MerchantUrls
+      if (url == null || url.isEmpty) {
+        final merchantInfo = MerchantUrls.getMerchantForProduct(item.product.id);
+        if (merchantInfo != null) {
+          url = merchantInfo.url;
+        }
+      }
+      
+      if (url != null && url.isNotEmpty) {
+        urls.add(url);
+      }
+    }
+    
+    return urls;
   }
 } 

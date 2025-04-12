@@ -50,8 +50,12 @@ dependencies:
   image_picker: ^1.0.5
   geolocator: ^10.1.0
   url_launcher: ^6.2.2
-  path_provider: ^2.1.1
+  path_provider: ^2.0.15
   permission_handler: ^11.1.0
+  
+  # Dialogflow
+  dialogflow_flutter: ^1.0.0
+  http: ^0.13.5
 
 dev_dependencies:
   integration_test:
@@ -88,6 +92,7 @@ flutter:
     - assets/images/misc/      # Assurez-vous que ce dossier existe
     - assets/images/avatars/
     - assets/fonts/
+    - assets/ecobot-febg-36d4c0342872.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware
