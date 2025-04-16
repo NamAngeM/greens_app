@@ -4,14 +4,15 @@ Une application Flutter dédiée à promouvoir un mode de vie écologique et dur
 
 ## Fonctionnalités principales
 
-### Chatbot écologique avec Gemma via Ollama
+### Chatbot écologique avec Dialogflow
 
-L'application intègre désormais un chatbot écologique alimenté par le modèle de langage Gemma de Google, exécuté localement via Ollama:
+L'application intègre désormais un chatbot écologique alimenté par Dialogflow de Google:
 
 - Posez des questions sur l'écologie, le développement durable, et les produits éco-responsables
-- Utilisation du modèle Gemma en local pour préserver la confidentialité des données
-- Filtrage intelligent des questions pour se concentrer sur les sujets écologiques
-- Documentation détaillée disponible dans `doc/ollama_setup.md`
+- Mode hors ligne avec réponses prédéfinies lorsque Dialogflow n'est pas disponible
+- Interface utilisateur intuitive et attrayante
+- Réponses rapides et pertinentes sur les sujets environnementaux
+- Accès direct depuis le menu principal de l'application
 
 ### Favoris et achats
 

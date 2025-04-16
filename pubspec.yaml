@@ -53,9 +53,10 @@ dependencies:
   path_provider: ^2.0.15
   permission_handler: ^11.1.0
   
-  # Dialogflow
-  dialogflow_flutter: ^1.0.0
+  # Http pour les requêtes API
   http: ^0.13.5
+  googleapis: ^11.0.0
+  googleapis_auth: ^1.4.1
 
 dev_dependencies:
   integration_test:
@@ -93,6 +94,7 @@ flutter:
     - assets/images/avatars/
     - assets/fonts/
     - assets/ecobot-febg-36d4c0342872.json
+    - assets/dialogflow_credentials.json
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

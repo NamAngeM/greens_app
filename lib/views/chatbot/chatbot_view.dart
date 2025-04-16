@@ -2,9 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
-import 'package:greens_app/services/llm_service.dart';
-import 'package:greens_app/utils/llm_config.dart';
+import 'package:greens_app/services/dialogflow_service.dart';
+import 'package:greens_app/services/ollama_service.dart';
 import 'package:greens_app/views/chatbot/llm_settings_view.dart';
+import 'package:uuid/uuid.dart';
 
 import '../../utils/app_colors.dart';
 import '../../widgets/menu.dart';
@@ -21,49 +22,44 @@ class _ChatbotViewState extends State<ChatbotView> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
-  late LlmService _llmService;
-  bool _isModelAvailable = false;
+  late DialogflowService _dialogflowService;
+  late OllamaService _ollamaService;
+  bool _isDialogflowAvailable = false;
+  bool _isOllamaAvailable = false;
+  final String _sessionId = const Uuid().v4();
+  
+  // Mode de l'IA : true pour Dialogflow, false pour Ollama
+  bool _useDialogflow = true;
 
   @override
   void initState() {
     super.initState();
-    _initLlmService();
+    _initAIServices();
     
-    // Message initial pour expliquer la fonctionnalité
     _addBotMessage("Bonjour ! Je suis GreenBot, votre assistant spécialisé en écologie. Je peux vous aider sur des sujets comme le développement durable, la réduction des déchets, ou la conservation de l'énergie. Que souhaitez-vous savoir aujourd'hui ?");
-    
-    // Vérifier après un court délai si le modèle est disponible
-    Future.delayed(const Duration(seconds: 2), () {
-      if (!_isModelAvailable && mounted) {
-        _addBotMessage("⚠️ Je remarque que je ne suis pas connecté à mon modèle de langage local (Gemma). Pour profiter de mes capacités complètes, veuillez configurer le modèle local via le bouton Paramètres en haut à droite.");
-      }
-    });
   }
   
-  Future<void> _initLlmService() async {
+  Future<void> _initAIServices() async {
     try {
       if (!mounted) return;
       
-      // Utiliser le singleton du service LLM
-      await LlmService.initialize();
-      _llmService = LlmService.instance;
+      // Initialiser Dialogflow
+      _dialogflowService = DialogflowService.instance;
+      await _dialogflowService.initialize();
       
-      // Vérifier si le modèle est disponible
-      try {
-        final testResponse = await _llmService.testConnection();
-        setState(() {
-          _isModelAvailable = testResponse.contains("Service actif");
-        });
-      } catch (e) {
-        print('Erreur lors du test de connectivité: $e');
-        setState(() {
-          _isModelAvailable = false;
-        });
-      }
-    } catch (e) {
-      print('Erreur lors de l\'initialisation du service LLM: $e');
+      // Initialiser Ollama
+      _ollamaService = OllamaService.instance;
+      await _ollamaService.initialize();
+      
       setState(() {
-        _isModelAvailable = false;
+        _isDialogflowAvailable = _dialogflowService.isInitialized;
+        _isOllamaAvailable = _ollamaService.isInitialized;
+      });
+    } catch (e) {
+      print('Erreur lors de l\'initialisation des services d\'IA: $e');
+      setState(() {
+        _isDialogflowAvailable = false;
+        _isOllamaAvailable = false;
       });
     }
   }
@@ -113,6 +109,15 @@ class _ChatbotViewState extends State<ChatbotView> {
     });
   }
 
+  void _toggleAIService() {
+    setState(() {
+      _useDialogflow = !_useDialogflow;
+    });
+    
+    // Afficher un message pour indiquer le changement
+    _addBotMessage("Mode ${_useDialogflow ? 'Dialogflow' : 'Ollama (local)'} activé.");
+  }
+
   Future<void> _handleSubmit() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -120,14 +125,22 @@ class _ChatbotViewState extends State<ChatbotView> {
     _addUserMessage(text);
     _messageController.clear();
     
-    // Indiquer que le bot est en train d'écrire
     setState(() {
       _isTyping = true;
     });
     
-    if (!_isModelAvailable) {
+    if (_useDialogflow && !_isDialogflowAvailable) {
       await Future.delayed(const Duration(seconds: 1));
-      _addBotMessage("Désolé, je ne peux pas me connecter au modèle Gemma local. Veuillez vérifier les paramètres de connexion ou lancer le serveur Gemma sur votre ordinateur.");
+      _addBotMessage("Désolé, je ne peux pas me connecter à Dialogflow. Veuillez vérifier votre configuration ou essayer le mode Ollama local.");
+      setState(() {
+        _isTyping = false;
+      });
+      return;
+    }
+    
+    if (!_useDialogflow && !_isOllamaAvailable) {
+      await Future.delayed(const Duration(seconds: 1));
+      _addBotMessage("Désolé, je ne peux pas me connecter à Ollama. Veuillez vérifier que le serveur Ollama est en cours d'exécution sur votre machine locale ou essayer le mode Dialogflow.");
       setState(() {
         _isTyping = false;
       });
@@ -135,19 +148,18 @@ class _ChatbotViewState extends State<ChatbotView> {
     }
     
     try {
-      // Vérifier si la question est liée à l'écologie
-      final isEcoRelated = await _llmService.isEcoRelated(text);
+      String response;
       
-      if (!isEcoRelated) {
-        _addBotMessage("Je suis spécialisé dans les sujets liés à l'écologie et au développement durable. Pourriez-vous me poser une question sur ces thèmes ?");
+      if (_useDialogflow) {
+        response = await _dialogflowService.detectIntent(text);
       } else {
-        // Obtenir une réponse du service LLM
-        final response = await _llmService.askEcoQuestion(text);
-        _addBotMessage(response);
+        response = await _ollamaService.getResponse(text);
       }
+      
+      _addBotMessage(response);
     } catch (e) {
-      print('Erreur lors de la communication avec le modèle: $e');
-      _addBotMessage("Désolé, une erreur s'est produite lors de la communication avec le modèle. Veuillez réessayer plus tard.");
+      print('Erreur lors de la communication avec le service d\'IA: $e');
+      _addBotMessage("Désolé, une erreur s'est produite lors de la communication avec le service d'IA. Veuillez réessayer plus tard.");
     } finally {
       setState(() {
         _isTyping = false;
@@ -183,20 +195,36 @@ class _ChatbotViewState extends State<ChatbotView> {
           ],
         ),
         actions: [
+          // Bouton de basculement entre Dialogflow et Ollama
+          IconButton(
+            icon: Icon(
+              _useDialogflow ? Icons.cloud : Icons.computer,
+              color: Colors.white,
+            ),
+            onPressed: _toggleAIService,
+            tooltip: _useDialogflow ? 'Passer à Ollama (local)' : 'Passer à Dialogflow',
+          ),
+          // Indicateur d'état
+          Icon(
+            Icons.circle,
+            size: 12,
+            color: _useDialogflow 
+                ? (_isDialogflowAvailable ? Colors.green : Colors.red)
+                : (_isOllamaAvailable ? Colors.green : Colors.red),
+          ),
+          const SizedBox(width: 8),
           IconButton(
             icon: Icon(
               Icons.settings,
               color: Colors.white,
-              // Indicateur visuel si le modèle n'est pas disponible
-              size: _isModelAvailable ? 24 : 28,
+              size: 24,
             ),
-            color: _isModelAvailable ? Colors.white : Colors.red,
             onPressed: () {
               // Naviguer vers les paramètres du LLM
               Navigator.push(
                 context,
                 MaterialPageRoute(builder: (context) => const LlmSettingsView()),
-              ).then((_) => _initLlmService());
+              ).then((_) => _initAIServices());
             },
           ),
         ],
@@ -216,7 +244,23 @@ class _ChatbotViewState extends State<ChatbotView> {
                     fontFamily: 'RethinkSans',
                   ),
                 ),
-                if (!_isModelAvailable) ...[
+                const SizedBox(width: 8),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _useDialogflow ? Colors.blue : Colors.green,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Text(
+                    _useDialogflow ? "Dialogflow" : "Ollama (local)",
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+                if (_useDialogflow && !_isDialogflowAvailable || !_useDialogflow && !_isOllamaAvailable) ...[
                   const SizedBox(width: 8),
                   Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),

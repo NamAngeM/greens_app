@@ -52,9 +52,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
     await LlmConfig.saveApiUrl(url);
     
     // Mettre à jour le service LLM
-    if (LlmService.instance != null) {
-      LlmService.instance.updateApiUrl(url);
-    }
+    LlmService.instance.updateApiUrl(url);
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -89,14 +87,10 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
       print('URL corrigée automatiquement: $correctedUrl');
     }
     
-    // S'assurer que l'URL se termine par /api/generate
-    if (!correctedUrl.endsWith('/api/generate')) {
-      // Supprimer le / final si présent
-      if (correctedUrl.endsWith('/')) {
-        correctedUrl = correctedUrl.substring(0, correctedUrl.length - 1);
-      }
-      correctedUrl = '$correctedUrl/api/generate';
-      print('URL complétée avec le chemin API: $correctedUrl');
+    // S'assurer que l'URL n'a pas de chemin spécifique pour le test de connexion
+    if (correctedUrl.contains('/api/')) {
+      correctedUrl = correctedUrl.substring(0, correctedUrl.indexOf('/api/'));
+      print('URL simplifiée pour le test: $correctedUrl');
     }
     
     if (correctedUrl != url) {
@@ -111,24 +105,20 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
       // Sauvegarder temporairement l'URL pour le test
       await LlmConfig.saveApiUrl(correctedUrl);
       
-      // Initialiser ou mettre à jour le service LLM
-      if (LlmService.instance == null) {
-        print('Initialisation du service LLM');
-        await LlmService.initialize();
-      } else {
-        print('Mise à jour de l\'URL du service LLM');
-        LlmService.instance.updateApiUrl(correctedUrl);
-      }
+      // Test de connexion
+      await LlmService.initialize();
       
       print('Appel de la méthode testConnection()');
       // Tester la connexion au modèle
-      final response = await LlmService.instance.testConnection();
+      final response = await LlmService.testConnectionWithUrl(correctedUrl);
       print('Réponse reçue du test: $response');
       
       setState(() {
         _isTesting = false;
-        _testResult = "Connexion réussie ! Le modèle Gemma est fonctionnel via Ollama.";
-        _isTestSuccessful = true;
+        _testResult = response 
+            ? "Connexion réussie ! Le serveur Ollama est accessible."
+            : "Impossible de se connecter à Ollama. Vérifiez que le serveur est en cours d'exécution.";
+        _isTestSuccessful = response;
       });
     } catch (e) {
       print('Erreur lors du test de connexion: $e');
@@ -222,6 +212,21 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                       fontStyle: FontStyle.italic,
                     ),
                   ),
+                  const SizedBox(height: 12),
+                  ElevatedButton.icon(
+                    onPressed: () async {
+                      final url = Uri.parse('https://ollama.ai/');
+                      if (await canLaunchUrl(url)) {
+                        await launchUrl(url);
+                      }
+                    },
+                    icon: const Icon(Icons.open_in_new),
+                    label: const Text('Visiter le site d\'Ollama'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue,
+                      foregroundColor: Colors.white,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -240,7 +245,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
             TextField(
               controller: _apiUrlController,
               decoration: InputDecoration(
-                hintText: 'http://localhost:11434/api/generate',
+                hintText: 'http://localhost:11434',
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
@@ -260,62 +265,55 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
               ),
             ),
             const SizedBox(height: 24),
-
-            // Boutons
+            
+            // Boutons d'action
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _isTesting ? null : _testConnection,
+                  child: ElevatedButton.icon(
+                    onPressed: _saveSettings,
+                    icon: const Icon(Icons.save),
+                    label: const Text('Sauvegarder'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.blue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 12),
                     ),
-                    child: _isTesting
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: ElevatedButton.icon(
+                    onPressed: _isTesting ? null : _testConnection,
+                    icon: _isTesting 
                         ? const SizedBox(
                             width: 20,
                             height: 20,
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                              strokeWidth: 3,
-                            ),
+                            child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
                           )
-                        : const Text('Tester la connexion'),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: ElevatedButton(
-                    onPressed: _saveSettings,
+                        : const Icon(Icons.network_check),
+                    label: Text(_isTesting ? 'Test en cours...' : 'Tester la connexion'),
                     style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryColor,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                      backgroundColor: Colors.green,
                       foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(8),
-                      ),
                     ),
-                    child: const Text('Sauvegarder'),
                   ),
                 ),
               ],
             ),
-            const SizedBox(height: 24),
-
+            
             // Résultat du test
-            if (_testResult != null)
+            if (_testResult != null) ...[
+              const SizedBox(height: 24),
               Container(
                 width: double.infinity,
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: _isTestSuccessful
-                      ? Colors.green.withOpacity(0.1)
-                      : Colors.red.withOpacity(0.1),
+                  color: _isTestSuccessful ? Colors.green.withOpacity(0.1) : Colors.red.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: _isTestSuccessful ? Colors.green : Colors.red,
+                    width: 1,
+                  ),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -328,9 +326,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          _isTestSuccessful
-                              ? 'Test réussi'
-                              : 'Échec du test',
+                          _isTestSuccessful ? 'Succès' : 'Échec',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: _isTestSuccessful ? Colors.green : Colors.red,
@@ -340,44 +336,64 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                     ),
                     const SizedBox(height: 8),
                     Text(_testResult!),
+                    if (!_isTestSuccessful) ...[
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Conseils de dépannage:',
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text('• Vérifiez qu\'Ollama est bien installé et démarré'),
+                      const Text('• Vérifiez que l\'URL est correcte (généralement http://localhost:11434)'),
+                      const Text('• Assurez-vous que le modèle "gemma" est installé avec la commande: ollama pull gemma'),
+                    ],
                   ],
                 ),
               ),
+            ],
+            
             const SizedBox(height: 32),
-
-            // Guide d'installation d'Ollama
+            
+            // Guide d'installation de Gemma
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: Colors.grey.withOpacity(0.1),
+                color: Colors.amber.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(12),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text(
-                    'Comment installer Gemma sur Ollama',
-                    style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 16,
-                    ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '1. Téléchargez et installez Ollama depuis: https://ollama.ai',
-                    style: TextStyle(fontSize: 14),
+                  const Row(
+                    children: [
+                      Icon(Icons.help_outline, color: Colors.amber),
+                      SizedBox(width: 8),
+                      Text(
+                        'Comment installer Gemma',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    '2. Lancez Ollama et exécutez dans votre terminal ou invite de commande:',
+                    '1. Installez Ollama depuis ollama.ai',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    '2. Ouvrez un terminal et exécutez:',
                     style: TextStyle(fontSize: 14),
                   ),
                   Container(
                     margin: const EdgeInsets.symmetric(vertical: 8),
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.black,
-                      borderRadius: BorderRadius.circular(6),
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: const Row(
                       children: [
@@ -386,16 +402,39 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                             'ollama pull gemma',
                             style: TextStyle(
                               fontFamily: 'monospace',
-                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
+                        Icon(Icons.content_copy, size: 16),
                       ],
                     ),
                   ),
                   const Text(
-                    '3. Attendez que le téléchargement soit terminé, puis connectez l\'application à l\'URL par défaut.',
+                    '3. Après l\'installation, démarrez le serveur avec:',
                     style: TextStyle(fontSize: 14),
+                  ),
+                  Container(
+                    margin: const EdgeInsets.symmetric(vertical: 8),
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[200],
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: const Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            'ollama serve',
+                            style: TextStyle(
+                              fontFamily: 'monospace',
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                        Icon(Icons.content_copy, size: 16),
+                      ],
+                    ),
                   ),
                 ],
               ),

@@ -1,0 +1,19 @@
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "api/**/*.js",
+      "use": "@vercel/node"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/api/dialogflow",
+      "dest": "/api/dialogflow.js",
+      "methods": ["POST"]
+    }
+  ],
+  "env": {
+    "NODE_ENV": "production"
+  }
+} 
