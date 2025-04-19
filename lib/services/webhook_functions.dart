@@ -141,41 +141,85 @@ class WebhookService {
         if (level == 'débutant') {
           return "Pour réduire votre consommation d'énergie, commencez par remplacer vos ampoules par des LED, "
               "qui consomment jusqu'à 90% d'électricité en moins que les ampoules incandescentes et durent 15 fois plus longtemps. "
-              "Éteignez également les appareils en veille, qui peuvent représenter jusqu'à 10% de votre facture d'électricité.";
+              "Éteignez également les appareils en veille, qui peuvent représenter jusqu'à 10% de votre facture d'électricité. "
+              "Baissez la température de chauffage de 1°C, ce qui peut réduire votre consommation énergétique de 7%.";
         } else {
           return "Pour optimiser votre consommation énergétique, envisagez d'installer des panneaux solaires "
-              "qui pourraient couvrir 30 à 50% de vos besoins. Complétez avec un système de domotique pour gérer intelligemment "
+              "qui pourraient couvrir 30 à 50% de vos besoins. Un système de 3kWc coûte environ 7000-9000€ (aides déduites) "
+              "et s'amortit en 8-10 ans. Complétez avec un système de domotique pour gérer intelligemment "
               "le chauffage et l'éclairage, réduisant ainsi votre consommation totale de 15 à 30%. "
-              "Vous pourriez également rejoindre une coopérative d'énergie citoyenne locale.";
+              "Envisagez aussi l'autoconsommation collective ou rejoignez une coopérative d'énergie citoyenne locale, "
+              "comme Enercoop ou Energie Partagée.";
         }
         
       case 'déchets':
         if (level == 'débutant') {
           return "Pour réduire vos déchets, adoptez les 3R : Réduire, Réutiliser, Recycler. "
               "Commencez par utiliser un sac réutilisable pour vos courses, évitez les produits à usage unique, "
-              "et assurez-vous de bien trier vos déchets recyclables. Ces gestes simples peuvent réduire vos déchets de 30%.";
+              "et assurez-vous de bien trier vos déchets recyclables. Sachez qu'un Français produit en moyenne 568 kg "
+              "de déchets par an. Ces gestes simples peuvent réduire vos déchets de 30%. Refusez également les publicités "
+              "dans votre boîte aux lettres avec un autocollant 'Stop Pub', ce qui évite 35 kg de papier gaspillé par an.";
         } else {
-          return "Pour une démarche zéro déchet avancée, créez votre compost (même en appartement avec un lombricomposteur), "
-              "achetez en vrac avec vos propres contenants, fabriquez vos produits ménagers et d'hygiène. "
-              "Vous pouvez également pratiquer l'upcycling pour transformer vos déchets en objets utiles ou décoratifs. "
-              "Ces pratiques peuvent réduire vos déchets de plus de 80%.";
+          return "Pour une démarche zéro déchet avancée, créez votre compost (même en appartement avec un lombricomposteur qui traite jusqu'à 2 kg de déchets organiques par semaine), "
+              "achetez en vrac avec vos propres contenants dans des épiceries spécialisées (économie moyenne de 160€/an pour une famille), "
+              "fabriquez vos produits ménagers et d'hygiène à base d'ingrédients simples comme le vinaigre blanc, le bicarbonate et le savon de Marseille. "
+              "Pratiquez également l'upcycling ou rejoignez un Repair Café pour réparer plutôt que jeter. "
+              "Ces pratiques peuvent réduire vos déchets de plus de 80%, comme le montrent les expériences de Béa Johnson ou des familles Zero Waste.";
         }
         
       case 'eau':
         if (level == 'débutant') {
-          return "Pour économiser l'eau, installez des mousseurs sur vos robinets (réduction de 50% du débit), "
-              "prenez des douches courtes plutôt que des bains, et réparez rapidement les fuites. "
-              "Une simple fuite peut gaspiller jusqu'à 120 litres d'eau par jour !";
+          return "Pour économiser l'eau, installez des mousseurs sur vos robinets (réduction de 50% du débit pour environ 5€ par robinet), "
+              "prenez des douches courtes plutôt que des bains (économie de 130 litres d'eau par douche), et réparez rapidement les fuites. "
+              "Une simple fuite peut gaspiller jusqu'à 120 litres d'eau par jour ! Pour référence, un Français consomme en moyenne 148 litres "
+              "d'eau par jour. Ces gestes simples peuvent réduire votre consommation de 20 à 30%.";
         } else {
-          return "Pour une gestion avancée de l'eau, installez un système de récupération d'eau de pluie pour arroser votre jardin "
-              "ou alimenter vos toilettes. Envisagez également un système de traitement des eaux grises pour réutiliser l'eau "
-              "de la douche ou de la machine à laver. Ces systèmes peuvent réduire votre consommation d'eau potable de 40 à 50%.";
+          return "Pour une gestion avancée de l'eau, installez un système de récupération d'eau de pluie (300-1500€ selon la capacité) pour arroser votre jardin "
+              "ou alimenter vos toilettes, ce qui peut économiser jusqu'à 50% de votre consommation d'eau potable. "
+              "Envisagez également un système de traitement des eaux grises pour réutiliser l'eau "
+              "de la douche ou de la machine à laver pour les toilettes ou l'arrosage. "
+              "Les toilettes sèches sont aussi une solution radicale qui économise environ 30% de votre consommation d'eau. "
+              "Ces systèmes combinés peuvent réduire votre consommation d'eau potable de 40 à 60%. Explorez aussi les techniques de "
+              "jardinage économe comme le paillage et l'irrigation goutte-à-goutte qui réduisent les besoins en eau de 70%.";
         }
         
+      case 'alimentation':
+        if (level == 'débutant') {
+          return "Pour une alimentation plus durable, commencez par privilégier les produits locaux et de saison, qui ont une empreinte carbone 4 à 10 fois moins élevée que les produits importés hors-saison. "
+              "Réduisez votre consommation de viande, même partiellement : remplacer 50% de protéines animales par des végétales réduit votre empreinte alimentaire d'environ 40%. "
+              "Évitez le gaspillage alimentaire en planifiant vos repas et en conservant correctement vos aliments - un Français jette en moyenne 29 kg de nourriture par an. "
+              "Ces gestes simples sont bénéfiques pour la planète et votre santé !";
+        } else {
+          return "Pour une alimentation éco-responsable avancée, adoptez un régime flexitarien ou végétalien (qui réduit l'empreinte carbone alimentaire de 50 à 73%), "
+              "privilégiez les circuits courts comme les AMAP (Association pour le Maintien d'une Agriculture Paysanne) qui garantissent un revenu équitable aux producteurs, "
+              "cultivez vos propres légumes et aromates même en appartement (économie potentielle de 200-300€/an), et pratiquez la conservation (fermentation, séchage, mise en bocaux) "
+              "pour éviter le gaspillage. Choisissez des produits issus de l'agroécologie qui régénèrent les sols et préservent la biodiversité. "
+              "Calculez régulièrement l'empreinte carbone de votre alimentation à l'aide d'applications comme Carbone ou Yuka pour optimiser vos choix.";
+        }
+        
+      case 'transport':
+        if (level == 'débutant') {
+          return "Pour des déplacements plus écologiques, privilégiez la marche ou le vélo pour les trajets courts (moins de 5 km), "
+              "ce qui réduit vos émissions à zéro tout en améliorant votre santé. Pour les distances moyennes, optez pour les transports en commun "
+              "qui émettent environ 3 fois moins de CO2 par voyageur que la voiture individuelle. Si vous devez utiliser une voiture, "
+              "pratiquez l'éco-conduite (économie de carburant de 15%) et envisagez le covoiturage, qui divise les émissions par le nombre de passagers. "
+              "Sachez qu'en France, les transports représentent 31% des émissions de gaz à effet de serre, dont 53% proviennent des voitures particulières.";
+        } else {
+          return "Pour une mobilité durable avancée, investissez dans un vélo à assistance électrique (1000-3000€, aides disponibles jusqu'à 500€) "
+              "qui peut remplacer 75% des trajets urbains en voiture. Utilisez les applications multimodales pour combiner efficacement les modes de transport. "
+              "Si vous êtes urbain, abonnez-vous aux services d'autopartage (économie annuelle moyenne de 4000€ par rapport à la possession d'une voiture). "
+              "Pour les déplacements longue distance, privilégiez le train qui émet environ 30 fois moins de CO2 que l'avion. Si vous devez posséder un véhicule, "
+              "choisissez un modèle électrique adapté à vos besoins réels (coût total de possession désormais comparable aux véhicules thermiques sur la durée de vie) "
+              "et alimentez-le avec de l'électricité verte. Militez également pour des infrastructures de mobilité douce dans votre commune.";
+        }
+
       default:
         return "Pour commencer votre démarche écologique, concentrez-vous sur un aspect qui vous tient à cœur : "
             "alimentation, transport, énergie, déchets... Fixez-vous des objectifs réalistes et progressifs. "
-            "Souvenez-vous que chaque petit geste compte et que l'impact collectif de nos actions individuelles est significatif.";
+            "Mesurez votre empreinte carbone (environ 10 tonnes CO2eq pour un Français moyen) à l'aide d'outils comme Nos Gestes Climat. "
+            "Sachez que les trois postes les plus émetteurs sont généralement l'alimentation, le transport et le logement. "
+            "Souvenez-vous que chaque petit geste compte mais que l'impact collectif et systémique est essentiel. "
+            "N'hésitez pas à vous informer via des sources fiables comme l'ADEME, le GIEC ou le site Bon Pote, et à rejoindre des initiatives locales de transition écologique.";
     }
   }
   
@@ -187,30 +231,57 @@ class WebhookService {
       case 'plastique':
         return "Le plastique se recycle différemment selon son type. Recherchez le numéro dans le triangle ♻️ sous l'objet : "
             "Les types 1 (PET) et 2 (HDPE) sont les plus facilement recyclables et vont dans la poubelle jaune. "
-            "Les types 3 (PVC) et 6 (PS) sont rarement recyclés. "
-            "Important : les bouteilles doivent être vidées mais pas écrasées, et les bouchons vissés dessus.";
+            "Les types 3 (PVC) et 6 (PS) sont rarement recyclés. En France, seuls 26% des emballages plastiques sont effectivement recyclés. "
+            "Important : les bouteilles doivent être vidées mais pas écrasées, et les bouchons vissés dessus. Pour réduire votre consommation de plastique à la source, "
+            "privilégiez les contenants réutilisables et achetez en vrac. Le meilleur déchet reste celui qu'on ne produit pas !";
         
       case 'verre':
         return "Le verre est recyclable à 100% et indéfiniment sans perdre ses propriétés ! "
             "Déposez bouteilles, pots et bocaux en verre dans les conteneurs à verre, sans les bouchons ni couvercles. "
+            "Le taux de recyclage du verre en France est de 85%, ce qui en fait l'un des matériaux les mieux recyclés. "
+            "Recycler une tonne de verre permet d'économiser 660 kg de sable et 100 kg de charbon. "
             "Attention : la vaisselle, les miroirs et les ampoules ne sont pas recyclables avec le verre d'emballage "
-            "car ils ont une composition différente.";
+            "car ils ont une composition différente (céramique, température de fusion plus élevée). Ces objets doivent être déposés en déchetterie.";
         
       case 'papier':
         return "Le papier peut être recyclé jusqu'à 5-7 fois avant que ses fibres ne deviennent trop courtes. "
             "Déposez journaux, magazines, enveloppes et papiers imprimés dans le bac de recyclage. "
-            "Évitez les papiers souillés (mouchoirs, essuie-tout), plastifiés ou adhésifs. "
-            "Saviez-vous que recycler une tonne de papier permet d'économiser 17 arbres et 20 000 litres d'eau ?";
+            "En France, 59% du papier et carton est recyclé. Évitez les papiers souillés (mouchoirs, essuie-tout), "
+            "plastifiés ou adhésifs qui perturbent le processus de recyclage. "
+            "Recycler une tonne de papier permet d'économiser 17 arbres, 20 000 litres d'eau et 2.5 tonnes de CO2. "
+            "Pour contribuer à la filière, privilégiez l'achat de papier recyclé ou issu de forêts gérées durablement (label FSC ou PEFC).";
         
       case 'électronique':
-        return "Les déchets électroniques contiennent des matériaux précieux et des substances toxiques. "
-            "Ne les jetez jamais avec les ordures ménagères ! Rapportez-les en déchèterie, dans les points de collecte en magasin, "
-            "ou donnez-les à des associations qui les reconditionnent. La directive européenne DEEE oblige les vendeurs "
-            "à reprendre gratuitement votre ancien appareil lors de l'achat d'un équivalent neuf.";
+        return "Les déchets électroniques contiennent des matériaux précieux (or, argent, cuivre) et des substances toxiques (plomb, mercure). "
+            "Ne les jetez jamais avec les ordures ménagères ! La filière française DEEE (Déchets d'Équipements Électriques et Électroniques) "
+            "a collecté 52% des appareils mis sur le marché en 2021, l'objectif européen étant de 65%. "
+            "Rapportez vos appareils en déchèterie, dans les points de collecte en magasin, "
+            "ou donnez-les à des associations comme Emmaüs ou Envie qui les reconditionnent. "
+            "La directive européenne DEEE oblige les vendeurs à reprendre gratuitement votre ancien appareil lors de l'achat d'un équivalent neuf. "
+            "Avant de vous en débarrasser, envisagez la réparation : le « Fonds Réparation » peut désormais couvrir jusqu'à 45% des coûts de réparation.";
+        
+      case 'textile':
+        return "Les textiles (vêtements, linge de maison, chaussures) ne doivent pas être jetés dans les ordures ménagères. "
+            "L'industrie textile est la 2ème plus polluante au monde avec 1.2 milliard de tonnes de CO2 émises par an et 4% des déchets mondiaux. "
+            "En France, seulement 38% des textiles sont collectés pour être valorisés via les 45 000 points de collecte Refashion (ex-EcoTLC). "
+            "Déposez vos textiles propres et secs, même usés ou déchirés, dans des sacs fermés. "
+            "70% seront réutilisés (seconde main), 24% recyclés en nouvelles fibres ou isolants, et 6% valorisés énergétiquement. "
+            "Pour un impact positif, privilégiez les vêtements durables, la seconde main, la location pour les occasions, et réparez ce qui peut l'être.";
+        
+      case 'métal':
+        return "Les métaux sont recyclables à l'infini sans perte de qualité et leur recyclage économise 60 à 95% d'énergie par rapport à leur production primaire. "
+            "En France, les taux de recyclage atteignent 61% pour l'aluminium des emballages ménagers et 100% pour l'acier des emballages. "
+            "Les canettes, boîtes de conserve, papier aluminium propre et capsules métalliques vont dans le bac de tri jaune. "
+            "Les objets métalliques plus volumineux (casseroles, vélos, mobilier métallique) doivent être apportés en déchetterie. "
+            "Une tonne d'aluminium recyclé permet d'économiser 8 tonnes de bauxite et 14 000 kWh d'électricité. "
+            "Pour les petits objets métalliques comme les capsules de café, cherchez les programmes de collecte spécifiques des fabricants.";
         
       default:
         return "Pour savoir comment recycler correctement ce matériau, consultez le guide local de tri de votre commune "
-            "ou utilisez l'application mobile Guide du Tri de CITEO qui vous donnera les consignes spécifiques pour votre localité.";
+            "ou utilisez l'application mobile 'Guide du Tri' de CITEO qui vous donnera les consignes spécifiques pour votre localité. "
+            "N'oubliez pas que la réduction des déchets à la source reste prioritaire sur le recyclage dans la hiérarchie des actions environnementales. "
+            "Vous pouvez également contacter votre déchetterie locale pour les matériaux spécifiques ou problématiques. "
+            "Pour une économie véritablement circulaire, privilégiez les objets conçus pour être réparables, recyclables ou compostables.";
     }
   }
   

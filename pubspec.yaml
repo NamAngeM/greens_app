@@ -41,22 +41,26 @@ dependencies:
   percent_indicator: ^4.2.3
   syncfusion_flutter_charts: ^20.2.45  # Version plus stable
   flutter_barcode_scanner: ^2.0.0
-  uuid: ^3.0.7
+  uuid: ^4.5.1
   intl: ^0.17.0  # Downgraded to be compatible with charts_flutter
   cached_network_image: ^3.3.0  # Pour la mise en cache des images réseau
   flutter_cache_manager: ^3.3.1  # Gestionnaire de cache avancé
   qr_code_scanner: ^1.0.1
   fl_chart: ^0.65.0
   image_picker: ^1.0.5
-  geolocator: ^10.1.0
+  # Commenté temporairement pour permettre la compilation
+  # geolocator: ^9.0.2
+  # geolocator_android: ^4.1.9
   url_launcher: ^6.2.2
-  path_provider: ^2.0.15
+  path_provider: ^2.1.5
   permission_handler: ^11.1.0
   
   # Http pour les requêtes API
   http: ^0.13.5
   googleapis: ^11.0.0
   googleapis_auth: ^1.4.1
+  langchain: ^0.7.7+2
+  sqflite: ^2.4.1
 
 dev_dependencies:
   integration_test:
@@ -93,8 +97,7 @@ flutter:
     - assets/images/misc/      # Assurez-vous que ce dossier existe
     - assets/images/avatars/
     - assets/fonts/
-    - assets/ecobot-febg-36d4c0342872.json
-    - assets/dialogflow_credentials.json
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware

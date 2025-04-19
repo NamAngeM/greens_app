@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import '../services/llm_service.dart';
-import '../utils/llm_config.dart';
+import 'package:greens_app/services/llm_service.dart';
+import 'package:greens_app/services/ollama_service.dart';
+import 'package:greens_app/utils/llm_config.dart';
 
 class LlmSettingsView extends StatefulWidget {
   const LlmSettingsView({Key? key}) : super(key: key);
@@ -15,6 +16,10 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
   bool _isLoading = false;
   String _testResult = '';
   bool _hasError = false;
+  bool _isTesting = false;
+  bool _isTestSuccessful = false;
+  bool _useApiProxy = true;
+  final _ollamaService = OllamaService.instance;
 
   @override
   void initState() {
@@ -37,6 +42,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
     try {
       final apiUrl = await LlmConfig.getApiUrl();
       _apiUrlController.text = apiUrl;
+      _useApiProxy = _ollamaService.useApiProxy;
     } catch (e) {
       _showSnackBar('Erreur lors du chargement de l\'URL: $e');
     } finally {
@@ -59,8 +65,9 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
       final apiUrl = _apiUrlController.text.trim();
       await LlmConfig.saveApiUrl(apiUrl);
       
-      // Mettre à jour le service LLM
-      LlmService.instance.updateApiUrl(apiUrl);
+      // Mettre à jour les services
+      _ollamaService.updateApiUrl(apiUrl);
+      _ollamaService.useApiProxy = _useApiProxy;
       
       _showSnackBar('URL API sauvegardée avec succès');
     } catch (e) {
@@ -83,9 +90,11 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
       await LlmConfig.resetApiUrl();
       final defaultUrl = await LlmConfig.getApiUrl();
       
-      // Mettre à jour le contrôleur et le service
+      // Mettre à jour le contrôleur et les services
       _apiUrlController.text = defaultUrl;
-      LlmService.instance.updateApiUrl(defaultUrl);
+      _ollamaService.updateApiUrl(defaultUrl);
+      _useApiProxy = true;
+      _ollamaService.useApiProxy = true;
       
       _showSnackBar('URL API réinitialisée avec succès');
     } catch (e) {
@@ -99,34 +108,69 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
 
   // Tester la connexion
   Future<void> _testConnection() async {
-    if (!_formKey.currentState!.validate()) return;
-
     setState(() {
-      _isLoading = true;
-      _testResult = '';
-      _hasError = false;
+      _isTesting = true;
+      _testResult = null;
     });
 
+    final url = _apiUrlController.text.trim();
+    print('URL saisie pour le test: "$url"');
+    
+    if (url.isEmpty) {
+      setState(() {
+        _isTesting = false;
+        _testResult = "URL vide. Veuillez entrer une URL valide.";
+        _isTestSuccessful = false;
+      });
+      return;
+    }
+    
+    // Correction simple pour les erreurs courantes dans l'URL
+    String correctedUrl = url;
+    if (!url.startsWith('http://') && !url.startsWith('https://')) {
+      correctedUrl = 'http://$url';
+      print('URL corrigée automatiquement: $correctedUrl');
+    }
+    
+    // S'assurer que l'URL n'a pas de chemin spécifique pour le test de connexion
+    if (correctedUrl.contains('/api/')) {
+      correctedUrl = correctedUrl.substring(0, correctedUrl.indexOf('/api/'));
+      print('URL simplifiée pour le test: $correctedUrl');
+    }
+    
+    if (correctedUrl != url) {
+      // Mettre à jour le champ de texte avec l'URL corrigée
+      _apiUrlController.text = correctedUrl;
+      print('Champ de texte mis à jour avec l\'URL corrigée');
+    }
+
     try {
-      final apiUrl = _apiUrlController.text.trim();
+      print('Début du test de connexion avec: $correctedUrl');
       
-      // Mettre à jour temporairement l'URL pour le test
-      LlmService.instance.updateApiUrl(apiUrl);
+      // Utiliser la méthode de test
+      _ollamaService.updateApiUrl(correctedUrl);
+      final llmService = LlmService();
+      final response = await llmService.testConnection();
+      print('Réponse reçue du test: $response');
       
-      final result = await LlmService.instance.testConnection();
+      if (response) {
+        // Si la connexion est réussie, sauvegarder l'URL
+        await LlmConfig.saveApiUrl(correctedUrl);
+      }
       
       setState(() {
-        _testResult = 'Connexion réussie: $result';
-        _hasError = false;
+        _isTesting = false;
+        _testResult = response 
+            ? "Connexion réussie ! Le serveur Ollama est accessible."
+            : "Impossible de se connecter à Ollama. Vérifiez que le serveur est en cours d'exécution.";
+        _isTestSuccessful = response;
       });
     } catch (e) {
+      print('Erreur lors du test de connexion: $e');
       setState(() {
-        _testResult = 'Échec de la connexion: $e';
-        _hasError = true;
-      });
-    } finally {
-      setState(() {
-        _isLoading = false;
+        _isTesting = false;
+        _testResult = "Erreur de connexion : $e";
+        _isTestSuccessful = false;
       });
     }
   }
@@ -164,6 +208,52 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                       'Spécifiez l\'URL de l\'API du service LLM. Assurez-vous que le service est accessible et correctement configuré.',
                     ),
                     const SizedBox(height: 16),
+                    
+                    // Mode de connexion
+                    Card(
+                      margin: const EdgeInsets.only(bottom: 16),
+                      child: Padding(
+                        padding: const EdgeInsets.all(16.0),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Text(
+                              'Mode de connexion',
+                              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'En cas de problèmes de timeout, vous pouvez essayer de basculer en mode direct.',
+                              style: TextStyle(fontSize: 14, color: Colors.grey),
+                            ),
+                            const SizedBox(height: 12),
+                            RadioListTile<bool>(
+                              title: const Text('Via API Node.js (recommandé)'),
+                              subtitle: const Text('Plus stable mais peut causer des timeouts sur les grands modèles'),
+                              value: true,
+                              groupValue: _useApiProxy,
+                              onChanged: (value) {
+                                setState(() {
+                                  _useApiProxy = value!;
+                                });
+                              },
+                            ),
+                            RadioListTile<bool>(
+                              title: const Text('Connexion directe à Ollama'),
+                              subtitle: const Text('Plus rapide mais moins de fonctionnalités'),
+                              value: false,
+                              groupValue: _useApiProxy,
+                              onChanged: (value) {
+                                setState(() {
+                                  _useApiProxy = value!;
+                                });
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    
                     TextFormField(
                       controller: _apiUrlController,
                       decoration: const InputDecoration(
@@ -214,23 +304,23 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                         padding: EdgeInsets.symmetric(vertical: 16),
                         child: Center(child: CircularProgressIndicator()),
                       ),
-                    if (_testResult.isNotEmpty)
+                    if (_testResult != null)
                       Container(
                         margin: const EdgeInsets.only(top: 16),
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: _hasError
-                              ? Colors.red.shade100
-                              : Colors.green.shade100,
+                          color: _isTestSuccessful
+                              ? Colors.green.shade100
+                              : Colors.red.shade100,
                           borderRadius: BorderRadius.circular(8),
                           border: Border.all(
-                            color: _hasError ? Colors.red : Colors.green,
+                            color: _isTestSuccessful ? Colors.green : Colors.red,
                           ),
                         ),
                         child: Text(
                           _testResult,
                           style: TextStyle(
-                            color: _hasError ? Colors.red.shade900 : Colors.green.shade900,
+                            color: _isTestSuccessful ? Colors.green.shade900 : Colors.red.shade900,
                           ),
                         ),
                       ),

@@ -4,12 +4,14 @@ class ChatMessage extends StatelessWidget {
   final String text;
   final bool isUser;
   final bool isError;
+  final bool isWarning;
 
   const ChatMessage({
     Key? key,
     required this.text,
     required this.isUser,
     this.isError = false,
+    this.isWarning = false,
   }) : super(key: key);
 
   @override
@@ -50,13 +52,17 @@ class ChatMessage extends StatelessWidget {
           ? Theme.of(context).primaryColor
           : isError
               ? Colors.red
-              : Colors.green,
+              : isWarning
+                  ? Colors.orange
+                  : Colors.green,
       child: Icon(
         isUser
             ? Icons.person
             : isError
                 ? Icons.error
-                : Icons.eco,
+                : isWarning
+                    ? Icons.timer
+                    : Icons.eco,
         color: Colors.white,
         size: 20,
       ),
@@ -68,6 +74,8 @@ class ChatMessage extends StatelessWidget {
       return Theme.of(context).primaryColor.withOpacity(0.9);
     } else if (isError) {
       return Colors.red.shade100;
+    } else if (isWarning) {
+      return Colors.orange.shade100;
     } else {
       return Colors.green.shade100;
     }

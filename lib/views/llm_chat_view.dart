@@ -14,6 +14,7 @@ class _LlmChatViewState extends State<LlmChatView> {
   final _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isLoading = false;
+  final _llmService = LlmService();
 
   @override
   void dispose() {
@@ -39,12 +40,17 @@ class _LlmChatViewState extends State<LlmChatView> {
     _scrollToBottom();
 
     try {
-      final response = await LlmService.instance.askEcologicalQuestion(text);
+      // Utiliser la nouvelle méthode generateLlmResponse
+      final response = await _llmService.generateLlmResponse(text);
+
+      // Vérifier si la réponse contient un avertissement de timeout
+      final bool isTimeout = response.startsWith('⚠️');
 
       setState(() {
         _messages.add(ChatMessage(
           text: response,
           isUser: false,
+          isWarning: isTimeout,
         ));
         _isLoading = false;
       });

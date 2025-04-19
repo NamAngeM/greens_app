@@ -1,7 +1,17 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:greens_app/models/product_model.dart';
-import 'package:geolocator/geolocator.dart';
+import 'dart:math';
+// Désactivé temporairement pour résoudre les problèmes de compilation
+// import 'package:geolocator/geolocator.dart';
+
+// Structure temporaire pour remplacer la dépendance à Position
+class FakePosition {
+  final double latitude;
+  final double longitude;
+  
+  FakePosition({required this.latitude, required this.longitude});
+}
 
 class ProductService {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -149,7 +159,8 @@ class ProductService {
 
   Future<List<Map<String, dynamic>>> getLocalAlternatives(String productId, {double maxDistance = 10.0}) async {
     try {
-      final Position currentPosition = await _getCurrentPosition();
+      // Version temporaire sans géolocalisation réelle
+      final currentPosition = FakePosition(latitude: 48.8566, longitude: 2.3522); // Paris par défaut
       
       final QuerySnapshot snapshot = await _firestore
           .collection('local_stores')
@@ -161,12 +172,13 @@ class ProductService {
         final storeData = doc.data() as Map<String, dynamic>;
         final storeLocation = storeData['location'] as GeoPoint;
         
-        final distance = Geolocator.distanceBetween(
+        // Calcul de distance temporaire (approximatif)
+        final distance = _calculateDistance(
           currentPosition.latitude,
           currentPosition.longitude,
           storeLocation.latitude,
           storeLocation.longitude,
-        ) / 1000; // Convertir en kilomètres
+        );
 
         if (distance <= maxDistance) {
           final productInfo = await _getStoreProductInfo(doc.id, productId);
@@ -208,29 +220,33 @@ class ProductService {
     }
   }
 
-  Future<Position> _getCurrentPosition() async {
-    bool serviceEnabled;
-    LocationPermission permission;
-
-    serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      throw Exception('Les services de localisation sont désactivés.');
-    }
-
-    permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        throw Exception('Les permissions de localisation ont été refusées.');
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      throw Exception('Les permissions de localisation sont définitivement refusées.');
-    }
-
-    return await Geolocator.getCurrentPosition();
+  Future<FakePosition> _getCurrentPosition() async {
+    // Version temporaire sans géolocalisation réelle
+    return FakePosition(latitude: 48.8566, longitude: 2.3522); // Paris par défaut
   }
+
+  // Méthode temporaire pour calculer la distance (formule approximative)
+  double _calculateDistance(double lat1, double lon1, double lat2, double lon2) {
+    const double earthRadius = 6371; // Rayon de la Terre en km
+    final dLat = _toRadians(lat2 - lat1);
+    final dLon = _toRadians(lon2 - lon1);
+    
+    final a = 
+        _sin(dLat / 2) * _sin(dLat / 2) +
+        _sin(dLon / 2) * _sin(dLon / 2) * _cos(_toRadians(lat1)) * _cos(_toRadians(lat2));
+    final c = 2 * _asin(_sqrt(a));
+    
+    return earthRadius * c; // Distance en km
+  }
+  
+  double _toRadians(double degree) {
+    return degree * (3.141592653589793 / 180);
+  }
+  
+  double _sin(double radians) => sin(radians);
+  double _cos(double radians) => cos(radians);
+  double _asin(double value) => asin(value);
+  double _sqrt(double value) => sqrt(value);
 
   Future<List<String>> getProductCertifications(String productId) async {
     try {

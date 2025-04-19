@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../utils/llm_config.dart';
 import '../services/llm_service.dart';
+import '../services/ollama_service.dart';
 
 class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
@@ -15,17 +16,20 @@ class _SettingsScreenState extends State<SettingsScreen> {
   bool _isConnectionTested = false;
   bool _isConnected = false;
   bool _isLoading = false;
+  bool _useApiProxy = true;
+  final _ollamaService = OllamaService.instance;
 
   @override
   void initState() {
     super.initState();
-    _loadSavedUrl();
+    _loadSavedSettings();
   }
 
-  Future<void> _loadSavedUrl() async {
+  Future<void> _loadSavedSettings() async {
     final url = await LlmConfig.getApiUrl();
     setState(() {
       _urlController.text = url;
+      _useApiProxy = _ollamaService.useApiProxy;
     });
   }
 
@@ -48,10 +52,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _saveSettings() async {
     if (_formKey.currentState!.validate()) {
       await LlmConfig.saveApiUrl(_urlController.text);
+      _ollamaService.useApiProxy = _useApiProxy;
+      
       if (!mounted) return;
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('URL de l\'API sauvegardée')),
+        const SnackBar(content: Text('Paramètres sauvegardés')),
       );
       
       await _testConnection();
@@ -64,12 +70,13 @@ class _SettingsScreenState extends State<SettingsScreen> {
     
     setState(() {
       _urlController.text = defaultUrl;
+      _useApiProxy = true;
       _isConnectionTested = false;
     });
     
     if (!mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('URL de l\'API réinitialisée')),
+      const SnackBar(content: Text('Paramètres réinitialisés')),
     );
   }
 
@@ -97,6 +104,51 @@ class _SettingsScreenState extends State<SettingsScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
+              
+              Card(
+                margin: const EdgeInsets.only(bottom: 16),
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Mode de connexion',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 8),
+                      const Text(
+                        'En cas de problèmes de timeout, vous pouvez essayer de basculer en mode direct.',
+                        style: TextStyle(fontSize: 14, color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      RadioListTile<bool>(
+                        title: const Text('Via API Node.js (recommandé)'),
+                        subtitle: const Text('Plus stable mais peut causer des timeouts sur les grands modèles'),
+                        value: true,
+                        groupValue: _useApiProxy,
+                        onChanged: (value) {
+                          setState(() {
+                            _useApiProxy = value!;
+                          });
+                        },
+                      ),
+                      RadioListTile<bool>(
+                        title: const Text('Connexion directe à Ollama'),
+                        subtitle: const Text('Plus rapide mais moins de fonctionnalités'),
+                        value: false,
+                        groupValue: _useApiProxy,
+                        onChanged: (value) {
+                          setState(() {
+                            _useApiProxy = value!;
+                          });
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+              
               TextFormField(
                 controller: _urlController,
                 decoration: const InputDecoration(
@@ -131,6 +183,14 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ? const CircularProgressIndicator()
                     : const Text('Tester la connexion'),
               ),
+              const SizedBox(height: 8),
+              OutlinedButton.icon(
+                onPressed: _isLoading ? null : () {
+                  OllamaService.showDiagnosticDialog(context);
+                },
+                icon: const Icon(Icons.bug_report),
+                label: const Text('Diagnostic approfondi'),
+              ),
               if (_isConnectionTested)
                 Container(
                   margin: const EdgeInsets.only(top: 16),
@@ -148,6 +208,31 @@ class _SettingsScreenState extends State<SettingsScreen> {
                     ),
                   ),
                 ),
+              
+              const SizedBox(height: 24),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text(
+                        '🕒 À propos des timeouts',
+                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Si vous rencontrez des problèmes de timeout lors de la génération de réponses, vous pouvez essayer de:\n'
+                        '• Basculer en mode de connexion directe\n'
+                        '• Poser des questions plus courtes\n'
+                        '• Utiliser un modèle plus petit\n'
+                        '• Vérifier les ressources de votre machine',
+                        style: TextStyle(fontSize: 14),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ],
           ),
         ),

@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:greens_app/services/eco_dialogflow_service.dart';
+import 'package:greens_app/services/ollama_service.dart';
 
 /// Modèle pour représenter un message dans le chatbot
 class ChatMessage {
@@ -14,7 +14,7 @@ class ChatMessage {
   });
 }
 
-/// Vue du chatbot écologique qui utilise Dialogflow
+/// Vue du chatbot écologique qui utilise Ollama avec Llama3
 class EcoChatbotView extends StatefulWidget {
   const EcoChatbotView({Key? key}) : super(key: key);
 
@@ -28,24 +28,37 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
   final ScrollController _scrollController = ScrollController();
   bool _isInitialized = false;
   bool _isLoading = false;
+  String _connectionStatus = "Non initialisé";
 
   @override
   void initState() {
     super.initState();
     _initializeService();
     // Ajouter un message de bienvenue
-    _addBotMessage("Bonjour ! Je suis votre assistant écologique. Comment puis-je vous aider aujourd'hui ?");
+    _addBotMessage("Bonjour ! Je suis votre assistant écologique basé sur Llama3. Comment puis-je vous aider aujourd'hui ?");
   }
 
-  /// Initialiser le service Dialogflow
+  /// Initialiser le service Ollama
   Future<void> _initializeService() async {
-    setState(() => _isLoading = true);
+    setState(() {
+      _isLoading = true;
+      _connectionStatus = "Connexion en cours...";
+    });
+    
     try {
-      await EcoDialogflowService.initialize();
-      setState(() => _isInitialized = true);
+      await OllamaService.instance.initialize();
+      setState(() {
+        _isInitialized = OllamaService.instance.isInitialized;
+        _connectionStatus = _isInitialized 
+            ? "Connecté" 
+            : "Échec de la connexion";
+      });
     } catch (e) {
-      print('Erreur lors de l\'initialisation du service: $e');
-      _addBotMessage("Je fonctionne actuellement en mode hors ligne avec des réponses limitées.");
+      print('Erreur lors de l\'initialisation du service Ollama: $e');
+      setState(() {
+        _connectionStatus = "Erreur: $e";
+      });
+      _addBotMessage("Je fonctionne actuellement en mode hors ligne avec des réponses limitées. Assurez-vous que le serveur Ollama est en cours d'exécution sur votre machine.");
     } finally {
       setState(() => _isLoading = false);
     }
@@ -89,7 +102,7 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
     
     try {
       if (_isInitialized) {
-        final response = await EcoDialogflowService.instance.getEcoResponse(question);
+        final response = await OllamaService.instance.getResponse(question);
         _addBotMessage(response);
       } else {
         // En mode hors-ligne ou non initialisé
@@ -97,13 +110,13 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
       }
     } catch (e) {
       print('Erreur lors de l\'obtention de la réponse: $e');
-      _addBotMessage("Désolé, je n'ai pas pu traiter votre demande. Pouvez-vous reformuler ou essayer autre chose ?");
+      _addBotMessage("Désolé, je n'ai pas pu traiter votre demande. Vérifiez que le serveur Ollama est en cours d'exécution et réessayez.");
     } finally {
       setState(() => _isLoading = false);
     }
   }
   
-  /// Fournir une réponse de secours locale quand Dialogflow n'est pas disponible
+  /// Fournir une réponse de secours locale quand Ollama n'est pas disponible
   String _getFallbackResponse(String question) {
     final q = question.toLowerCase();
     final List<String> fallbackResponses = [
@@ -128,6 +141,8 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
       return "Pour des déplacements plus écologiques, privilégiez la marche ou le vélo pour les courts trajets, les transports en commun ou le covoiturage pour les plus longs.";
     } else if (q.contains('aliment') || q.contains('manger') || q.contains('nourriture')) {
       return "Pour une alimentation plus durable, privilégiez les produits locaux et de saison, réduisez votre consommation de viande, et limitez le gaspillage alimentaire.";
+    } else if (q.contains('écologie') || q.contains('ecologie')) {
+      return "L'écologie est l'étude des relations entre les êtres vivants et leur environnement. En tant que discipline, elle nous aide à comprendre les interactions complexes dans les écosystèmes et comment protéger notre planète. Au quotidien, adopter une approche écologique signifie vivre de manière plus durable, en réduisant notre empreinte carbone et en protégeant la biodiversité.";
     } else {
       // Réponse générique aléatoire
       return fallbackResponses[DateTime.now().millisecondsSinceEpoch % fallbackResponses.length];
@@ -158,30 +173,79 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Assistant Écologique'),
+        title: const Text('Assistant Écologique (Llama3)'),
         backgroundColor: Colors.green,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: () {
-              showDialog(
-                context: context,
-                builder: (context) => AlertDialog(
-                  title: const Text('À propos'),
-                  content: const Text(
-                    'Cet assistant écologique vous aide à trouver des informations '
-                    'sur les pratiques durables et écologiques. Posez des questions '
-                    'sur le recyclage, la réduction des déchets, l\'économie d\'énergie, etc.',
-                  ),
-                  actions: [
-                    TextButton(
-                      onPressed: () => Navigator.pop(context),
-                      child: const Text('OK'),
-                    ),
+          // Badge indiquant l'état de la connexion
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 8.0),
+            child: Chip(
+              backgroundColor: _isInitialized ? Colors.green.shade100 : Colors.red.shade100,
+              label: Text(
+                _connectionStatus,
+                style: TextStyle(
+                  color: _isInitialized ? Colors.green.shade800 : Colors.red.shade800,
+                  fontSize: 12,
+                ),
+              ),
+              avatar: Icon(
+                _isInitialized ? Icons.check_circle : Icons.error,
+                color: _isInitialized ? Colors.green : Colors.red,
+                size: 16,
+              ),
+            ),
+          ),
+          // Menu d'options
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert),
+            onSelected: (value) async {
+              if (value == 'refresh') {
+                _addBotMessage("Tentative de reconnexion au serveur...");
+                await _initializeService();
+                if (_isInitialized) {
+                  _addBotMessage("Connexion réussie!");
+                } else {
+                  _addBotMessage("Échec de la connexion. Vérifiez que le serveur est en cours d'exécution.");
+                }
+              } else if (value == 'direct') {
+                _addBotMessage("Tentative de connexion directe à Ollama...");
+                await _connectDirectToOllama();
+              } else if (value == 'help') {
+                _showHelpDialog();
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'refresh',
+                child: Row(
+                  children: [
+                    Icon(Icons.refresh, color: Colors.green),
+                    SizedBox(width: 8),
+                    Text('Reconnecter'),
                   ],
                 ),
-              );
-            },
+              ),
+              const PopupMenuItem(
+                value: 'direct',
+                child: Row(
+                  children: [
+                    Icon(Icons.link, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Text('Connexion directe à Ollama'),
+                  ],
+                ),
+              ),
+              const PopupMenuItem(
+                value: 'help',
+                child: Row(
+                  children: [
+                    Icon(Icons.help, color: Colors.amber),
+                    SizedBox(width: 8),
+                    Text('Aide au dépannage'),
+                  ],
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -214,6 +278,89 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
               ),
             ),
           _buildInputArea(),
+        ],
+      ),
+    );
+  }
+
+  /// Se connecter directement à Ollama sans passer par l'API
+  Future<void> _connectDirectToOllama() async {
+    setState(() => _isLoading = true);
+    
+    try {
+      // Accéder à l'instance du service et mettre à jour l'URL
+      OllamaService.instance.updateApiUrl('http://localhost:11434/api');
+      
+      // Réinitialiser le service avec la nouvelle URL
+      await OllamaService.instance.initialize();
+      
+      setState(() {
+        _isInitialized = OllamaService.instance.isInitialized;
+        _connectionStatus = _isInitialized 
+            ? "Connecté directement à Ollama" 
+            : "Échec de la connexion directe";
+      });
+      
+      if (_isInitialized) {
+        _addBotMessage("Connexion directe à Ollama réussie! Vous pouvez maintenant poser vos questions.");
+      } else {
+        _addBotMessage("Échec de la connexion directe à Ollama. Vérifiez que le serveur Ollama est bien en cours d'exécution sur http://localhost:11434.");
+      }
+    } catch (e) {
+      print('Erreur lors de la connexion directe à Ollama: $e');
+      _addBotMessage("Erreur lors de la tentative de connexion directe à Ollama: $e");
+    } finally {
+      setState(() => _isLoading = false);
+    }
+  }
+
+  /// Afficher une boîte de dialogue d'aide au dépannage
+  void _showHelpDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Aide au dépannage'),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Si le chatbot ne fonctionne pas correctement, voici quelques étapes à suivre :',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text('1. Vérifiez que le serveur Ollama est en cours d\'exécution'),
+              const Text('2. Si vous utilisez l\'API Node.js, vérifiez qu\'elle est bien démarrée'),
+              const Text('3. Si l\'API ne répond pas, essayez la connexion directe à Ollama'),
+              const SizedBox(height: 16),
+              const Text(
+                'Commandes utiles :',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                color: Colors.grey.shade200,
+                child: const Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('# Démarrer Ollama', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('ollama serve'),
+                    SizedBox(height: 8),
+                    Text('# Démarrer l\'API Node.js', style: TextStyle(fontWeight: FontWeight.bold)),
+                    Text('npm start'),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: const Text('Fermer'),
+          ),
         ],
       ),
     );

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/services/llm_service.dart';
+import 'package:greens_app/services/ollama_service.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/llm_config.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -16,6 +17,8 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
   bool _isTesting = false;
   String? _testResult;
   bool _isTestSuccessful = false;
+  final _ollamaService = OllamaService.instance;
+  bool _useApiProxy = true;
 
   @override
   void initState() {
@@ -33,6 +36,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
     final apiUrl = await LlmConfig.getApiUrl();
     setState(() {
       _apiUrlController.text = apiUrl;
+      _useApiProxy = _ollamaService.useApiProxy;
     });
   }
 
@@ -51,8 +55,9 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
     // Sauvegarder l'URL
     await LlmConfig.saveApiUrl(url);
     
-    // Mettre à jour le service LLM
-    LlmService.instance.updateApiUrl(url);
+    // Mettre à jour le service Ollama
+    _ollamaService.updateApiUrl(url);
+    _ollamaService.useApiProxy = _useApiProxy;
 
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
@@ -105,12 +110,15 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
       // Sauvegarder temporairement l'URL pour le test
       await LlmConfig.saveApiUrl(correctedUrl);
       
-      // Test de connexion
-      await LlmService.initialize();
+      // Mettre à jour l'URL dans le service Ollama
+      _ollamaService.updateApiUrl(correctedUrl);
+      
+      // Créer une instance de LlmService qui utilisera OllamaService.instance
+      final llmService = LlmService();
       
       print('Appel de la méthode testConnection()');
       // Tester la connexion au modèle
-      final response = await LlmService.testConnectionWithUrl(correctedUrl);
+      final response = await llmService.testConnection();
       print('Réponse reçue du test: $response');
       
       setState(() {
@@ -134,7 +142,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Paramètres du modèle Gemma'),
+        title: const Text('Paramètres du modèle Llama3'),
         backgroundColor: Colors.white,
         foregroundColor: AppColors.textColor,
         elevation: 0,
@@ -162,7 +170,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                   ),
                   const SizedBox(height: 16),
                   const Text(
-                    'Configuration de Gemma via Ollama',
+                    'Configuration de Llama3 via Ollama',
                     style: TextStyle(
                       fontSize: 18,
                       fontWeight: FontWeight.bold,
@@ -174,6 +182,63 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
               ),
             ),
             const SizedBox(height: 32),
+
+            // Mode de connexion
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.green.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Row(
+                    children: [
+                      Icon(Icons.settings_input_component, color: Colors.green),
+                      SizedBox(width: 8),
+                      Text(
+                        'Mode de connexion',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                          color: Colors.green,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Choisissez comment vous souhaitez vous connecter à Ollama. Le mode direct peut être plus rapide, mais le mode API offre plus de fonctionnalités.',
+                    style: TextStyle(fontSize: 14),
+                  ),
+                  const SizedBox(height: 12),
+                  RadioListTile<bool>(
+                    title: const Text('Via API Node.js (recommandé)'),
+                    subtitle: const Text('Plus stable mais peut causer des timeouts sur les grands modèles'),
+                    value: true,
+                    groupValue: _useApiProxy,
+                    onChanged: (value) {
+                      setState(() {
+                        _useApiProxy = value!;
+                      });
+                    },
+                  ),
+                  RadioListTile<bool>(
+                    title: const Text('Connexion directe à Ollama'),
+                    subtitle: const Text('Plus rapide mais moins de fonctionnalités'),
+                    value: false,
+                    groupValue: _useApiProxy,
+                    onChanged: (value) {
+                      setState(() {
+                        _useApiProxy = value!;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 24),
 
             // Informations sur Ollama
             Container(
@@ -201,7 +266,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                   ),
                   const SizedBox(height: 8),
                   const Text(
-                    'Ollama est un outil qui permet d\'exécuter des modèles de langage localement sur votre machine. Gemma de Google doit être installé sur Ollama pour fonctionner avec ce chatbot.',
+                    'Ollama est un outil qui permet d\'exécuter des modèles de langage localement sur votre machine. Llama3 de Meta doit être installé sur Ollama pour fonctionner avec ce chatbot.',
                     style: TextStyle(fontSize: 14),
                   ),
                   const SizedBox(height: 12),
@@ -257,7 +322,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
             ),
             const SizedBox(height: 8),
             const Text(
-              'Assurez-vous qu\'Ollama est en cours d\'exécution et que le modèle "gemma" est installé.',
+              'Assurez-vous qu\'Ollama est en cours d\'exécution et que le modèle "llama3" est installé.',
               style: TextStyle(
                 fontSize: 13,
                 color: Colors.grey,
@@ -345,7 +410,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                       const SizedBox(height: 8),
                       const Text('• Vérifiez qu\'Ollama est bien installé et démarré'),
                       const Text('• Vérifiez que l\'URL est correcte (généralement http://localhost:11434)'),
-                      const Text('• Assurez-vous que le modèle "gemma" est installé avec la commande: ollama pull gemma'),
+                      const Text('• Assurez-vous que le modèle "llama3" est installé avec la commande: ollama pull llama3'),
                     ],
                   ],
                 ),
@@ -354,7 +419,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
             
             const SizedBox(height: 32),
             
-            // Guide d'installation de Gemma
+            // Guide d'installation de Llama3
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -369,7 +434,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                       Icon(Icons.help_outline, color: Colors.amber),
                       SizedBox(width: 8),
                       Text(
-                        'Comment installer Gemma',
+                        'Comment installer Llama3',
                         style: TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 16,
@@ -399,7 +464,7 @@ class _LlmSettingsViewState extends State<LlmSettingsView> {
                       children: [
                         Expanded(
                           child: Text(
-                            'ollama pull gemma',
+                            'ollama pull llama3',
                             style: TextStyle(
                               fontFamily: 'monospace',
                               fontWeight: FontWeight.bold,
