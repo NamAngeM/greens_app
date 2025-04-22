@@ -13,10 +13,45 @@ class OllamaService {
   
   // Configuration de l'API
   String _apiBaseUrl = 'http://10.0.2.2:3000/api'; // URL de l'API Node.js avec l'adresse pour émulateur Android
-  final String _modelName = 'llama3';
+  String _modelName = 'llama3:8b'; // Modèle par défaut plus léger
+  
+  // Liste des modèles disponibles et leurs caractéristiques
+  final Map<String, Map<String, dynamic>> _modelConfigs = {
+    'llama3:8b': {
+      'name': 'Llama 3 (8B)',
+      'description': 'Modèle léger et rapide, idéal pour réponses simples',
+      'size': 'small',
+      'ram_required': 4, // Go de RAM requis
+      'temperature': 0.5,
+      'top_p': 0.7,
+      'num_predict': 300,
+    },
+    'llama3': {
+      'name': 'Llama 3 (Standard)',
+      'description': 'Modèle standard avec bon équilibre vitesse/qualité',
+      'size': 'medium',
+      'ram_required': 8,
+      'temperature': 0.7,
+      'top_p': 0.9,
+      'num_predict': 500,
+    },
+    'llama3:70b': {
+      'name': 'Llama 3 (70B)',
+      'description': 'Modèle complet pour réponses détaillées',
+      'size': 'large',
+      'ram_required': 16,
+      'temperature': 0.8,
+      'top_p': 0.9,
+      'num_predict': 800,
+    },
+  };
   
   // Adresse hôte à utiliser (10.0.2.2 pour émulateur Android, localhost sinon)
   final String _hostAddress = Platform.isAndroid ? '10.0.2.2' : 'localhost';
+  
+  // Cache pour l'historique des conversations
+  final Map<String, List<Map<String, String>>> _conversationHistory = {};
+  final int _maxHistoryLength = 10; // Nombre maximum de messages dans l'historique
   
   /// Constructeur privé
   OllamaService._() {
@@ -362,21 +397,87 @@ COMPORTEMENT:
     _isInitialized = false; // Forcer la réinitialisation avec la nouvelle URL
   }
 
-  Future<Map<String, dynamic>> generateResponse(String prompt, String modelName, {double temperature = 0.7, double topP = 0.9}) async {
+  Future<Map<String, dynamic>> generateResponse(
+    String prompt, 
+    String modelName, 
+    {
+      double? temperature,
+      double? topP,
+      int? numPredict,
+      Function(String chunk)? onResponseChunk,
+      String? conversationId
+    }
+  ) async {
     try {
+      // Déterminer les paramètres optimaux pour le modèle
+      final modelConfig = getModelParams(modelName);
+      final double finalTemp = temperature ?? modelConfig['temperature'] ?? 0.7;
+      final double finalTopP = topP ?? modelConfig['top_p'] ?? 0.9;
+      final int finalNumPredict = numPredict ?? modelConfig['num_predict'] ?? 300;
+      
+      // Identifiant de conversation unique si non fourni
+      final String finalConvId = conversationId ?? 'default';
+      
+      // Obtenir l'historique de la conversation
+      final history = getConversationHistory(finalConvId);
+      
+      // Préparer les messages avec l'historique
+      final List<Map<String, String>> messages = [];
+      
+      // Ajouter le prompt système s'il n'existe pas dans l'historique
+      if (history.isEmpty || history.first['role'] != 'system') {
+        final systemPrompt = 'Tu es GreenBot, un assistant écologique. Réponds de façon concise en te basant sur des faits scientifiques.';
+        messages.add({'role': 'system', 'content': systemPrompt});
+        
+        // Ajouter au début de l'historique
+        if (history.isEmpty) {
+          addToHistory(finalConvId, 'system', systemPrompt);
+        }
+      } else {
+        // Utiliser le prompt système existant
+        messages.add(history.first);
+      }
+      
+      // Ajouter l'historique récent (sans le prompt système)
+      if (history.length > 1) {
+        messages.addAll(history.sublist(1));
+      }
+      
+      // Ajouter le prompt actuel s'il n'est pas déjà dans l'historique
+      if (history.isEmpty || history.last['content'] != prompt) {
+        messages.add({'role': 'user', 'content': prompt});
+        
+        // Mémoriser la question
+        addToHistory(finalConvId, 'user', prompt);
+      }
+      
+      debugPrint('📤 Génération avec ${messages.length} messages dans l\'historique');
+      
       if (_useApiProxy) {
         debugPrint('📤 Génération via API proxy: $prompt');
         // Utiliser l'API proxy
+        // Note: Le streaming via l'API Node.js nécessite des modifications côté serveur
+        // Nous allons donc conserver le comportement actuel pour ce mode
+        
+        // Construction du payload avec historique (format simplifié)
+        final Map<String, dynamic> payload = {
+          'text': prompt,
+          'model': modelName,
+          'temperature': finalTemp,
+          'topP': finalTopP,
+          'num_predict': finalNumPredict
+        };
+        
+        // Ajouter l'historique si disponible
+        if (messages.length > 1) {
+          payload['history'] = messages;
+        }
+        
         final response = await http.post(
           Uri.parse('$_apiBaseUrl/llm/generate'),
           headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
-            'text': prompt,
-            'model': modelName,
-            'temperature': temperature,
-            'topP': topP
-          }),
-        ).timeout(const Duration(seconds: 180)); // 3 minutes de timeout
+          body: jsonEncode(payload),
+        ).timeout(const Duration(seconds: 120));
 
         // Vérifier si la réponse contient du HTML au lieu du JSON
         if (response.body.trim().toLowerCase().startsWith('<!doctype html') || 
@@ -403,6 +504,10 @@ COMPORTEMENT:
           
           if (response.statusCode == 200 && data['status'] == 'OK') {
             debugPrint('✅ Réponse API reçue avec succès');
+            
+            // Mémoriser la réponse dans l'historique
+            addToHistory(finalConvId, 'assistant', data['response']);
+            
             return {
               'success': true,
               'message': data['response'],
@@ -425,66 +530,125 @@ COMPORTEMENT:
         }
       } else {
         debugPrint('📤 Génération directe via Ollama: $prompt');
-        // Connexion directe à Ollama
-        
-        // Créer un prompt système plus simple pour accélérer la génération
-        final systemPrompt = 'Tu es GreenBot, un assistant écologique. Fournis des réponses concises.';
-        
-        final response = await http.post(
-          Uri.parse('http://$_hostAddress:11434/api/chat'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({
+       
+        // Si un callback de streaming est fourni, utiliser le mode stream
+        if (onResponseChunk != null) {
+          debugPrint('🔄 Utilisation du mode streaming');
+          
+          final request = http.Request(
+            'POST', 
+            Uri.parse('http://$_hostAddress:11434/api/chat')
+          );
+          
+          request.headers['Content-Type'] = 'application/json';
+          request.body = jsonEncode({
             'model': modelName,
-            'messages': [
-              {
-                'role': 'system',
-                'content': systemPrompt
-              },
-              {
-                'role': 'user',
-                'content': prompt
+            'messages': messages,
+            'stream': true,
+            'temperature': finalTemp,
+            'top_p': finalTopP,
+            'num_predict': finalNumPredict
+          });
+          
+          final streamedResponse = await http.Client().send(request)
+              .timeout(const Duration(seconds: 90));
+              
+          if (streamedResponse.statusCode == 200) {
+            String fullResponse = '';
+            
+            // Traiter le flux de données
+            await for (var chunk in streamedResponse.stream.transform(utf8.decoder)) {
+              // Chaque chunk peut contenir plusieurs lignes JSON
+              final lines = chunk.split('\n').where((line) => line.isNotEmpty);
+              
+              for (final line in lines) {
+                try {
+                  final data = jsonDecode(line);
+                  if (data.containsKey('message') && 
+                      data['message'].containsKey('content') &&
+                      data['message']['content'] != null &&
+                      data['message']['content'].isNotEmpty) {
+                    
+                    final content = data['message']['content'];
+                    onResponseChunk(content);
+                    fullResponse += content;
+                  }
+                } catch (e) {
+                  debugPrint('⚠️ Erreur parsing chunk JSON: $e');
+                }
               }
-            ],
-            'stream': false,
-            'temperature': temperature,
-            'top_p': topP,
-            'num_predict': 500 // Limiter le nombre de tokens générés
-          }),
-        ).timeout(const Duration(seconds: 120)); // 2 minutes de timeout
-
-        // Vérifier si la réponse contient du HTML au lieu du JSON
-        if (response.body.trim().toLowerCase().startsWith('<!doctype html') || 
-            response.body.trim().toLowerCase().startsWith('<html')) {
-          debugPrint('❌ Erreur: La réponse est du HTML au lieu du JSON');
-          return {
-            'success': false,
-            'message': 'Erreur de communication: Le serveur a renvoyé une page HTML au lieu du JSON. Vérifiez que Ollama est en cours d\'exécution.'
-          };
-        }
-
-        try {
-          final data = jsonDecode(response.body);
-          if (response.statusCode == 200) {
-            debugPrint('✅ Réponse directe d\'Ollama reçue avec succès');
+            }
+            
+            debugPrint('✅ Streaming terminé, réponse complète générée');
+            
+            // Mémoriser la réponse complète dans l'historique
+            addToHistory(finalConvId, 'assistant', fullResponse);
+            
             return {
               'success': true,
-              'message': data['message']['content'] ?? 'Pas de réponse',
+              'message': fullResponse,
             };
           } else {
-            debugPrint('❌ Erreur Ollama: ${data['error'] ?? 'Erreur inconnue'}');
+            debugPrint('❌ Erreur streaming: ${streamedResponse.statusCode}');
             return {
               'success': false,
-              'message': 'Erreur: ${data['error'] ?? "Une erreur est survenue"}',
+              'message': 'Erreur lors du streaming: ${streamedResponse.statusCode}',
             };
           }
-        } catch (jsonError) {
-          debugPrint('❌ Erreur lors du décodage JSON: $jsonError');
-          debugPrint('❌ Contenu reçu: ${response.body.substring(0, min(100, response.body.length))}...');
-          
-          return {
-            'success': false,
-            'message': 'Erreur lors du décodage de la réponse. Format de réponse invalide.',
-          };
+        } else {
+          // Mode non-streaming (code existant)
+          final response = await http.post(
+            Uri.parse('http://$_hostAddress:11434/api/chat'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'model': modelName,
+              'messages': messages,
+              'stream': false,
+              'temperature': finalTemp,
+              'top_p': finalTopP,
+              'num_predict': finalNumPredict
+            }),
+          ).timeout(const Duration(seconds: 90));
+
+          // Vérifier si la réponse contient du HTML au lieu du JSON
+          if (response.body.trim().toLowerCase().startsWith('<!doctype html') || 
+              response.body.trim().toLowerCase().startsWith('<html')) {
+            debugPrint('❌ Erreur: La réponse est du HTML au lieu du JSON');
+            return {
+              'success': false,
+              'message': 'Erreur de communication: Le serveur a renvoyé une page HTML au lieu du JSON. Vérifiez que Ollama est en cours d\'exécution.'
+            };
+          }
+
+          try {
+            final data = jsonDecode(response.body);
+            if (response.statusCode == 200) {
+              debugPrint('✅ Réponse directe d\'Ollama reçue avec succès');
+              
+              // Mémoriser la réponse dans l'historique
+              final content = data['message']['content'] ?? 'Pas de réponse';
+              addToHistory(finalConvId, 'assistant', content);
+              
+              return {
+                'success': true,
+                'message': content,
+              };
+            } else {
+              debugPrint('❌ Erreur Ollama: ${data['error'] ?? 'Erreur inconnue'}');
+              return {
+                'success': false,
+                'message': 'Erreur: ${data['error'] ?? "Une erreur est survenue"}',
+              };
+            }
+          } catch (jsonError) {
+            debugPrint('❌ Erreur lors du décodage JSON: $jsonError');
+            debugPrint('❌ Contenu reçu: ${response.body.substring(0, min(100, response.body.length))}...');
+            
+            return {
+              'success': false,
+              'message': 'Erreur lors du décodage de la réponse. Format de réponse invalide.',
+            };
+          }
         }
       }
     } on TimeoutException {
@@ -948,5 +1112,75 @@ COMPORTEMENT:
         Text(message),
       ],
     );
+  }
+
+  /// Obtenir le modèle actuellement utilisé
+  String get currentModel => _modelName;
+  
+  /// Définir le modèle à utiliser
+  set currentModel(String modelName) {
+    if (_modelConfigs.containsKey(modelName)) {
+      _modelName = modelName;
+      debugPrint('🔄 Modèle changé pour: $_modelName');
+    } else {
+      debugPrint('⚠️ Modèle inconnu: $modelName, utilisation du modèle par défaut');
+    }
+  }
+  
+  /// Obtenir la liste des configurations de modèles
+  Map<String, Map<String, dynamic>> get modelConfigs => _modelConfigs;
+  
+  /// Obtenir les paramètres recommandés pour un modèle
+  Map<String, dynamic> getModelParams(String modelName) {
+    final params = _modelConfigs[modelName];
+    if (params == null) {
+      return _modelConfigs[_modelName] ?? {};
+    }
+    return params;
+  }
+  
+  /// Sélectionner automatiquement le meilleur modèle en fonction des ressources disponibles
+  Future<String> selectBestModel() async {
+    // Logique simplifiée - en production, il faudrait détecter la RAM disponible
+    if (Platform.isAndroid) {
+      // Sur Android, privilégier le modèle léger
+      currentModel = 'llama3:8b';
+    } else {
+      // Sur desktop, on peut tenter le modèle standard
+      currentModel = 'llama3';
+    }
+    
+    return _modelName;
+  }
+  
+  /// Ajouter un message à l'historique de conversation
+  void addToHistory(String conversationId, String role, String content) {
+    if (!_conversationHistory.containsKey(conversationId)) {
+      _conversationHistory[conversationId] = [];
+    }
+    
+    _conversationHistory[conversationId]!.add({
+      'role': role,
+      'content': content
+    });
+    
+    // Limiter la taille de l'historique
+    if (_conversationHistory[conversationId]!.length > _maxHistoryLength) {
+      // Garder le premier message (système) et les derniers messages
+      final systemPrompt = _conversationHistory[conversationId]!.first;
+      _conversationHistory[conversationId]!.removeAt(0);
+      _conversationHistory[conversationId]!.removeAt(0);
+      _conversationHistory[conversationId]!.insert(0, systemPrompt);
+    }
+  }
+  
+  /// Obtenir l'historique de conversation
+  List<Map<String, String>> getConversationHistory(String conversationId) {
+    return _conversationHistory[conversationId] ?? [];
+  }
+  
+  /// Effacer l'historique de conversation
+  void clearConversationHistory(String conversationId) {
+    _conversationHistory.remove(conversationId);
   }
 } 
