@@ -622,16 +622,33 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
   }
 
   Widget _buildInfoRow(IconData icon, String label, String value) {
+    // Adapter l'icône et le libellé pour les livres
+    IconData displayIcon = icon;
+    String displayLabel = label;
+    
+    // Si c'est un livre et qu'on affiche les ingrédients, changer le libellé
+    final scanController = Provider.of<ProductScanController>(context);
+    if (scanController.lastScan != null && 
+        scanController.lastScan!.category == "Livres & Médias") {
+      if (label == "Ingrédients") {
+        displayLabel = "Pages";
+        displayIcon = Icons.book_outlined;
+      } else if (label == "Origine") {
+        displayLabel = "Éditeur";
+        displayIcon = Icons.business_outlined;
+      }
+    }
+    
     return Row(
       children: [
         Icon(
-          icon,
+          displayIcon,
           size: 16,
           color: Colors.grey.shade600,
         ),
         const SizedBox(width: 8),
         Text(
-          '$label: ',
+          '$displayLabel: ',
           style: TextStyle(
             color: Colors.grey.shade600,
             fontSize: 14,

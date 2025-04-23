@@ -1183,4 +1183,68 @@ COMPORTEMENT:
   void clearConversationHistory(String conversationId) {
     _conversationHistory.remove(conversationId);
   }
-} 
+}
+
+class ProductCategoryService {
+  static String determineCategory(String barcode) {
+    if (barcode.startsWith('978') || barcode.startsWith('979'))
+      return "Livres & Médias";
+    else if (RegExp(r'^(000|00[1-9]|0[1-9][0-9])').hasMatch(barcode))
+      return "Électronique";
+    else if (RegExp(r'^(45[0-9])').hasMatch(barcode))
+      return "Vêtements & Mode";
+    else if (RegExp(r'^(35[0-9])').hasMatch(barcode))
+      return "Beauté & Cosmétiques";
+    else if (RegExp(r'^(50[0-9])').hasMatch(barcode))
+      return "Produits Ménagers";
+    // Autres catégories spécifiques
+    else
+      return "Divers"; // Catégorie par défaut
+  }
+  
+  static IconData getCategoryIcon(String category) {
+    switch(category) {
+      case "Livres & Médias": return Icons.menu_book;
+      case "Électronique": return Icons.devices;
+      case "Vêtements & Mode": return Icons.checkroom;
+      case "Beauté & Cosmétiques": return Icons.face;
+      case "Produits Ménagers": return Icons.cleaning_services;
+      case "Alimentation": return Icons.restaurant;
+      default: return Icons.category;
+    }
+  }
+  
+  static List<String> getCategorySpecificFields(String category) {
+    // Retourne les champs spécifiques à afficher selon la catégorie
+    switch(category) {
+      case "Livres & Médias": 
+        return ["Auteur", "Éditeur", "Pages", "ISBN"];
+      case "Électronique": 
+        return ["Marque", "Modèle", "Spécifications", "Garantie"];
+      case "Vêtements & Mode": 
+        return ["Marque", "Taille", "Matière", "Entretien"];
+      // Autres catégories
+      default: 
+        return ["Description", "Marque", "Caractéristiques"];
+    }
+  }
+  
+  static IconData getFieldIcon(String field) {
+    switch(field) {
+      case "Auteur": return Icons.person;
+      case "Éditeur": return Icons.business;
+      case "Pages": return Icons.book;
+      case "ISBN": return Icons.numbers;
+      case "Marque": return Icons.branding_watermark;
+      case "Modèle": return Icons.model_training;
+      case "Spécifications": return Icons.settings;
+      case "Garantie": return Icons.verified;
+      case "Taille": return Icons.format_size;
+      case "Matière": return Icons.texture;
+      case "Entretien": return Icons.wash;
+      default: return Icons.info;
+    }
+  }
+}
+
+// Le fichier se termine ici 
