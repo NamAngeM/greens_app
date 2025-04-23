@@ -88,88 +88,100 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
   }
 
   Widget _buildScannerTab(ProductScanController controller, AuthController authController) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          if (controller.isScanning)
-            Container(
-              padding: const EdgeInsets.all(32),
-              decoration: BoxDecoration(
-                color: const Color(0xFF4CAF50).withOpacity(0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const CircularProgressIndicator(
-                valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-                strokeWidth: 3,
-              ),
-            )
-          else if (controller.lastScan != null)
-            _buildLastScanResult(controller.lastScan!)
-          else
-            Column(
+    return SingleChildScrollView(
+      physics: const AlwaysScrollableScrollPhysics(),
+      child: ConstrainedBox(
+        constraints: BoxConstraints(
+          minHeight: MediaQuery.of(context).size.height - 120, // hauteur moins la hauteur de l'appbar et tabbar
+        ),
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 24.0),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(32),
-                  decoration: BoxDecoration(
-                    color: const Color(0xFF4CAF50).withOpacity(0.1),
-                    shape: BoxShape.circle,
+                if (controller.isScanning)
+                  Container(
+                    padding: const EdgeInsets.all(32),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF4CAF50).withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const CircularProgressIndicator(
+                      valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                      strokeWidth: 3,
+                    ),
+                  )
+                else if (controller.lastScan != null)
+                  _buildLastScanResult(controller.lastScan!)
+                else
+                  Column(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(32),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50).withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.qr_code_scanner,
+                          size: 80,
+                          color: Color(0xFF4CAF50),
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      const Text(
+                        'Scannez un produit pour connaître\nson impact environnemental',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w500,
+                          color: Colors.grey,
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      const Text(
+                        'Placez le code-barres dans le cadre\npour le scanner automatiquement',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: Colors.grey,
+                        ),
+                      ),
+                    ],
                   ),
-                  child: const Icon(
-                    Icons.qr_code_scanner,
-                    size: 80,
-                    color: Color(0xFF4CAF50),
+                const SizedBox(height: 40),
+                ElevatedButton(
+                  onPressed: () => _scanBarcode(context, controller, authController),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF4CAF50),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    elevation: 4,
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: const [
+                      Icon(Icons.qr_code_scanner),
+                      SizedBox(width: 12),
+                      Text(
+                        'Scanner un code-barres',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-                const SizedBox(height: 24),
-                const Text(
-                  'Scannez un produit pour connaître\nson impact environnemental',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w500,
-                    color: Colors.grey,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                const Text(
-                  'Placez le code-barres dans le cadre\npour le scanner automatiquement',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: Colors.grey,
-                  ),
-                ),
-              ],
-            ),
-          const SizedBox(height: 40),
-          ElevatedButton(
-            onPressed: () => _scanBarcode(context, controller, authController),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(30),
-              ),
-              elevation: 4,
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: const [
-                Icon(Icons.qr_code_scanner),
-                SizedBox(width: 12),
-                Text(
-                  'Scanner un code-barres',
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                const SizedBox(height: 20), // Espace supplémentaire en bas
               ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }
@@ -396,213 +408,215 @@ class _ProductScannerViewState extends State<ProductScannerView> with SingleTick
   }
 
   Widget _buildLastScanResult(ProductScan scan) {
-    return Container(
-      width: double.infinity,
-      margin: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.grey.withOpacity(0.15),
-            spreadRadius: 2,
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Image du produit avec overlay
-          Stack(
-            children: [
-              ClipRRect(
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(16),
-                  topRight: Radius.circular(16),
-                ),
-                child: Image.network(
-                  scan.imageUrl,
-                  height: 200,
-                  width: double.infinity,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      height: 200,
-                      width: double.infinity,
-                      color: Colors.grey.shade200,
-                      child: const Icon(
-                        Icons.image_not_supported_outlined,
-                        color: Colors.grey,
-                        size: 50,
-                      ),
-                    );
-                  },
-                ),
-              ),
-              // Badge eco-score
-              Positioned(
-                top: 16,
-                right: 16,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: _getEcoScoreColor(scan.ecoScore),
-                    borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.2),
-                        spreadRadius: 1,
-                        blurRadius: 3,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      const Icon(
-                        Icons.eco_outlined,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Score: ${scan.ecoScore}',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          
-          // Informations du produit
-          Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return SingleChildScrollView(
+      child: Container(
+        width: double.infinity,
+        margin: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.grey.withOpacity(0.15),
+              spreadRadius: 2,
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Image du produit avec overlay - hauteur réduite
+            Stack(
               children: [
-                // Nom et marque
-                Text(
-                  scan.productName,
-                  style: const TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 20,
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(16),
+                    topRight: Radius.circular(16),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  scan.brand,
-                  style: TextStyle(
-                    color: Colors.grey.shade600,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                
-                // Caractéristiques
-                _buildInfoRow(Icons.category_outlined, 'Catégorie', scan.category),
-                const SizedBox(height: 8),
-                _buildInfoRow(Icons.science_outlined, 'Ingrédients', '${scan.ingredients.length} ingrédients'),
-                const SizedBox(height: 8),
-                _buildInfoRow(Icons.public_outlined, 'Origine', scan.origin),
-                const SizedBox(height: 16),
-                
-                // Impact environnemental
-                const Text(
-                  'Impact environnemental',
-                  style: TextStyle(
-                    fontWeight: FontWeight.bold,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                
-                // Barres de progression pour différents impacts
-                _buildImpactBar('Émission CO2', scan.carbonFootprint, 5, const Color(0xFF4CAF50)),
-                const SizedBox(height: 8),
-                _buildImpactBar('Consommation d\'eau', scan.waterFootprint, 5, Colors.blue),
-                const SizedBox(height: 8),
-                _buildImpactBar('Déforestation', scan.deforestationImpact, 5, Colors.brown),
-                
-                const SizedBox(height: 24),
-                
-                // Boutons d'action
-                Row(
-                  children: [
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Sauvegarder dans les favoris
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.white,
-                          foregroundColor: const Color(0xFF4CAF50),
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                            side: const BorderSide(color: Color(0xFF4CAF50)),
-                          ),
-                          elevation: 0,
+                  child: Image.network(
+                    scan.imageUrl,
+                    height: 180, // Hauteur réduite
+                    width: double.infinity,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        height: 180, // Hauteur réduite
+                        width: double.infinity,
+                        color: Colors.grey.shade200,
+                        child: const Icon(
+                          Icons.image_not_supported_outlined,
+                          color: Colors.grey,
+                          size: 50,
                         ),
-                        child: const Text('Sauvegarder'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: ElevatedButton(
-                        onPressed: () {
-                          // Partager le résultat
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFF4CAF50),
-                          foregroundColor: Colors.white,
-                          padding: const EdgeInsets.symmetric(vertical: 12),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
-                          ),
-                          elevation: 2,
-                        ),
-                        child: const Text('Partager'),
-                      ),
-                    ),
-                  ],
-                ),
-                
-                const SizedBox(height: 16),
-                
-                // Bouton pour scanner un nouveau produit
-                SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    onPressed: () {
-                      // Réinitialiser et scanner un nouveau produit
-                      final scanController = Provider.of<ProductScanController>(context, listen: false);
-                      scanController.resetLastScan();
+                      );
                     },
-                    icon: const Icon(Icons.qr_code_scanner),
-                    label: const Text('Scanner un nouveau produit'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.grey.shade700,
-                      padding: const EdgeInsets.symmetric(vertical: 12),
-                      side: BorderSide(color: Colors.grey.shade300),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+                  ),
+                ),
+                // Badge eco-score
+                Positioned(
+                  top: 16,
+                  right: 16,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: _getEcoScoreColor(scan.ecoScore),
+                      borderRadius: BorderRadius.circular(30),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(0.2),
+                          spreadRadius: 1,
+                          blurRadius: 3,
+                          offset: const Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: Row(
+                      children: [
+                        const Icon(
+                          Icons.eco_outlined,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Score: ${scan.ecoScore}',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
                     ),
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            
+            // Informations du produit
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Nom et marque
+                  Text(
+                    scan.productName,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 18, // Taille réduite
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    scan.brand,
+                    style: TextStyle(
+                      color: Colors.grey.shade600,
+                      fontSize: 15, // Taille réduite
+                    ),
+                  ),
+                  const SizedBox(height: 12), // Espacement réduit
+                  
+                  // Caractéristiques avec espacements réduits
+                  _buildInfoRow(Icons.category_outlined, 'Catégorie', scan.category),
+                  const SizedBox(height: 6), // Espacement réduit
+                  _buildInfoRow(Icons.science_outlined, 'Ingrédients', '${scan.ingredients.length} ingrédients'),
+                  const SizedBox(height: 6), // Espacement réduit
+                  _buildInfoRow(Icons.public_outlined, 'Origine', scan.origin),
+                  const SizedBox(height: 12), // Espacement réduit
+                  
+                  // Impact environnemental
+                  const Text(
+                    'Impact environnemental',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 15, // Taille réduite
+                    ),
+                  ),
+                  const SizedBox(height: 10), // Espacement réduit
+                  
+                  // Barres de progression pour différents impacts
+                  _buildImpactBar('Émission CO2', scan.carbonFootprint, 5, const Color(0xFF4CAF50)),
+                  const SizedBox(height: 6), // Espacement réduit
+                  _buildImpactBar('Consommation d\'eau', scan.waterFootprint, 5, Colors.blue),
+                  const SizedBox(height: 6), // Espacement réduit
+                  _buildImpactBar('Déforestation', scan.deforestationImpact, 5, Colors.brown),
+                  
+                  const SizedBox(height: 16), // Espacement réduit
+                  
+                  // Boutons d'action
+                  Row(
+                    children: [
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Sauvegarder dans les favoris
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.white,
+                            foregroundColor: const Color(0xFF4CAF50),
+                            padding: const EdgeInsets.symmetric(vertical: 10), // Padding réduit
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                              side: const BorderSide(color: Color(0xFF4CAF50)),
+                            ),
+                            elevation: 0,
+                          ),
+                          child: const Text('Sauvegarder'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () {
+                            // Partager le résultat
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF4CAF50),
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 10), // Padding réduit
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            elevation: 2,
+                          ),
+                          child: const Text('Partager'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  
+                  const SizedBox(height: 14), // Espacement réduit
+                  
+                  // Bouton pour scanner un nouveau produit
+                  SizedBox(
+                    width: double.infinity,
+                    child: OutlinedButton.icon(
+                      onPressed: () {
+                        // Réinitialiser et scanner un nouveau produit
+                        final scanController = Provider.of<ProductScanController>(context, listen: false);
+                        scanController.resetLastScan();
+                      },
+                      icon: const Icon(Icons.qr_code_scanner),
+                      label: const Text('Scanner un nouveau produit'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.grey.shade700,
+                        padding: const EdgeInsets.symmetric(vertical: 10), // Padding réduit
+                        side: BorderSide(color: Colors.grey.shade300),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
