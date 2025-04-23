@@ -456,20 +456,37 @@ class _ProductsViewState extends State<ProductsView> {
                                   ),
                                 ),
                               )
-                            : GridView.builder(
-                                padding: const EdgeInsets.all(16),
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  childAspectRatio: 0.75,
-                                  crossAxisSpacing: 16,
-                                  mainAxisSpacing: 16,
-                                ),
-                                itemCount: _filteredProducts.length,
-                                itemBuilder: (context, index) {
-                                  final product = _filteredProducts[index];
-                                  print('Construction du produit ${product.name} à l\'index $index');
-                                  return _buildProductCard(product);
-                                },
+                            : LayoutBuilder(
+                                builder: (context, constraints) {
+                                  // Calculer le ratio optimal en fonction de la largeur disponible
+                                  // Plus l'écran est petit, plus on réduit le ratio pour éviter les débordements
+                                  final screenWidth = MediaQuery.of(context).size.width;
+                                  // Ratio adaptatif: plus petit sur les petits écrans
+                                  double adaptiveRatio;
+                                  if (screenWidth < 360) {  // Très petits écrans (Galaxy A15, etc.)
+                                    adaptiveRatio = 0.65; // Réduire encore plus pour éviter les débordements
+                                  } else if (screenWidth < 400) {  // Petits écrans
+                                    adaptiveRatio = 0.68;
+                                  } else {  // Écrans moyens et grands
+                                    adaptiveRatio = 0.72;
+                                  }
+                                  
+                                  return GridView.builder(
+                                    padding: const EdgeInsets.all(16),
+                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                      crossAxisCount: 2,
+                                      childAspectRatio: adaptiveRatio,
+                                      crossAxisSpacing: 16,
+                                      mainAxisSpacing: 16,
+                                    ),
+                                    itemCount: _filteredProducts.length,
+                                    itemBuilder: (context, index) {
+                                      final product = _filteredProducts[index];
+                                      print('Construction du produit ${product.name} à l\'index $index');
+                                      return _buildProductCard(product);
+                                    },
+                                  );
+                                }
                               ),
                       ),
                     ],
@@ -652,8 +669,8 @@ class _ProductsViewState extends State<ProductsView> {
                           children: [
                             // Image du produit avec bordure
                             Container(
-                              width: 70, // Réduire la largeur pour éviter le débordement
-                              height: 70, // Réduire la hauteur pour maintenir le ratio
+                              width: 60, // Réduire davantage la taille de l'image
+                              height: 60,
                               decoration: BoxDecoration(
                                 borderRadius: BorderRadius.circular(8),
                                 border: Border.all(
@@ -675,7 +692,7 @@ class _ProductsViewState extends State<ProductsView> {
                                                     Icon(
                                                       Icons.broken_image,
                                                       color: Colors.grey,
-                                                      size: 64,
+                                                      size: 30, // Réduire la taille de l'icône
                                                     ),
                                                 )
                                               : Image.asset(
@@ -685,80 +702,102 @@ class _ProductsViewState extends State<ProductsView> {
                                                     Icon(
                                                       Icons.broken_image,
                                                       color: Colors.grey,
-                                                      size: 64,
+                                                      size: 30, // Réduire la taille de l'icône
                                                     ),
                                                 )
                                           : Icon(
                                               Icons.image_not_supported_outlined,
                                               color: Colors.grey,
-                                              size: 64,
+                                              size: 30, // Réduire la taille de l'icône
                                             ),
                                     ),
                                   ],
                                 ),
                               ),
                             ),
-                            const SizedBox(width: 12), // Réduire l'espacement
+                            const SizedBox(width: 10), // Réduire davantage l'espacement
                             // Informations du produit
-                            Flexible(
+                            Expanded( // Utiliser Expanded au lieu de Flexible pour mieux contrôler l'espace
                               child: Column(
                                 crossAxisAlignment: CrossAxisAlignment.start,
                                 children: [
                                   Text(
                                     item.product.name,
-                                    style: TextStyle(
+                                    style: const TextStyle(
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                      color: const Color(0xFF1F3140),
+                                      fontSize: 14, // Réduire la taille de police
+                                      color: Color(0xFF1F3140),
                                     ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2), // Réduire l'espacement vertical
                                   if (item.product.isEcoFriendly)
                                     Row(
                                       children: [
-                                        Icon(
+                                        const Icon(
                                           Icons.eco,
-                                          size: 14,
-                                          color: const Color(0xFF4CAF50),
+                                          size: 12, // Réduire la taille de l'icône
+                                          color: Color(0xFF4CAF50),
                                         ),
-                                        const SizedBox(width: 4),
+                                        const SizedBox(width: 2), // Réduire l'espacement
                                         Text(
-                                          'Éco-responsable',
+                                          'Éco',
                                           style: TextStyle(
-                                            fontSize: 12,
+                                            fontSize: 10, // Réduire la taille de police
                                             color: const Color(0xFF4CAF50),
                                           ),
                                         ),
                                       ],
                                     ),
-                                  const SizedBox(height: 4),
+                                  const SizedBox(height: 2), // Réduire l'espacement vertical
                                   Text(
                                     '\$${item.product.price.toStringAsFixed(2)}',
-                                    style: TextStyle(
-                                      color: const Color(0xFF4CAF50),
+                                    style: const TextStyle(
+                                      color: Color(0xFF4CAF50),
                                       fontWeight: FontWeight.bold,
-                                      fontSize: 15,
+                                      fontSize: 14, // Réduire la taille de police
                                     ),
                                   ),
                                 ],
                               ),
                             ),
-                            // Bouton d'achat
-                            IconButton(
-                              icon: const Icon(Icons.shopping_bag_outlined),
-                              color: Colors.blue,
-                              onPressed: () {
-                                _openMerchantUrl(item.product.merchantUrl);
-                              },
-                              tooltip: 'Acheter',
-                            ),
-                            // Bouton de suppression
-                            IconButton(
-                              icon: const Icon(Icons.delete_outline, color: Colors.red, size: 22),
-                              onPressed: () {
-                                _removeFromFavorites(index);
-                              },
-                              tooltip: 'Supprimer des favoris',
+                            // Boutons d'action compactés en ligne
+                            Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                // Bouton d'achat plus compact
+                                SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child: IconButton(
+                                    iconSize: 18, // Réduire la taille de l'icône
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.shopping_bag_outlined),
+                                    color: Colors.blue,
+                                    onPressed: () {
+                                      _openMerchantUrl(item.product.merchantUrl);
+                                    },
+                                    tooltip: 'Acheter',
+                                  ),
+                                ),
+                                // Bouton de suppression plus compact
+                                SizedBox(
+                                  width: 32,
+                                  height: 32,
+                                  child: IconButton(
+                                    iconSize: 18, // Réduire la taille de l'icône
+                                    padding: EdgeInsets.zero,
+                                    constraints: const BoxConstraints(),
+                                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                                    onPressed: () {
+                                      _removeFromFavorites(index);
+                                    },
+                                    tooltip: 'Supprimer',
+                                  ),
+                                ),
+                              ],
                             ),
                           ],
                         ),
@@ -924,208 +963,220 @@ class _ProductsViewState extends State<ProductsView> {
             ),
           ],
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Product image
-            Expanded(
-              flex: 3,
-              child: Stack(
-                children: [
-                  Hero(
-                    tag: 'product-${product.id}',
-                    child: ClipRRect(
-                      borderRadius: const BorderRadius.only(
-                        topLeft: Radius.circular(12),
-                        topRight: Radius.circular(12),
-                      ),
-                      child: Container(
-                        width: double.infinity,
-                        color: Colors.grey.shade100,
-                        child: product.imageAsset != null
-                            ? Image.asset(
-                                product.imageAsset!,
-                                fit: BoxFit.cover,
-                                errorBuilder: (context, error, stackTrace) {
-                                  print('Erreur de chargement de l\'image produit: ${product.name}, erreur: $error');
-                                  return Center(
+        // Utiliser un layout plus adaptable avec des tailles relatives
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // La hauteur maximale disponible pour la carte
+            final cardHeight = constraints.maxHeight;
+            // Allouer 55% pour l'image et 45% pour les infos
+            final imageHeight = cardHeight * 0.55;
+            final infoHeight = cardHeight * 0.45;
+            
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                // Product image - hauteur fixe pour éviter les débordements
+                SizedBox(
+                  height: imageHeight,
+                  child: Stack(
+                    children: [
+                      Hero(
+                        tag: 'product-${product.id}',
+                        child: ClipRRect(
+                          borderRadius: const BorderRadius.only(
+                            topLeft: Radius.circular(12),
+                            topRight: Radius.circular(12),
+                          ),
+                          child: Container(
+                            width: double.infinity,
+                            color: Colors.grey.shade100,
+                            child: product.imageAsset != null
+                                ? Image.asset(
+                                    product.imageAsset!,
+                                    fit: BoxFit.cover,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      print('Erreur de chargement de l\'image produit: ${product.name}, erreur: $error');
+                                      return Center(
+                                        child: Icon(
+                                          Icons.image_not_supported_outlined,
+                                          color: Colors.grey,
+                                          size: 48,
+                                        ),
+                                      );
+                                    },
+                                  )
+                                : Center(
                                     child: Icon(
                                       Icons.image_not_supported_outlined,
                                       color: Colors.grey,
                                       size: 48,
                                     ),
-                                  );
-                                },
-                              )
-                            : Center(
-                                child: Icon(
-                                  Icons.image_not_supported_outlined,
-                                  color: Colors.grey,
-                                  size: 48,
-                                ),
-                              ),
-                      ),
-                    ),
-                  ),
-                  if (product.isEcoFriendly)
-                    Positioned(
-                      top: 8,
-                      right: 8,
-                      child: Container(
-                        width: 28,
-                        height: 28,
-                        decoration: const BoxDecoration(
-                          color: Color(0xFF4CAF50),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Center(
-                          child: Icon(
-                            Icons.eco,
-                            color: Colors.white,
-                            size: 16,
+                                  ),
                           ),
                         ),
                       ),
-                    ),
-                ],
-              ),
-            ),
-            
-            // Product info
-            Expanded(
-              flex: 2,
-              child: Padding(
-                padding: const EdgeInsets.all(12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      product.name,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 14,
-                        color: Color(0xFF1F3140),
-                      ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                    ),
-                    const SizedBox(height: 4),
-                    Expanded(
-                      child: Text(
-                        product.description,
-                        style: TextStyle(
-                          color: Colors.grey.shade600,
-                          fontSize: 12,
-                        ),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Text(
-                          '\$${product.price.toStringAsFixed(2)}',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Color(0xFF1F3140),
-                          ),
-                        ),
-                        Row(
-                          children: [
-                            // Bouton d'ajout aux favoris
-                            InkWell(
-                              onTap: () => _addToFavorites(product),
-                              child: Container(
-                                padding: const EdgeInsets.all(6),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFF4CAF50),
-                                  borderRadius: BorderRadius.circular(8),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: const Color(0xFF4CAF50).withOpacity(0.3),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
-                                    ),
-                                  ],
-                                ),
-                                child: Icon(
-                                  Icons.favorite,
-                                  size: 18,
-                                  color: Colors.white,
-                                ),
+                      if (product.isEcoFriendly)
+                        Positioned(
+                          top: 8,
+                          right: 8,
+                          child: Container(
+                            width: 28,
+                            height: 28,
+                            decoration: const BoxDecoration(
+                              color: Color(0xFF4CAF50),
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Center(
+                              child: Icon(
+                                Icons.eco,
+                                color: Colors.white,
+                                size: 16,
                               ),
                             ),
-                            // Si un marchand existe pour ce produit, montrer le bouton Acheter
-                            if (merchantInfo != null) 
-                              Padding(
-                                padding: const EdgeInsets.only(left: 8),
-                                child: InkWell(
-                                  onTap: () async {
-                                    try {
-                                      final url = Uri.parse(merchantInfo.url);
-                                      if (await canLaunchUrl(url)) {
-                                        await launchUrl(
-                                          url,
-                                          mode: LaunchMode.externalApplication,
-                                        );
-                                      } else {
-                                        if (mounted) {
-                                          ScaffoldMessenger.of(context).showSnackBar(
-                                            const SnackBar(
-                                              content: Text("Impossible d'ouvrir le site marchand"),
-                                              backgroundColor: Colors.red,
-                                            ),
-                                          );
-                                        }
-                                      }
-                                    } catch (e) {
-                                      print('Erreur lors de l\'ouverture de l\'URL: $e');
-                                      if (mounted) {
-                                        ScaffoldMessenger.of(context).showSnackBar(
-                                          SnackBar(
-                                            content: Text('Erreur: $e'),
-                                            backgroundColor: Colors.red,
-                                          ),
-                                        );
-                                      }
-                                    }
-                                  },
-                                  child: Container(
-                                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.blue,
-                                      borderRadius: BorderRadius.circular(8),
-                                      boxShadow: [
-                                        BoxShadow(
-                                          color: Colors.blue.withOpacity(0.3),
-                                          blurRadius: 4,
-                                          offset: const Offset(0, 2),
-                                        ),
-                                      ],
-                                    ),
-                                    child: const Text(
-                                      'Acheter',
-                                      style: TextStyle(
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+                
+                // Product info - hauteur fixe basée sur le layout
+                SizedBox(
+                  height: infoHeight,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Nom du produit
+                        Text(
+                          product.name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                            color: Color(0xFF1F3140),
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        const SizedBox(height: 1),
+                        // Description - hauteur flexible limitée
+                        Flexible(
+                          child: Text(
+                            product.description,
+                            style: TextStyle(
+                              color: Colors.grey.shade600,
+                              fontSize: 12,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const Spacer(),
+                        // Prix et boutons - hauteur fixe
+                        SizedBox(
+                          height: 30,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              // Prix avec contrainte de largeur
+                              Flexible(
+                                child: Text(
+                                  '\$${product.price.toStringAsFixed(2)}',
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 13,
+                                    color: Color(0xFF1F3140),
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              // Boutons d'action compacts
+                              Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  // Bouton d'ajout aux favoris
+                                  InkWell(
+                                    onTap: () => _addToFavorites(product),
+                                    child: Container(
+                                      padding: const EdgeInsets.all(4),
+                                      decoration: BoxDecoration(
+                                        color: const Color(0xFF4CAF50),
+                                        borderRadius: BorderRadius.circular(4),
+                                      ),
+                                      child: const Icon(
+                                        Icons.favorite,
+                                        size: 14,
                                         color: Colors.white,
-                                        fontSize: 12,
-                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                   ),
-                                ),
+                                  // Si un marchand existe pour ce produit, montrer le bouton Acheter
+                                  if (merchantInfo != null) 
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 4),
+                                      child: InkWell(
+                                        onTap: () async {
+                                          try {
+                                            final url = Uri.parse(merchantInfo.url);
+                                            if (await canLaunchUrl(url)) {
+                                              await launchUrl(
+                                                url,
+                                                mode: LaunchMode.externalApplication,
+                                              );
+                                            } else {
+                                              if (mounted) {
+                                                ScaffoldMessenger.of(context).showSnackBar(
+                                                  const SnackBar(
+                                                    content: Text("Impossible d'ouvrir le site marchand"),
+                                                    backgroundColor: Colors.red,
+                                                  ),
+                                                );
+                                              }
+                                            }
+                                          } catch (e) {
+                                            print('Erreur lors de l\'ouverture de l\'URL: $e');
+                                            if (mounted) {
+                                              ScaffoldMessenger.of(context).showSnackBar(
+                                                SnackBar(
+                                                  content: Text('Erreur: $e'),
+                                                  backgroundColor: Colors.red,
+                                                ),
+                                              );
+                                            }
+                                          }
+                                        },
+                                        child: Container(
+                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: Colors.blue,
+                                            borderRadius: BorderRadius.circular(4),
+                                          ),
+                                          child: const Text(
+                                            'Buy',
+                                            style: TextStyle(
+                                              color: Colors.white,
+                                              fontSize: 10,
+                                              fontWeight: FontWeight.bold,
+                                            ),
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                ],
                               ),
-                          ],
+                            ],
+                          ),
                         ),
                       ],
                     ),
-                  ],
+                  ),
                 ),
-              ),
-            ),
-          ],
+              ],
+            );
+          }
         ),
       ),
     );

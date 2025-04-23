@@ -5,6 +5,7 @@ import 'package:greens_app/controllers/auth_controller.dart';
 import 'package:greens_app/models/eco_goal_model.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:intl/intl.dart';
+import 'dart:math';
 
 class GoalsView extends StatefulWidget {
   const GoalsView({Key? key}) : super(key: key);
@@ -715,53 +716,99 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
     final TextEditingController progressController = TextEditingController();
     progressController.text = goal.currentProgress.toString();
     
+    // Obtenir les dimensions d'écran
+    final screenSize = MediaQuery.of(context).size;
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Mettre à jour la progression'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(
-              'Objectif: ${goal.title}',
-              style: const TextStyle(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextFormField(
-              controller: progressController,
-              decoration: InputDecoration(
-                labelText: 'Progression actuelle',
-                border: const OutlineInputBorder(),
-                suffixText: '/ ${goal.target}',
-              ),
-              keyboardType: TextInputType.number,
-            ),
-          ],
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Annuler'),
+        title: const Text(
+          'Mettre à jour la progression',
+          style: TextStyle(
+            fontSize: 18,
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.w600,
           ),
-          ElevatedButton(
-            onPressed: () {
-              final newValue = int.tryParse(progressController.text);
-              if (newValue != null) {
-                controller.updateGoalProgress(
-                  goal.id,
-                  newValue,
-                );
-                Navigator.of(context).pop();
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
+        ),
+        contentPadding: const EdgeInsets.fromLTRB(24, 20, 24, 0),
+        content: Container(
+          width: screenSize.width * 0.8,
+          constraints: BoxConstraints(
+            maxHeight: screenSize.height * 0.3,
+          ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Objectif: ${goal.title}',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: progressController,
+                  decoration: InputDecoration(
+                    labelText: 'Progression actuelle',
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    suffixText: '/ ${goal.target}',
+                    filled: true,
+                    fillColor: Colors.grey.shade50,
+                  ),
+                  keyboardType: TextInputType.number,
+                ),
+              ],
             ),
-            child: const Text('Mettre à jour'),
+          ),
+        ),
+        actionsPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        actions: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.textLightColor,
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                ),
+                child: const Text('Annuler'),
+              ),
+              const SizedBox(width: 8),
+              ElevatedButton(
+                onPressed: () {
+                  final newValue = int.tryParse(progressController.text);
+                  if (newValue != null) {
+                    controller.updateGoalProgress(
+                      goal.id,
+                      newValue,
+                    );
+                    Navigator.of(context).pop();
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.secondaryColor,
+                  foregroundColor: Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                ),
+                child: const Text('Mettre à jour'),
+              ),
+            ],
           ),
         ],
       ),
@@ -772,18 +819,35 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
     showDialog(
       context: context,
       builder: (context) => SimpleDialog(
-        title: const Text('Options'),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(16),
+        ),
+        contentPadding: const EdgeInsets.symmetric(vertical: 16),
+        title: const Text(
+          'Options',
+          style: TextStyle(
+            fontSize: 18,
+            color: AppColors.primaryColor,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
         children: [
           SimpleDialogOption(
             onPressed: () {
               Navigator.of(context).pop();
               _showUpdateProgressDialog(context, goal, controller);
             },
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: const Row(
               children: [
-                Icon(Icons.update),
+                Icon(Icons.update, color: AppColors.accentColor),
                 SizedBox(width: 12),
-                Text('Mettre à jour la progression'),
+                Text(
+                  'Mettre à jour la progression',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -792,11 +856,17 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
               Navigator.of(context).pop();
               // Logique pour modifier l'objectif
             },
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: const Row(
               children: [
-                Icon(Icons.edit),
+                Icon(Icons.edit, color: AppColors.accentColor),
                 SizedBox(width: 12),
-                Text('Modifier l\'objectif'),
+                Text(
+                  'Modifier l\'objectif',
+                  style: TextStyle(
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -805,11 +875,18 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
               Navigator.of(context).pop();
               _showDeleteConfirmation(context, goal, controller);
             },
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
             child: const Row(
               children: [
                 Icon(Icons.delete, color: Colors.red),
                 SizedBox(width: 12),
-                Text('Supprimer', style: TextStyle(color: Colors.red)),
+                Text(
+                  'Supprimer', 
+                  style: TextStyle(
+                    color: Colors.red, 
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
               ],
             ),
           ),
@@ -876,147 +953,480 @@ class _GoalsViewState extends State<GoalsView> with SingleTickerProviderStateMix
     _selectedType = GoalType.waterSaving;
     _selectedFrequency = GoalFrequency.daily;
     
+    // Obtenir les dimensions de l'écran pour l'adaptabilité
+    final screenSize = MediaQuery.of(context).size;
+    final maxDialogHeight = screenSize.height * 0.7; // 70% de la hauteur de l'écran maximum
+    final viewPadding = MediaQuery.of(context).viewPadding;
+    final keyboardHeight = MediaQuery.of(context).viewInsets.bottom;
+    
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ajouter un objectif'),
-        content: SingleChildScrollView(
-          child: Form(
-            key: _formKey,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                TextFormField(
-                  controller: _titleController,
-                  decoration: const InputDecoration(
-                    labelText: 'Titre',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer un titre';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _descriptionController,
-                  decoration: const InputDecoration(
-                    labelText: 'Description',
-                    border: OutlineInputBorder(),
-                  ),
-                  maxLines: 3,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer une description';
-                    }
-                    return null;
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<GoalType>(
-                  value: _selectedType,
-                  decoration: const InputDecoration(
-                    labelText: 'Type',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: GoalType.values.map((type) {
-                    return DropdownMenuItem<GoalType>(
-                      value: type,
-                      child: Text(type.toString().split('.').last.capitalize()),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedType = value;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<GoalFrequency>(
-                  value: _selectedFrequency,
-                  decoration: const InputDecoration(
-                    labelText: 'Fréquence',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: GoalFrequency.values.map((frequency) {
-                    return DropdownMenuItem<GoalFrequency>(
-                      value: frequency,
-                      child: Text(frequency.toString().split('.').last.capitalize()),
-                    );
-                  }).toList(),
-                  onChanged: (value) {
-                    if (value != null) {
-                      setState(() {
-                        _selectedFrequency = value;
-                      });
-                    }
-                  },
-                ),
-                const SizedBox(height: 16),
-                TextFormField(
-                  controller: _targetController,
-                  decoration: const InputDecoration(
-                    labelText: 'Valeur cible',
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Veuillez entrer une valeur cible';
-                    }
-                    if (double.tryParse(value) == null) {
-                      return 'Veuillez entrer un nombre valide';
-                    }
-                    return null;
-                  },
-                ),
-              ],
-            ),
-          ),
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 24),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
         ),
-        actions: [
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Annuler'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              if (_formKey.currentState!.validate()) {
-                final authController = Provider.of<AuthController>(context, listen: false);
-                final ecoGoalController = Provider.of<EcoGoalController>(context, listen: false);
-                
-                if (authController.currentUser != null) {
-                  final targetValue = double.parse(_targetController.text);
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            // Calculer la hauteur disponible en tenant compte du clavier
+            final availableHeight = screenSize.height - viewPadding.top - viewPadding.bottom - keyboardHeight - 48;
+            final dialogHeight = keyboardHeight > 0 
+                ? availableHeight * 0.7 // Quand le clavier est visible
+                : min(maxDialogHeight, availableHeight * 0.8);
+            
+            return Container(
+              width: screenSize.width * 0.9,
+              height: dialogHeight,
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  // En-tête avec titre
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(24, 20, 24, 16),
+                    decoration: BoxDecoration(
+                      color: AppColors.secondaryColor.withOpacity(0.1),
+                      borderRadius: const BorderRadius.only(
+                        topLeft: Radius.circular(20),
+                        topRight: Radius.circular(20),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add_task, color: AppColors.secondaryColor, size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: const Text(
+                            'Nouvel objectif écologique',
+                            style: TextStyle(
+                              fontSize: 18,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.primaryColor,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        IconButton(
+                          onPressed: () => Navigator.of(context).pop(),
+                          icon: const Icon(Icons.close, color: AppColors.textLightColor),
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                        ),
+                      ],
+                    ),
+                  ),
                   
-                  ecoGoalController.createGoal(
-                    userId: authController.currentUser!.uid,
-                    title: _titleController.text,
-                    description: _descriptionController.text,
-                    type: _selectedType,
-                    frequency: _selectedFrequency,
-                    target: targetValue.toInt(),
-                    startDate: DateTime.now(),
-                    endDate: DateTime.now().add(const Duration(days: 30)),
-                  );
+                  // Corps du formulaire
+                  Expanded(
+                    child: SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
+                      child: Form(
+                        key: _formKey,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Titre de l'objectif
+                            const Text(
+                              'Titre de l\'objectif',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _titleController,
+                              decoration: InputDecoration(
+                                hintText: 'Ex: Réduire ma consommation d\'eau',
+                                prefixIcon: const Icon(Icons.title, color: AppColors.accentColor),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.secondaryColor, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                              ),
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Veuillez entrer un titre';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Description
+                            const Text(
+                              'Description',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _descriptionController,
+                              decoration: InputDecoration(
+                                hintText: 'Décrivez votre objectif en quelques mots...',
+                                prefixIcon: const Padding(
+                                  padding: EdgeInsets.only(bottom: 24),
+                                  child: Icon(Icons.description, color: AppColors.accentColor),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.secondaryColor, width: 2),
+                                ),
+                                alignLabelWithHint: true,
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                              ),
+                              maxLines: 2,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Veuillez entrer une description';
+                                }
+                                return null;
+                              },
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Type d'objectif
+                            const Text(
+                              'Type d\'objectif',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<GoalType>(
+                              value: _selectedType,
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(
+                                  _getIconForType(_selectedType), 
+                                  color: _getColorForType(_selectedType),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.secondaryColor, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                              ),
+                              items: GoalType.values.map((type) {
+                                return DropdownMenuItem<GoalType>(
+                                  value: type,
+                                  child: Row(
+                                    children: [
+                                      Icon(_getIconForType(type), color: _getColorForType(type), size: 20),
+                                      const SizedBox(width: 12),
+                                      Expanded(
+                                        child: Text(
+                                          _getTypeLabel(type),
+                                          style: const TextStyle(fontWeight: FontWeight.w500),
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedType = value;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.arrow_drop_down_circle, color: AppColors.accentColor),
+                              elevation: 2,
+                              dropdownColor: Colors.white,
+                              isExpanded: true,
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Fréquence
+                            const Text(
+                              'Fréquence',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            DropdownButtonFormField<GoalFrequency>(
+                              value: _selectedFrequency,
+                              decoration: InputDecoration(
+                                prefixIcon: Icon(
+                                  _getIconForFrequency(_selectedFrequency),
+                                  color: AppColors.accentColor,
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.secondaryColor, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                              ),
+                              items: GoalFrequency.values.map((frequency) {
+                                return DropdownMenuItem<GoalFrequency>(
+                                  value: frequency,
+                                  child: Row(
+                                    children: [
+                                      Icon(_getIconForFrequency(frequency), color: AppColors.accentColor, size: 20),
+                                      const SizedBox(width: 12),
+                                      Text(
+                                        _getFrequencyText(frequency),
+                                        style: const TextStyle(fontWeight: FontWeight.w500),
+                                      ),
+                                    ],
+                                  ),
+                                );
+                              }).toList(),
+                              onChanged: (value) {
+                                if (value != null) {
+                                  setState(() {
+                                    _selectedFrequency = value;
+                                  });
+                                }
+                              },
+                              icon: const Icon(Icons.arrow_drop_down_circle, color: AppColors.accentColor),
+                              elevation: 2,
+                              dropdownColor: Colors.white,
+                              isExpanded: true,
+                            ),
+                            const SizedBox(height: 16),
+                            
+                            // Valeur cible
+                            const Text(
+                              'Valeur cible',
+                              style: TextStyle(
+                                fontWeight: FontWeight.w600,
+                                fontSize: 14,
+                                color: AppColors.textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            TextFormField(
+                              controller: _targetController,
+                              decoration: InputDecoration(
+                                hintText: 'Ex: 100',
+                                prefixIcon: const Icon(Icons.flag, color: AppColors.accentColor),
+                                suffix: Text(
+                                  _getUnitForType(_selectedType),
+                                  style: const TextStyle(
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.textLightColor,
+                                  ),
+                                ),
+                                filled: true,
+                                fillColor: Colors.grey.shade50,
+                                border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                enabledBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: BorderSide(color: Colors.grey.shade300),
+                                ),
+                                focusedBorder: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                  borderSide: const BorderSide(color: AppColors.secondaryColor, width: 2),
+                                ),
+                                contentPadding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
+                              ),
+                              keyboardType: TextInputType.number,
+                              validator: (value) {
+                                if (value == null || value.isEmpty) {
+                                  return 'Veuillez entrer une valeur cible';
+                                }
+                                if (double.tryParse(value) == null) {
+                                  return 'Veuillez entrer un nombre valide';
+                                }
+                                return null;
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
                   
-                  Navigator.of(context).pop();
-                }
-              }
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFF4CAF50),
-            ),
-            child: const Text('Ajouter'),
-          ),
-        ],
+                  // Bas de la boîte avec les boutons d'action
+                  Container(
+                    padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
+                    decoration: BoxDecoration(
+                      color: Colors.grey.shade50,
+                      borderRadius: const BorderRadius.only(
+                        bottomLeft: Radius.circular(20),
+                        bottomRight: Radius.circular(20),
+                      ),
+                      border: Border(
+                        top: BorderSide(color: Colors.grey.shade200),
+                      ),
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () {
+                            Navigator.of(context).pop();
+                          },
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.textLightColor,
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                          child: const Text(
+                            'Annuler',
+                            style: TextStyle(fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: () {
+                            if (_formKey.currentState!.validate()) {
+                              final authController = Provider.of<AuthController>(context, listen: false);
+                              final ecoGoalController = Provider.of<EcoGoalController>(context, listen: false);
+                              
+                              if (authController.currentUser != null) {
+                                final targetValue = double.parse(_targetController.text);
+                                
+                                ecoGoalController.createGoal(
+                                  userId: authController.currentUser!.uid,
+                                  title: _titleController.text,
+                                  description: _descriptionController.text,
+                                  type: _selectedType,
+                                  frequency: _selectedFrequency,
+                                  target: targetValue.toInt(),
+                                  startDate: DateTime.now(),
+                                  endDate: DateTime.now().add(const Duration(days: 30)),
+                                );
+                                
+                                Navigator.of(context).pop();
+                              }
+                            }
+                          },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.secondaryColor,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          ),
+                          child: const Text(
+                            'Créer',
+                            style: TextStyle(fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        ),
       ),
     );
+  }
+  
+  // Fonction pour obtenir l'unité en fonction du type d'objectif
+  String _getUnitForType(GoalType type) {
+    switch (type) {
+      case GoalType.waterSaving:
+        return 'litres';
+      case GoalType.energySaving:
+        return 'kWh';
+      case GoalType.wasteReduction:
+        return 'kg';
+      case GoalType.transportation:
+        return 'km';
+      case GoalType.sustainableShopping:
+        return 'achats';
+      case GoalType.custom:
+        return 'unités';
+      default:
+        return 'unités';
+    }
+  }
+  
+  // Fonction pour obtenir le libellé du type d'objectif
+  String _getTypeLabel(GoalType type) {
+    switch (type) {
+      case GoalType.waterSaving:
+        return 'Économie d\'eau';
+      case GoalType.energySaving:
+        return 'Économie d\'énergie';
+      case GoalType.wasteReduction:
+        return 'Réduction des déchets';
+      case GoalType.transportation:
+        return 'Transport durable';
+      case GoalType.sustainableShopping:
+        return 'Achats responsables';
+      case GoalType.custom:
+        return 'Objectif personnalisé';
+      default:
+        return 'Objectif personnalisé';
+    }
+  }
+  
+  // Fonction pour obtenir l'icône en fonction de la fréquence
+  IconData _getIconForFrequency(GoalFrequency frequency) {
+    switch (frequency) {
+      case GoalFrequency.daily:
+        return Icons.today;
+      case GoalFrequency.weekly:
+        return Icons.view_week;
+      case GoalFrequency.monthly:
+        return Icons.calendar_month;
+      default:
+        return Icons.calendar_today;
+    }
   }
 }
 
