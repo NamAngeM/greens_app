@@ -303,12 +303,15 @@ class _ProductsViewState extends State<ProductsView> {
               size: 24,
             ),
             const SizedBox(width: 8),
-            const Text(
-              "Explore a green lifestyle",
-              style: TextStyle(
-                color: Color(0xFF1F3140),
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+            Expanded(
+              child: Text(
+                "Explore a green lifestyle",
+                style: const TextStyle(
+                  color: Color(0xFF1F3140),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
               ),
             ),
           ],

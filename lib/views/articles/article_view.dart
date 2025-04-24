@@ -298,12 +298,15 @@ By implementing these water conservation strategies, you can significantly reduc
                               ),
                             ),
                             const SizedBox(width: 8),
-                            const Text(
-                              'Explore a green lifestyle',
-                              style: TextStyle(
-                                color: Color(0xFF4CD964),
-                                fontSize: 14,
-                                fontWeight: FontWeight.w500,
+                            Expanded(
+                              child: Text(
+                                'Explore a green lifestyle',
+                                style: const TextStyle(
+                                  color: Color(0xFF4CD964),
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
                           ],

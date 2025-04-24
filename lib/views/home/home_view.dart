@@ -24,6 +24,7 @@ import 'package:greens_app/models/community_challenge_model.dart';
 import 'package:greens_app/models/article_model.dart';
 import 'package:greens_app/models/eco_badge.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'dart:math' as math;
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -590,58 +591,32 @@ class _HomeViewState extends State<HomeView> {
     
     // Convertir les ProductModel en Product
     if (productController.ecoFriendlyProducts.isNotEmpty) {
-      for (var product in productController.ecoFriendlyProducts) {
-        if (product is ProductModel) {
-          productsToShow.add(
-            Product(
-              id: product.id,
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              imageAsset: product.imageUrl ?? 'assets/images/placeholder.png',
-              category: product.categories.isNotEmpty ? product.categories[0] : 'Divers',
-              isEcoFriendly: product.isEcoFriendly,
-              brand: product.brand ?? 'GreenMinds',
-              ecoRating: 4.0, // Valeur par défaut
-              certifications: [],
-              ecoCriteria: {},
-              nutritionalInfo: {},
-              environmentalImpact: {},
-              ingredients: [],
-              packagingType: '',
-              isRecyclable: true,
-              origin: 'N/A',
-              carbonFootprint: 0.0,
-              manufacturingInfo: {},
-              imageUrl: product.imageUrl ?? '',
-            )
-          );
-        } else {
-          productsToShow.add(
-            Product(
-              id: product.id,
-              name: product.name,
-              description: product.description,
-              price: product.price,
-              imageAsset: product.imageUrl ?? 'assets/images/placeholder.png',
-              category: product.categories.isNotEmpty ? product.categories[0] : 'Divers',
-              isEcoFriendly: product.isEcoFriendly,
-              brand: product.brand ?? 'GreenMinds',
-              ecoRating: 4.0, // Valeur par défaut
-              certifications: [],
-              ecoCriteria: {},
-              nutritionalInfo: {},
-              environmentalImpact: {},
-              ingredients: [],
-              packagingType: '',
-              isRecyclable: true,
-              origin: 'N/A',
-              carbonFootprint: 0.0,
-              manufacturingInfo: {},
-              imageUrl: product.imageUrl ?? '',
-            )
-          );
-        }
+      for (var productModel in productController.ecoFriendlyProducts) {
+        // Créer un objet Product à partir du ProductModel
+        productsToShow.add(
+          Product(
+            id: productModel.id,
+            name: productModel.name,
+            description: productModel.description ?? "",
+            price: productModel.price,
+            imageAsset: productModel.imageUrl,
+            category: productModel.categories.isNotEmpty ? productModel.categories[0] : 'Divers',
+            isEcoFriendly: productModel.isEcoFriendly,
+            brand: productModel.brand ?? 'GreenMinds',
+            ecoRating: 4.0, // Valeur par défaut
+            certifications: [],
+            ecoCriteria: {},
+            nutritionalInfo: {},
+            environmentalImpact: {},
+            ingredients: [],
+            packagingType: '',
+            isRecyclable: true,
+            origin: 'N/A',
+            carbonFootprint: 0.0,
+            manufacturingInfo: {},
+            imageUrl: productModel.imageUrl ?? '',
+          )
+        );
       }
     }
     
@@ -651,7 +626,7 @@ class _HomeViewState extends State<HomeView> {
         Product(
           id: 'product-1',
           name: 'Gourde écologique',
-          description: 'Gourde réutilisable en acier inoxydable, sans BPA',
+          description: 'Gourde réutilisable en acier inoxydable',
           price: 19.99,
           imageAsset: 'assets/images/products/botle.png',
           category: 'Accessoires',
@@ -673,7 +648,7 @@ class _HomeViewState extends State<HomeView> {
         Product(
           id: 'product-2',
           name: 'Brosse à dents bambou',
-          description: 'Brosse à dents en bambou biodégradable avec poils végétaux',
+          description: 'Brosse à dents biodégradable',
           price: 6.50,
           imageAsset: 'assets/images/products/brosse-a-dents-en-bois.png',
           category: 'Hygiène',
@@ -695,7 +670,7 @@ class _HomeViewState extends State<HomeView> {
         Product(
           id: 'product-3',
           name: 'Sacs fruits et légumes',
-          description: 'Lot de 5 sacs réutilisables en filet pour vos achats en vrac',
+          description: 'Lot de 5 sacs réutilisables',
           price: 9.99,
           imageAsset: 'assets/images/products/panier.png',
           category: 'Cuisine',
@@ -717,7 +692,7 @@ class _HomeViewState extends State<HomeView> {
         Product(
           id: 'product-4',
           name: 'Coffret soin cheveux',
-          description: 'Coffret de soins capillaires naturels et écologiques',
+          description: 'Soins capillaires naturels',
           price: 24.50,
           imageAsset: 'assets/images/products/coffret-soin-cheveux.png',
           category: 'Hygiène',
@@ -736,72 +711,6 @@ class _HomeViewState extends State<HomeView> {
           manufacturingInfo: {},
           imageUrl: 'assets/images/products/coffret-soin-cheveux.png',
         ),
-        Product(
-          id: 'product-5',
-          name: 'Sac en tissu',
-          description: 'Sac réutilisable en coton bio pour vos courses',
-          price: 12.99,
-          imageAsset: 'assets/images/products/sac.png',
-          category: 'Accessoires',
-          isEcoFriendly: true,
-          brand: 'GreenMinds',
-          ecoRating: 4.0,
-          certifications: [],
-          ecoCriteria: {},
-          nutritionalInfo: {},
-          environmentalImpact: {},
-          ingredients: [],
-          packagingType: '',
-          isRecyclable: true,
-          origin: 'N/A',
-          carbonFootprint: 0.0,
-          manufacturingInfo: {},
-          imageUrl: 'assets/images/products/sac.png',
-        ),
-        Product(
-          id: 'product-6',
-          name: 'Dentifrice solide',
-          description: 'Dentifrice en comprimés à croquer, zéro déchet',
-          price: 7.90,
-          imageAsset: 'assets/images/products/packshot-dentifrice.png',
-          category: 'Hygiène',
-          isEcoFriendly: true,
-          brand: 'GreenMinds',
-          ecoRating: 4.0,
-          certifications: [],
-          ecoCriteria: {},
-          nutritionalInfo: {},
-          environmentalImpact: {},
-          ingredients: [],
-          packagingType: '',
-          isRecyclable: true,
-          origin: 'N/A',
-          carbonFootprint: 0.0,
-          manufacturingInfo: {},
-          imageUrl: 'assets/images/products/packshot-dentifrice.png',
-        ),
-        Product(
-          id: 'product-7',
-          name: 'Rouge à lèvres naturel',
-          description: 'Rouge à lèvres fabriqué à partir d\'ingrédients naturels et biologiques',
-          price: 14.95,
-          imageAsset: 'assets/images/products/rouge-a-levres.png',
-          category: 'Beauté',
-          isEcoFriendly: true,
-          brand: 'GreenMinds',
-          ecoRating: 4.0,
-          certifications: [],
-          ecoCriteria: {},
-          nutritionalInfo: {},
-          environmentalImpact: {},
-          ingredients: [],
-          packagingType: '',
-          isRecyclable: true,
-          origin: 'N/A',
-          carbonFootprint: 0.0,
-          manufacturingInfo: {},
-          imageUrl: 'assets/images/products/rouge-a-levres.png',
-        ),
       ];
     }
     
@@ -810,11 +719,11 @@ class _HomeViewState extends State<HomeView> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.6,
+        childAspectRatio: 0.7,
         crossAxisSpacing: 12,
         mainAxisSpacing: 12,
       ),
-      itemCount: productsToShow.length,
+      itemCount: math.min(4, productsToShow.length), // Limiter à 4 produits maximum
       itemBuilder: (context, index) {
         final product = productsToShow[index];
         return _buildProductCard(product);
@@ -1369,44 +1278,607 @@ class _HomeViewState extends State<HomeView> {
   }
 
   Widget _buildProfilePage(AuthController authController) {
-    return Center(
+    return SingleChildScrollView(
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircleAvatar(
-            radius: 50,
-            backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
+          // Section d'en-tête de profil avec image de couverture
+          Stack(
+            clipBehavior: Clip.none,
+            alignment: Alignment.bottomCenter,
+            children: [
+              // Image de couverture
+              Container(
+                height: 180,
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  image: DecorationImage(
+                    image: AssetImage('assets/images/backgrounds/mountain_background.png'),
+                    fit: BoxFit.cover,
+                  ),
+                  color: Color(0xFF4CAF50),
+                ),
+              ),
+              
+              // Photo de profil
+              Positioned(
+                bottom: -50,
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 4),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.1),
+                        blurRadius: 8,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  child: const CircleAvatar(
+                    radius: 50,
+                    backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
+                  ),
+                ),
+              ),
+              
+              // Bouton d'édition du profil
+              Positioned(
+                bottom: -30,
+                right: 20,
+                child: ElevatedButton.icon(
+                  onPressed: () {
+                    // Navigation vers l'édition du profil
+                  },
+                  icon: const Icon(Icons.edit, size: 16),
+                  label: const Text('Éditer'),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.white,
+                    foregroundColor: const Color(0xFF4CAF50),
+                    elevation: 2,
+                    shadowColor: Colors.black.withOpacity(0.1),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(20),
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
-          const SizedBox(height: 16),
-          const Text(
-            'Leah Ward',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
+          
+          // Espace pour la photo de profil
+          const SizedBox(height: 60),
+          
+          // Informations principales
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const Text(
+                  'Leah Ward',
+                  style: TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                    color: Color(0xFF1F3140),
+                  ),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 4),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF4CAF50).withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: const [
+                          Icon(
+                            Icons.eco,
+                            size: 14,
+                            color: Color(0xFF4CAF50),
+                          ),
+                          SizedBox(width: 4),
+                          Text(
+                            'Éco-enthusiaste',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF4CAF50),
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      'Membre depuis 2023',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Statistiques d'impact
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Card(
+              elevation: 2,
+              shadowColor: Colors.black.withOpacity(0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: const [
+                        Icon(
+                          Icons.bar_chart,
+                          color: Color(0xFF1F3140),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Votre impact écologique',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF1F3140),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildStatItem('28', 'Produits\nécologiques', Icons.shopping_bag_outlined),
+                        _buildStatItem('12.5kg', 'CO₂\névité', Icons.eco_outlined),
+                        _buildStatItem('85%', 'Score\nvert', Icons.insert_chart_outlined),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Badges et réalisations
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Badges et réalisations',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F3140),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text(
+                        'Voir tout',
+                        style: TextStyle(
+                          color: Color(0xFF4CAF50),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                SingleChildScrollView(
+                  scrollDirection: Axis.horizontal,
+                  child: Row(
+                    children: [
+                      _buildBadge('Débutant', Icons.eco_outlined, 'Premier pas écologique'),
+                      _buildBadge('Recycleur', Icons.recycling, '10 produits recyclables'),
+                      _buildBadge('Expert', Icons.star, '30 jours d\'activité'),
+                      _buildBadge('Champion', Icons.military_tech, '50 articles consultés'),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Favoris récents
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Vos favoris récents',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Color(0xFF1F3140),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text(
+                        'Voir tout',
+                        style: TextStyle(
+                          color: Color(0xFF4CAF50),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                _buildFavoritesPreview(),
+              ],
+            ),
+          ),
+          
+          const SizedBox(height: 24),
+          
+          // Menu de paramètres
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
+            child: Card(
+              elevation: 2,
+              shadowColor: Colors.black.withOpacity(0.1),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                child: Column(
+                  children: [
+                    _buildSettingsItem(
+                      'Paramètres du compte',
+                      'Gérer vos informations personnelles',
+                      Icons.person_outline,
+                      () {},
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildSettingsItem(
+                      'Notifications',
+                      'Gérer vos préférences de notification',
+                      Icons.notifications_none,
+                      () {},
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildSettingsItem(
+                      'Confidentialité et sécurité',
+                      'Gérer vos paramètres de confidentialité',
+                      Icons.lock_outline,
+                      () {},
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildSettingsItem(
+                      'Aide et support',
+                      'Obtenir de l\'aide ou contacter le support',
+                      Icons.help_outline,
+                      () {},
+                    ),
+                    const Divider(height: 1, indent: 56),
+                    _buildSettingsItem(
+                      'Déconnexion',
+                      'Se déconnecter de votre compte',
+                      Icons.logout,
+                      () {
+                        authController.signOut();
+                      },
+                      textColor: Colors.red,
+                      iconColor: Colors.red,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          const SizedBox(height: 40),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildStatItem(String value, String label, IconData icon) {
+    return Column(
+      children: [
+        Container(
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: const Color(0xFF4CAF50).withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFF4CAF50),
+            size: 24,
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.bold,
+            color: Color(0xFF1F3140),
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 12,
+            color: Colors.grey,
+          ),
+          textAlign: TextAlign.center,
+        ),
+      ],
+    );
+  }
+  
+  Widget _buildBadge(String title, IconData icon, String description) {
+    return Container(
+      width: 100,
+      margin: const EdgeInsets.only(right: 12),
+      child: Column(
+        children: [
+          Container(
+            width: 60,
+            height: 60,
+            decoration: BoxDecoration(
+              color: const Color(0xFF4CAF50).withOpacity(0.1),
+              shape: BoxShape.circle,
+            ),
+            child: Icon(
+              icon,
+              color: const Color(0xFF4CAF50),
+              size: 30,
             ),
           ),
           const SizedBox(height: 8),
-          const Text(
-            'Eco-enthusiaste depuis 2023',
-            style: TextStyle(
-              fontSize: 16,
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 14,
+              fontWeight: FontWeight.bold,
+              color: Color(0xFF1F3140),
+            ),
+            textAlign: TextAlign.center,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            description,
+            style: const TextStyle(
+              fontSize: 10,
               color: Colors.grey,
             ),
-          ),
-          const SizedBox(height: 32),
-          ElevatedButton(
-            onPressed: () {
-              // Handle logout
-              authController.signOut();
-            },
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 12),
-            ),
-            child: const Text('Sign Out'),
+            textAlign: TextAlign.center,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
           ),
         ],
+      ),
+    );
+  }
+  
+  Widget _buildFavoritesPreview() {
+    // Simuler quelques produits favoris pour la prévisualisation
+    List<Product> favorites = [
+      Product(
+        id: 'product-1',
+        name: 'Gourde écologique',
+        description: 'Gourde réutilisable en acier',
+        price: 19.99,
+        imageAsset: 'assets/images/products/botle.png',
+        category: 'Accessoires',
+        isEcoFriendly: true,
+        brand: 'GreenMinds',
+        ecoRating: 4.0,
+        certifications: [],
+        ecoCriteria: {},
+        nutritionalInfo: {},
+        environmentalImpact: {},
+        ingredients: [],
+        packagingType: '',
+        isRecyclable: true,
+        origin: 'N/A',
+        carbonFootprint: 0.0,
+        manufacturingInfo: {},
+        imageUrl: 'assets/images/products/botle.png',
+      ),
+      Product(
+        id: 'product-2',
+        name: 'Brosse à dents bambou',
+        description: 'Brosse à dents biodégradable',
+        price: 6.50,
+        imageAsset: 'assets/images/products/brosse-a-dents-en-bois.png',
+        category: 'Hygiène',
+        isEcoFriendly: true,
+        brand: 'EcoBrush',
+        ecoRating: 4.5,
+        certifications: [],
+        ecoCriteria: {},
+        nutritionalInfo: {},
+        environmentalImpact: {},
+        ingredients: [],
+        packagingType: '',
+        isRecyclable: true,
+        origin: 'N/A',
+        carbonFootprint: 0.0,
+        manufacturingInfo: {},
+        imageUrl: 'assets/images/products/brosse-a-dents-en-bois.png',
+      ),
+    ];
+
+    return SizedBox(
+      height: 120,
+      child: ListView.builder(
+        scrollDirection: Axis.horizontal,
+        itemCount: favorites.length,
+        itemBuilder: (context, index) {
+          final product = favorites[index];
+          return GestureDetector(
+            onTap: () => _showProductDetails(product),
+            child: Container(
+              width: 200,
+              margin: const EdgeInsets.only(right: 12),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  ClipRRect(
+                    borderRadius: const BorderRadius.only(
+                      topLeft: Radius.circular(12),
+                      bottomLeft: Radius.circular(12),
+                    ),
+                    child: Image.asset(
+                      product.imageAsset!,
+                      width: 70,
+                      height: 120,
+                      fit: BoxFit.cover,
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                            product.name,
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1F3140),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 4),
+                          Text(
+                            '\$${product.price.toStringAsFixed(2)}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF4CAF50),
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF4CAF50).withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  'Éco',
+                                  style: TextStyle(
+                                    fontSize: 10,
+                                    color: Color(0xFF4CAF50),
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
+    );
+  }
+  
+  Widget _buildSettingsItem(String title, String subtitle, IconData icon, VoidCallback onTap, {
+    Color iconColor = const Color(0xFF1F3140),
+    Color textColor = const Color(0xFF1F3140),
+  }) {
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+        child: Row(
+          children: [
+            Icon(
+              icon,
+              color: iconColor,
+              size: 24,
+            ),
+            const SizedBox(width: 16),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    title,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w500,
+                      color: textColor,
+                    ),
+                  ),
+                  if (subtitle.isNotEmpty)
+                    const SizedBox(height: 2),
+                  if (subtitle.isNotEmpty)
+                    Text(
+                      subtitle,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios,
+              color: Colors.grey.shade400,
+              size: 16,
+            ),
+          ],
+        ),
       ),
     );
   }
