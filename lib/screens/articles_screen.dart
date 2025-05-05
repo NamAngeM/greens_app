@@ -126,22 +126,14 @@ class _ArticlesScreenState extends State<ArticlesScreen> with AutomaticKeepAlive
                           child: Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
                             children: [
+                              const Spacer(),
                               Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: BoxDecoration(
-                                      color: Colors.green.shade100,
-                                      borderRadius: BorderRadius.circular(8),
-                                    ),
-                                    child: const Text(
-                                      'g',
-                                      style: TextStyle(
-                                        color: Colors.green,
-                                        fontSize: 16,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
+                                  const Icon(
+                                    Icons.eco,
+                                    color: Color(0xFF4CAF50),
+                                    size: 24,
                                   ),
                                   const SizedBox(width: 8),
                                   const Text(
@@ -149,10 +141,12 @@ class _ArticlesScreenState extends State<ArticlesScreen> with AutomaticKeepAlive
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
+                                      color: Color(0xFF1F3140),
                                     ),
                                   ),
                                 ],
                               ),
+                              const Spacer(),
                               IconButton(
                                 icon: const Icon(Icons.settings_outlined),
                                 onPressed: () {
