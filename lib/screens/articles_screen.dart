@@ -286,7 +286,7 @@ class _ArticlesScreenState extends State<ArticlesScreen> with AutomaticKeepAlive
                                         Expanded(
                                           child: _buildArticleCard(
                                             title: '5 easy steps to go green today',
-                                            imageUrl: 'assets/images/article1.jpg',
+                                            imageUrl: 'assets/images/backgrounds/latest_article_background.png',
                                             duration: '20 Min',
                                           ),
                                         ),
@@ -294,7 +294,7 @@ class _ArticlesScreenState extends State<ArticlesScreen> with AutomaticKeepAlive
                                         Expanded(
                                           child: _buildArticleCard(
                                             title: 'Eco hacks for daily life',
-                                            imageUrl: 'assets/images/article2.jpg',
+                                            imageUrl: 'assets/images/backgrounds/tips_background.png',
                                             duration: '10 Min',
                                           ),
                                         ),
@@ -303,8 +303,61 @@ class _ArticlesScreenState extends State<ArticlesScreen> with AutomaticKeepAlive
                                     const SizedBox(height: 16),
                                     _buildArticleCard(
                                       title: 'How to reduce your carbon footprint',
-                                      imageUrl: 'assets/images/article3.jpg',
+                                      imageUrl: 'assets/images/backgrounds/latest_article_background.png',
                                       duration: '15 Min',
+                                    ),
+                                    
+                                    // Ajout de l'image et du bouton chatbot
+                                    Container(
+                                      width: double.infinity,
+                                      margin: const EdgeInsets.only(top: 24, bottom: 16),
+                                      padding: const EdgeInsets.symmetric(vertical: 24),
+                                      decoration: const BoxDecoration(
+                                        image: DecorationImage(
+                                          image: AssetImage('assets/images/backgrounds/footer_background2.png'),
+                                          fit: BoxFit.cover,
+                                        ),
+                                        borderRadius: BorderRadius.all(Radius.circular(12)),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          // Logo et texte
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(vertical: 16),
+                                            child: Image.asset(
+                                              'assets/images/logo/green_minds_logo.png',
+                                              width:95,
+                                              height:95,
+                                            ),
+                                          ),
+                                          
+                                          // Bouton chatbot
+                                          Padding(
+                                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                            child: GestureDetector(
+                                              onTap: () {
+                                                Navigator.pushNamed(context, AppRoutes.ecoChatbot);
+                                              },
+                                              child: Container(
+                                                padding: const EdgeInsets.symmetric(vertical: 12),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.white.withOpacity(0.8),
+                                                  borderRadius: BorderRadius.circular(24),
+                                                ),
+                                                child: const Center(
+                                                  child: Text(
+                                                    'Discuss with our chatbot',
+                                                    style: TextStyle(
+                                                      color: Colors.black87,
+                                                      fontWeight: FontWeight.w500,
+                                                    ),
+                                                  ),
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
                                     ),
                                   ],
                                 ),
