@@ -101,25 +101,33 @@ class _HomeViewState extends State<HomeView> {
       body: IndexedStack(
         index: _currentIndex,
         children: [
-          // Page d'accueil
+          // Page d'accueil (index 0)
           _buildHomePage(),
           
-          // Page des produits
+          // Page des articles (index 1)
+          const Center(child: Text('Page Articles - À implémenter')),
+          
+          // Page des produits (index 2)
           const Center(child: Text('Page Produits - À implémenter')),
           
-          // Page du chatbot (placeholder)
-          const Center(child: Text('Page Chatbot - À implémenter')),
-          
-          // Page de profil
+          // Page de profil (index 3)
           _buildProfilePage(authController),
+          
+          // Page du chatbot (index 4)
+          const Center(child: Text('Page Chatbot - À implémenter')),
         ],
       ),
       bottomNavigationBar: CustomMenu(
-        currentIndex: 0, // Mettre à jour l'indice du menu
+        currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          // Gérer la navigation spéciale pour le chatbot (index 4)
+          if (index == 4) {
+            Navigator.pushNamed(context, AppRoutes.ecoChatbot);
+          } else {
+            setState(() {
+              _currentIndex = index;
+            });
+          }
         },
       ),
     );
@@ -237,7 +245,7 @@ class _HomeViewState extends State<HomeView> {
                       onPressed: () {
                         // Navigate to chatbot
                         setState(() {
-                          _currentIndex = 2; // Index for chatbot page
+                          _currentIndex = 4; // Index for chatbot page
                         });
                       },
                       style: ElevatedButton.styleFrom(
@@ -1289,7 +1297,7 @@ class _HomeViewState extends State<HomeView> {
             children: [
               // Image de couverture
               Container(
-                height: 180,
+                height: 160, // Réduit de 180px à 160px
                 width: double.infinity,
                 decoration: const BoxDecoration(
                   image: DecorationImage(
@@ -1302,12 +1310,12 @@ class _HomeViewState extends State<HomeView> {
               
               // Photo de profil
               Positioned(
-                bottom: -50,
+                bottom: -40, // Réduit de -50px à -40px
                 child: Container(
                   decoration: BoxDecoration(
                     color: Colors.white,
                     shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 4),
+                    border: Border.all(color: Colors.white, width: 3), // Réduit de 4px à 3px
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black.withOpacity(0.1),
@@ -1317,21 +1325,21 @@ class _HomeViewState extends State<HomeView> {
                     ],
                   ),
                   child: const CircleAvatar(
-                    radius: 50,
-                    backgroundImage: AssetImage('assets/images/profile_placeholder.png'),
+                    radius: 40, // Réduit de 50px à 40px
+                    backgroundImage: AssetImage('assets/images/profile/profile_placeholder.png'),
                   ),
                 ),
               ),
               
               // Bouton d'édition du profil
               Positioned(
-                bottom: -30,
+                bottom: -25, // Ajusté de -30px à -25px
                 right: 20,
                 child: ElevatedButton.icon(
                   onPressed: () {
                     // Navigation vers l'édition du profil
                   },
-                  icon: const Icon(Icons.edit, size: 16),
+                  icon: const Icon(Icons.edit, size: 14), // Réduit de 16px à 14px
                   label: const Text('Éditer'),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.white,
@@ -1341,6 +1349,7 @@ class _HomeViewState extends State<HomeView> {
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(20),
                     ),
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6), // Réduit le padding
                   ),
                 ),
               ),
@@ -1348,7 +1357,7 @@ class _HomeViewState extends State<HomeView> {
           ),
           
           // Espace pour la photo de profil
-          const SizedBox(height: 60),
+          const SizedBox(height: 50), // Réduit de 60px à 50px
           
           // Informations principales
           Padding(
@@ -1359,7 +1368,7 @@ class _HomeViewState extends State<HomeView> {
                 const Text(
                   'Leah Ward',
                   style: TextStyle(
-                    fontSize: 24,
+                    fontSize: 22, // Réduit de 24px à 22px
                     fontWeight: FontWeight.bold,
                     color: Color(0xFF1F3140),
                   ),
@@ -1370,7 +1379,7 @@ class _HomeViewState extends State<HomeView> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3), // Réduit vertical de 4px à 3px
                       decoration: BoxDecoration(
                         color: const Color(0xFF4CAF50).withOpacity(0.1),
                         borderRadius: BorderRadius.circular(12),
@@ -1379,14 +1388,14 @@ class _HomeViewState extends State<HomeView> {
                         children: const [
                           Icon(
                             Icons.eco,
-                            size: 14,
+                            size: 12, // Réduit de 14px à 12px
                             color: Color(0xFF4CAF50),
                           ),
                           SizedBox(width: 4),
                           Text(
                             'Éco-enthusiaste',
                             style: TextStyle(
-                              fontSize: 12,
+                              fontSize: 11, // Réduit de 12px à 11px
                               color: Color(0xFF4CAF50),
                               fontWeight: FontWeight.w600,
                             ),
@@ -1398,7 +1407,7 @@ class _HomeViewState extends State<HomeView> {
                     const Text(
                       'Membre depuis 2023',
                       style: TextStyle(
-                        fontSize: 12,
+                        fontSize: 11, // Réduit de 12px à 11px
                         color: Colors.grey,
                       ),
                     ),
@@ -1408,7 +1417,7 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 20), // Réduit de 24px à 20px
           
           // Statistiques d'impact
           Padding(
@@ -1420,7 +1429,7 @@ class _HomeViewState extends State<HomeView> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.all(14), // Réduit de 16px à 14px
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -1429,19 +1438,20 @@ class _HomeViewState extends State<HomeView> {
                         Icon(
                           Icons.bar_chart,
                           color: Color(0xFF1F3140),
+                          size: 18, // Ajout d'une taille d'icône plus petite
                         ),
                         SizedBox(width: 8),
                         Text(
                           'Votre impact écologique',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 15, // Réduit de 16px à 15px
                             fontWeight: FontWeight.bold,
                             color: Color(0xFF1F3140),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 14), // Réduit de 16px à 14px
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
@@ -1456,7 +1466,7 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 20), // Réduit de 24px à 20px
           
           // Badges et réalisations
           Padding(
@@ -1470,23 +1480,27 @@ class _HomeViewState extends State<HomeView> {
                     const Text(
                       'Badges et réalisations',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16, // Réduit de 18px à 16px
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1F3140),
                       ),
                     ),
                     TextButton(
                       onPressed: () {},
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Réduit le padding
+                      ),
                       child: const Text(
                         'Voir tout',
                         style: TextStyle(
                           color: Color(0xFF4CAF50),
+                          fontSize: 13, // Ajout d'une taille de police plus petite
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10), // Réduit de 12px à 10px
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -1502,7 +1516,7 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 20), // Réduit de 24px à 20px
           
           // Favoris récents
           Padding(
@@ -1516,29 +1530,33 @@ class _HomeViewState extends State<HomeView> {
                     const Text(
                       'Vos favoris récents',
                       style: TextStyle(
-                        fontSize: 18,
+                        fontSize: 16, // Réduit de 18px à 16px
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1F3140),
                       ),
                     ),
                     TextButton(
                       onPressed: () {},
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4), // Réduit le padding
+                      ),
                       child: const Text(
                         'Voir tout',
                         style: TextStyle(
                           color: Color(0xFF4CAF50),
+                          fontSize: 13, // Ajout d'une taille de police plus petite
                         ),
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 10), // Réduit de 12px à 10px
                 _buildFavoritesPreview(),
               ],
             ),
           ),
           
-          const SizedBox(height: 24),
+          const SizedBox(height: 20), // Réduit de 24px à 20px
           
           // Menu de paramètres
           Padding(
@@ -1550,7 +1568,7 @@ class _HomeViewState extends State<HomeView> {
                 borderRadius: BorderRadius.circular(16),
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(vertical: 8),
+                padding: const EdgeInsets.symmetric(vertical: 6), // Réduit de 8px à 6px
                 child: Column(
                   children: [
                     _buildSettingsItem(
@@ -1597,7 +1615,7 @@ class _HomeViewState extends State<HomeView> {
             ),
           ),
           
-          const SizedBox(height: 40),
+          const SizedBox(height: 30), // Réduit de 40px à 30px
         ],
       ),
     );
