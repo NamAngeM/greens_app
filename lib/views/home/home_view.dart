@@ -719,9 +719,9 @@ class _HomeViewState extends State<HomeView> {
       physics: const NeverScrollableScrollPhysics(),
       gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
         crossAxisCount: 2,
-        childAspectRatio: 0.7,
+        childAspectRatio: 0.55, // Modifié de 0.7 à 0.55 pour donner plus d'espace vertical
         crossAxisSpacing: 12,
-        mainAxisSpacing: 12,
+        mainAxisSpacing: 16, // Augmenté l'espacement vertical
       ),
       itemCount: math.min(4, productsToShow.length), // Limiter à 4 produits maximum
       itemBuilder: (context, index) {
@@ -762,7 +762,7 @@ class _HomeViewState extends State<HomeView> {
               child: Stack(
                 children: [
                   Container(
-                    height: 130,
+                    height: 120, // Réduit de 130px à 120px
                     width: double.infinity,
                     decoration: BoxDecoration(
                       color: Colors.grey.shade200,
@@ -818,7 +818,7 @@ class _HomeViewState extends State<HomeView> {
             // Product info
             Expanded(
               child: Padding(
-                padding: const EdgeInsets.all(10),
+                padding: const EdgeInsets.all(8), // Réduit de 10px à 8px
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
@@ -827,7 +827,7 @@ class _HomeViewState extends State<HomeView> {
                       product.category,
                       style: TextStyle(
                         color: Colors.grey.shade600,
-                        fontSize: 11,
+                        fontSize: 10, // Réduit de 11px à 10px
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -836,7 +836,7 @@ class _HomeViewState extends State<HomeView> {
                       product.name,
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
-                        fontSize: 13,
+                        fontSize: 12, // Réduit de 13px à 12px
                       ),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
@@ -846,9 +846,9 @@ class _HomeViewState extends State<HomeView> {
                       product.description,
                       style: TextStyle(
                         color: Colors.grey.shade700,
-                        fontSize: 11,
+                        fontSize: 10, // Réduit de 11px à 10px
                       ),
-                      maxLines: 2,
+                      maxLines: 1, // Réduit de 2 à 1 ligne
                       overflow: TextOverflow.ellipsis,
                     ),
                     const Spacer(),
@@ -864,24 +864,24 @@ class _HomeViewState extends State<HomeView> {
                               '\$${product.price.toStringAsFixed(2)}',
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
-                                fontSize: 16,
+                                fontSize: 14, // Réduit de 16px à 14px
                                 color: Color(0xFF4CAF50),
                               ),
                             ),
                           ],
                         ),
                         Container(
-                          padding: const EdgeInsets.all(8),
+                          padding: const EdgeInsets.all(6), // Réduit de 8px à 6px
                           decoration: BoxDecoration(
                             color: const Color(0xFF4CAF50),
-                            borderRadius: BorderRadius.circular(12),
+                            borderRadius: BorderRadius.circular(10), // Réduit de 12px à 10px
                           ),
                           child: InkWell(
                             onTap: () => _showAddToCartOptions(product),
                             child: const Icon(
                               Icons.add_shopping_cart_outlined,
                               color: Colors.white,
-                              size: 18,
+                              size: 16, // Réduit de 18px à 16px
                             ),
                           ),
                         ),
