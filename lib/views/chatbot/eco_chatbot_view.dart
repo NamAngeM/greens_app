@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/services/chatbot_service.dart';
+import 'package:greens_app/widgets/menu.dart';
+import 'package:greens_app/utils/app_router.dart';
 
 /// Modèle pour représenter un message dans le chatbot
 class ChatMessage {
@@ -30,6 +32,7 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
   bool _isLoading = false;
   String _connectionStatus = "Non initialisé";
   late ChatbotService _chatbotService;
+  int _currentIndex = 4; // Index pour la page chatbot
 
   @override
   void initState() {
@@ -149,9 +152,31 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        title: const Text("Assistant Écologique"),
-        backgroundColor: Colors.green,
+        backgroundColor: Colors.white,
+        elevation: 0,
+        title: Row(
+          children: [
+            const Icon(
+              Icons.eco,
+              color: Color(0xFF4CAF50),
+              size: 24,
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                "Assistant Écologique",
+                style: const TextStyle(
+                  color: Color(0xFF1F3140),
+                  fontSize: 16,
+                  fontWeight: FontWeight.w500,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
+            ),
+          ],
+        ),
         actions: [
           // Indicateur de statut
           Padding(
@@ -160,13 +185,16 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
               children: [
                 Icon(
                   _isInitialized ? Icons.check_circle : Icons.error,
-                  color: _isInitialized ? Colors.green : Colors.red,
+                  color: _isInitialized ? Color(0xFF4CAF50) : Colors.red,
                   size: 16,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   _connectionStatus,
-                  style: const TextStyle(fontSize: 12),
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFF1F3140),
+                  ),
                 ),
               ],
             ),
@@ -193,7 +221,9 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
             const Padding(
               padding: EdgeInsets.symmetric(vertical: 8.0),
               child: Center(
-                child: CircularProgressIndicator(),
+                child: CircularProgressIndicator(
+                  color: Color(0xFF4CAF50),
+                ),
               ),
             ),
           
@@ -209,11 +239,28 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
                       hintText: "Posez votre question écologique...",
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(24.0),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24.0),
+                        borderSide: BorderSide(
+                          color: Colors.grey.shade300,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24.0),
+                        borderSide: BorderSide(
+                          color: Color(0xFF4CAF50),
+                        ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
                         horizontal: 16.0,
                         vertical: 12.0,
                       ),
+                      fillColor: Colors.grey.shade50,
+                      filled: true,
                     ),
                     onSubmitted: (_) => _handleSubmit(),
                   ),
@@ -221,13 +268,34 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
                 const SizedBox(width: 8.0),
                 FloatingActionButton(
                   onPressed: _handleSubmit,
-                  backgroundColor: Colors.green,
+                  backgroundColor: Color(0xFF4CAF50),
                   child: const Icon(Icons.send),
                 ),
               ],
             ),
           ),
         ],
+      ),
+      bottomNavigationBar: CustomMenu(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          if (index != _currentIndex) {
+            switch (index) {
+              case 0: // Home
+                Navigator.pushReplacementNamed(context, AppRoutes.home);
+                break;
+              case 1: // Articles
+                Navigator.pushReplacementNamed(context, AppRoutes.articles);
+                break;
+              case 2: // Products
+                Navigator.pushReplacementNamed(context, AppRoutes.products);
+                break;
+              case 3: // Profile
+                Navigator.pushReplacementNamed(context, AppRoutes.profile);
+                break;
+            }
+          }
+        },
       ),
     );
   }
@@ -243,7 +311,7 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
         children: [
           if (!message.isUser) ...[
             CircleAvatar(
-              backgroundColor: Colors.green,
+              backgroundColor: Color(0xFF4CAF50),
               child: const Icon(
                 Icons.eco,
                 color: Colors.white,
@@ -256,23 +324,23 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
               padding: const EdgeInsets.all(12.0),
               decoration: BoxDecoration(
                 color: message.isUser
-                    ? Colors.green
+                    ? Color(0xFF4CAF50)
                     : Colors.grey.shade200,
                 borderRadius: BorderRadius.circular(16.0),
               ),
               child: Text(
                 message.text,
                 style: TextStyle(
-                  color: message.isUser ? Colors.white : Colors.black,
+                  color: message.isUser ? Colors.white : Color(0xFF1F3140),
                 ),
               ),
             ),
           ),
           if (message.isUser) ...[
             const SizedBox(width: 8.0),
-            const CircleAvatar(
-              backgroundColor: Colors.blue,
-              child: Icon(
+            CircleAvatar(
+              backgroundColor: Colors.blue.shade700,
+              child: const Icon(
                 Icons.person,
                 color: Colors.white,
               ),
