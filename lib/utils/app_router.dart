@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:greens_app/services/auth_service.dart';
 import 'package:greens_app/views/auth/login_view.dart';
 import 'package:greens_app/views/auth/signup_view.dart';
+import 'package:greens_app/screens/articles_screen.dart';
 import 'package:greens_app/views/home/home_view.dart';
 import 'package:greens_app/views/onboarding/onboarding_view.dart';
 import 'package:greens_app/views/splash_view.dart';
@@ -96,7 +97,7 @@ class AppRouter {
       case AppRoutes.question5:
         return MaterialPageRoute(builder: (_) => const Question5View());
       case AppRoutes.articles:
-        return MaterialPageRoute(builder: (_) => const ArticleView());
+        return MaterialPageRoute(builder: (_) => const ArticlesScreen());
       case AppRoutes.blog:
         return MaterialPageRoute(builder: (_) => const BlogView());
       case AppRoutes.legalNotice:

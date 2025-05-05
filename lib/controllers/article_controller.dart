@@ -9,42 +9,48 @@ class ArticleController extends ChangeNotifier {
   List<ArticleModel> _recommendedArticles = [];
   ArticleModel? _selectedArticle;
   bool _isLoading = false;
-  String? _errorMessage;
+  String _error = '';
 
   List<ArticleModel> get allArticles => _allArticles;
   List<ArticleModel> get filteredArticles => _filteredArticles;
   List<ArticleModel> get recommendedArticles => _recommendedArticles;
+  List<ArticleModel> get articles => _allArticles;
   ArticleModel? get selectedArticle => _selectedArticle;
   bool get isLoading => _isLoading;
-  String? get errorMessage => _errorMessage;
+  String get error => _error;
 
   // Récupérer tous les articles
   Future<void> getAllArticles() async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
       _allArticles = await _articleService.getAllArticles();
       _filteredArticles = _allArticles;
     } catch (e) {
-      _errorMessage = 'Erreur lors de la récupération des articles: $e';
+      _error = 'Erreur lors de la récupération des articles: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
     }
   }
+  
+  // Alias pour getAllArticles pour compatibilité
+  Future<void> fetchArticles() async {
+    await getAllArticles();
+  }
 
   // Récupérer les articles par catégorie
   Future<void> getArticlesByCategory(String category) async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
       _filteredArticles = await _articleService.getArticlesByCategory(category);
     } catch (e) {
-      _errorMessage = 'Erreur lors de la récupération des articles par catégorie: $e';
+      _error = 'Erreur lors de la récupération des articles par catégorie: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -54,13 +60,13 @@ class ArticleController extends ChangeNotifier {
   // Récupérer un article par son ID
   Future<void> getArticleById(String articleId) async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
       _selectedArticle = await _articleService.getArticleById(articleId);
     } catch (e) {
-      _errorMessage = 'Erreur lors de la récupération de l\'article: $e';
+      _error = 'Erreur lors de la récupération de l\'article: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -70,7 +76,7 @@ class ArticleController extends ChangeNotifier {
   // Rechercher des articles
   Future<void> searchArticles(String query) async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
@@ -80,7 +86,7 @@ class ArticleController extends ChangeNotifier {
         _filteredArticles = await _articleService.searchArticles(query);
       }
     } catch (e) {
-      _errorMessage = 'Erreur lors de la recherche d\'articles: $e';
+      _error = 'Erreur lors de la recherche d\'articles: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -90,13 +96,13 @@ class ArticleController extends ChangeNotifier {
   // Récupérer les articles les plus récents
   Future<void> getRecentArticles({int limit = 5}) async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
       _filteredArticles = await _articleService.getRecentArticles(limit: limit);
     } catch (e) {
-      _errorMessage = 'Erreur lors de la récupération des articles récents: $e';
+      _error = 'Erreur lors de la récupération des articles récents: $e';
     } finally {
       _isLoading = false;
       notifyListeners();
@@ -104,18 +110,17 @@ class ArticleController extends ChangeNotifier {
   }
 
   // Récupérer les articles recommandés en fonction des intérêts de l'utilisateur
-  Future<void> getRecommendedArticles(List<String> userInterests, {int limit = 5}) async {
+  Future<void> getRecommendedArticles({int limit = 5}) async {
     _isLoading = true;
-    _errorMessage = null;
+    _error = '';
     notifyListeners();
 
     try {
       _recommendedArticles = await _articleService.getRecommendedArticles(
-        userInterests,
         limit: limit,
       );
     } catch (e) {
-      _errorMessage = 'Erreur lors de la récupération des articles recommandés: $e';
+      _error = 'Erreur lors de la récupération des articles recommandés: $e';
     } finally {
       _isLoading = false;
       notifyListeners();

@@ -1,14 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
-import 'package:greens_app/services/dialogflow_service.dart';
-import 'package:greens_app/services/ollama_service.dart';
+import 'package:greens_app/services/chatbot_service.dart';
 import 'package:greens_app/views/chatbot/llm_settings_view.dart';
 import 'package:uuid/uuid.dart';
-
-import '../../utils/app_colors.dart';
-import '../../widgets/menu.dart';
 
 class ChatbotView extends StatefulWidget {
   const ChatbotView({Key? key}) : super(key: key);
@@ -22,44 +17,33 @@ class _ChatbotViewState extends State<ChatbotView> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
-  late DialogflowService _dialogflowService;
-  late OllamaService _ollamaService;
-  bool _isDialogflowAvailable = false;
-  bool _isOllamaAvailable = false;
+  late N8nChatbotService _n8nService;
+  bool _isN8nAvailable = false;
   final String _sessionId = const Uuid().v4();
-  
-  // Mode de l'IA : true pour Dialogflow, false pour Ollama
-  bool _useDialogflow = true;
 
   @override
   void initState() {
     super.initState();
-    _initAIServices();
+    _initAIService();
     
     _addBotMessage("Bonjour ! Je suis GreenBot, votre assistant spécialisé en écologie. Je peux vous aider sur des sujets comme le développement durable, la réduction des déchets, ou la conservation de l'énergie. Que souhaitez-vous savoir aujourd'hui ?");
   }
   
-  Future<void> _initAIServices() async {
+  Future<void> _initAIService() async {
     try {
       if (!mounted) return;
       
-      // Initialiser Dialogflow
-      _dialogflowService = DialogflowService.instance;
-      await _dialogflowService.initialize();
-      
-      // Initialiser Ollama
-      _ollamaService = OllamaService.instance;
-      await _ollamaService.initialize();
+      // Initialiser n8n
+      _n8nService = N8nChatbotService.instance;
+      await _n8nService.initialize(webhookUrl: 'https://angenam.app.n8n.cloud/webhook-test/chatbot-eco');
       
       setState(() {
-        _isDialogflowAvailable = _dialogflowService.isInitialized;
-        _isOllamaAvailable = _ollamaService.isInitialized;
+        _isN8nAvailable = _n8nService.isInitialized;
       });
     } catch (e) {
-      print('Erreur lors de l\'initialisation des services d\'IA: $e');
+      print('Erreur lors de l\'initialisation du service d\'IA: $e');
       setState(() {
-        _isDialogflowAvailable = false;
-        _isOllamaAvailable = false;
+        _isN8nAvailable = false;
       });
     }
   }
@@ -109,15 +93,6 @@ class _ChatbotViewState extends State<ChatbotView> {
     });
   }
 
-  void _toggleAIService() {
-    setState(() {
-      _useDialogflow = !_useDialogflow;
-    });
-    
-    // Afficher un message pour indiquer le changement
-    _addBotMessage("Mode ${_useDialogflow ? 'Dialogflow' : 'Ollama (local)'} activé.");
-  }
-
   Future<void> _handleSubmit() async {
     final text = _messageController.text.trim();
     if (text.isEmpty) return;
@@ -129,18 +104,10 @@ class _ChatbotViewState extends State<ChatbotView> {
       _isTyping = true;
     });
     
-    if (_useDialogflow && !_isDialogflowAvailable) {
+    // Vérifier la disponibilité du service
+    if (!_isN8nAvailable) {
       await Future.delayed(const Duration(seconds: 1));
-      _addBotMessage("Désolé, je ne peux pas me connecter à Dialogflow. Veuillez vérifier votre configuration ou essayer le mode Ollama local.");
-      setState(() {
-        _isTyping = false;
-      });
-      return;
-    }
-    
-    if (!_useDialogflow && !_isOllamaAvailable) {
-      await Future.delayed(const Duration(seconds: 1));
-      _addBotMessage("Désolé, je ne peux pas me connecter à Ollama. Veuillez vérifier que le serveur Ollama est en cours d'exécution sur votre machine locale ou essayer le mode Dialogflow.");
+      _addBotMessage("Désolé, je ne peux pas me connecter au service n8n. Veuillez vérifier votre configuration.");
       setState(() {
         _isTyping = false;
       });
@@ -148,13 +115,17 @@ class _ChatbotViewState extends State<ChatbotView> {
     }
     
     try {
-      String response;
+      // Convertir les 5 derniers messages pour le contexte
+      final context = _messages
+          .where((msg) => _messages.indexOf(msg) >= _messages.length - 5)
+          .map((msg) => {
+                'text': msg.text,
+                'isUser': msg.isUser,
+                'timestamp': DateTime.now().toIso8601String(),
+              })
+          .toList();
       
-      if (_useDialogflow) {
-        response = await _dialogflowService.detectIntent(text);
-      } else {
-        response = await _ollamaService.getResponse(text);
-      }
+      String response = await _n8nService.getResponse(text, context: context);
       
       _addBotMessage(response);
     } catch (e) {
@@ -195,186 +166,143 @@ class _ChatbotViewState extends State<ChatbotView> {
           ],
         ),
         actions: [
-          // Bouton de basculement entre Dialogflow et Ollama
-          IconButton(
-            icon: Icon(
-              _useDialogflow ? Icons.cloud : Icons.computer,
-              color: Colors.white,
-            ),
-            onPressed: _toggleAIService,
-            tooltip: _useDialogflow ? 'Passer à Ollama (local)' : 'Passer à Dialogflow',
-          ),
           // Indicateur d'état
           Icon(
             Icons.circle,
             size: 12,
-            color: _useDialogflow 
-                ? (_isDialogflowAvailable ? Colors.green : Colors.red)
-                : (_isOllamaAvailable ? Colors.green : Colors.red),
+            color: _isN8nAvailable ? Colors.green : Colors.red,
           ),
           const SizedBox(width: 8),
           IconButton(
-            icon: Icon(
+            icon: const Icon(
               Icons.settings,
               color: Colors.white,
-              size: 24,
             ),
             onPressed: () {
-              // Naviguer vers les paramètres du LLM
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (context) => const LlmSettingsView()),
-              ).then((_) => _initAIServices());
+                MaterialPageRoute(
+                  builder: (context) => const LLMSettingsView(),
+                ),
+              );
             },
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(30),
-          child: Container(
-            alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(left: 16, bottom: 16),
-            child: Row(
-              children: [
-                const Text(
-                  "Ask me about ecology!",
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    fontFamily: 'RethinkSans',
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                  decoration: BoxDecoration(
-                    color: _useDialogflow ? Colors.blue : Colors.green,
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Text(
-                    _useDialogflow ? "Dialogflow" : "Ollama (local)",
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 12,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                if (_useDialogflow && !_isDialogflowAvailable || !_useDialogflow && !_isOllamaAvailable) ...[
-                  const SizedBox(width: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: Colors.red,
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    child: const Text(
-                      "Offline",
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                ],
-              ],
-            ),
-          ),
-        ),
       ),
       body: Column(
         children: [
-          // Messages
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.purple,
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(
+                        Icons.api,
+                        color: Colors.white,
+                        size: 16,
+                      ),
+                      const SizedBox(width: 4),
+                      const Text(
+                        "n8n (agent IA)",
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const SizedBox(width: 4),
+                      Icon(
+                        Icons.circle,
+                        size: 8,
+                        color: _isN8nAvailable ? Colors.green : Colors.red,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
           Expanded(
             child: ListView.builder(
               controller: _scrollController,
               padding: const EdgeInsets.all(16),
               itemCount: _messages.length,
               itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
+                return _buildMessageBubble(_messages[index]);
               },
             ),
           ),
-          
-          // Indicateur de frappe
           if (_isTyping)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              alignment: Alignment.centerLeft,
-              child: const Text(
-                "GreenBot is writing...",
-                style: TextStyle(
-                  color: Colors.grey,
-                  fontSize: 14,
-                  fontStyle: FontStyle.italic,
-                  fontFamily: 'RethinkSans',
-                ),
+            const Padding(
+              padding: EdgeInsets.all(8.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  SizedBox(
+                    width: 20,
+                    height: 20,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    "GreenBot est en train d'écrire...",
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                ],
               ),
             ),
-          
-          // Barre de saisie
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            decoration: BoxDecoration(
-              color: const Color(0xFF1E3246),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.1),
-                  blurRadius: 10,
-                  offset: const Offset(0, -2),
-                ),
-              ],
-            ),
+            color: const Color(0xFF162736),
             child: Row(
               children: [
                 Expanded(
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16),
-                    height: 50,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withOpacity(0.9),
-                      borderRadius: BorderRadius.circular(25),
-                    ),
-                    child: TextField(
-                      controller: _messageController,
-                      decoration: const InputDecoration(
-                        hintText: 'Send a message...',
-                        border: InputBorder.none,
-                        hintStyle: TextStyle(
-                          fontFamily: 'RethinkSans',
-                        ),
+                  child: TextField(
+                    controller: _messageController,
+                    decoration: InputDecoration(
+                      hintText: 'Posez votre question écologique...',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
+                      filled: true,
+                      fillColor: const Color(0xFF1E3246),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
                       ),
-                      style: const TextStyle(
-                        fontFamily: 'RethinkSans',
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
                       ),
-                      onSubmitted: (_) => _handleSubmit(),
                     ),
+                    style: const TextStyle(color: Colors.white),
+                    onSubmitted: (_) => _handleSubmit(),
                   ),
                 ),
                 const SizedBox(width: 8),
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
-                  ),
-                  child: IconButton(
-                    icon: const Icon(
-                      Icons.send,
-                      color: Color(0xFF1E3246),
-                    ),
-                    onPressed: () => _handleSubmit(),
-                  ),
+                FloatingActionButton(
+                  onPressed: _handleSubmit,
+                  backgroundColor: AppColors.secondaryColor,
+                  elevation: 0,
+                  child: const Icon(Icons.send),
                 ),
               ],
             ),
           ),
         ],
       ),
-      bottomNavigationBar: const CustomMenu(currentIndex: 4),
     );
   }
 
@@ -382,7 +310,8 @@ class _ChatbotViewState extends State<ChatbotView> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: Row(
-        mainAxisAlignment: message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment:
+            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           if (!message.isUser) ...[
@@ -390,13 +319,13 @@ class _ChatbotViewState extends State<ChatbotView> {
               width: 36,
               height: 36,
               decoration: const BoxDecoration(
-                color: Colors.white,
+                color: AppColors.secondaryColor,
                 shape: BoxShape.circle,
               ),
               child: const Center(
                 child: Icon(
                   Icons.eco,
-                  color: AppColors.secondaryColor,
+                  color: Colors.white,
                   size: 20,
                 ),
               ),
@@ -405,24 +334,43 @@ class _ChatbotViewState extends State<ChatbotView> {
           ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 16,
+                vertical: 12,
+              ),
               decoration: BoxDecoration(
-                color: message.isUser 
-                    ? AppColors.secondaryColor 
-                    : Colors.white, 
+                color: message.isUser
+                    ? AppColors.secondaryColor
+                    : const Color(0xFF162736),
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 message.text,
-                style: TextStyle(
-                  color: message.isUser ? Colors.white : const Color(0xFF1E3246),
+                style: const TextStyle(
+                  color: Colors.white,
                   fontSize: 16,
-                  fontFamily: 'RethinkSans',
                 ),
               ),
             ),
           ),
-          if (message.isUser) const SizedBox(width: 8),
+          if (message.isUser) ...[
+            const SizedBox(width: 8),
+            Container(
+              width: 36,
+              height: 36,
+              decoration: const BoxDecoration(
+                color: AppColors.secondaryColor,
+                shape: BoxShape.circle,
+              ),
+              child: const Center(
+                child: Icon(
+                  Icons.person,
+                  color: Colors.white,
+                  size: 20,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );

@@ -56,16 +56,24 @@ class CustomMenu extends StatelessWidget {
         // Navigation basée sur l'index
         switch (index) {
           case 0: // Accueil
-            Navigator.pushNamed(context, AppRoutes.home);
+            if (ModalRoute.of(context)?.settings.name != AppRoutes.home) {
+              Navigator.pushNamedAndRemoveUntil(context, AppRoutes.home, (route) => false);
+            }
             break;
           case 1: // Articles
-            Navigator.pushNamed(context, AppRoutes.articles);
+            if (ModalRoute.of(context)?.settings.name != AppRoutes.articles) {
+              Navigator.pushNamed(context, AppRoutes.articles);
+            }
             break;
           case 2: // Produits
-            Navigator.pushNamed(context, AppRoutes.products);
+            if (ModalRoute.of(context)?.settings.name != AppRoutes.products) {
+              Navigator.pushNamed(context, AppRoutes.products);
+            }
             break;
           case 3: // Profil
-            Navigator.pushNamed(context, AppRoutes.profile);
+            if (ModalRoute.of(context)?.settings.name != AppRoutes.profile) {
+              Navigator.pushNamed(context, AppRoutes.profile);
+            }
             break;
         }
       },
@@ -115,7 +123,9 @@ class CustomMenu extends StatelessWidget {
         if (onTap != null) {
           onTap!(4); // Index spécial pour le chatbot
         }
-        Navigator.pushNamed(context, AppRoutes.ecoChatbot);
+        if (ModalRoute.of(context)?.settings.name != AppRoutes.ecoChatbot) {
+          Navigator.pushNamed(context, AppRoutes.ecoChatbot);
+        }
       },
       customBorder: const CircleBorder(),
       child: Container(

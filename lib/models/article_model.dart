@@ -19,6 +19,9 @@ class ArticleModel {
     this.authorName,
   });
 
+  // Getter pour faciliter l'accès au temps de lecture
+  int get readTime => readTimeMinutes;
+
   factory ArticleModel.fromJson(Map<String, dynamic> json) {
     return ArticleModel(
       id: json['id'] ?? '',

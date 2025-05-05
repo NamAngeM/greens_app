@@ -1,41 +1,20 @@
-import 'package:shared_preferences/shared_preferences.dart';
-
-/// Classe utilitaire pour gérer la configuration du LLM
+/// Classe utilitaire pour gérer la configuration des modèles de langage
 class LlmConfig {
-  static const String _apiUrlKey = 'llm_api_url';
-  static const String _defaultApiUrl = 'http://localhost:3000/api'; // URL de l'API Node.js
-
-  /// Valider si une URL est correctement formée
-  static bool isValidApiUrl(String url) {
-    if (url.isEmpty) return false;
-    
-    try {
-      final uri = Uri.parse(url);
-      return uri.isAbsolute && (uri.scheme == 'http' || uri.scheme == 'https');
-    } catch (e) {
-      return false;
-    }
-  }
-
-  /// Récupérer l'URL de l'API stockée dans les préférences
+  /// Récupérer l'URL de l'API
   static Future<String> getApiUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    return prefs.getString(_apiUrlKey) ?? _defaultApiUrl;
+    // Retourner l'URL par défaut pour n8n
+    return 'https://angenam.app.n8n.cloud/webhook-test/chatbot-eco';
   }
 
-  /// Sauvegarder l'URL de l'API dans les préférences
+  /// Sauvegarder l'URL de l'API
   static Future<void> saveApiUrl(String url) async {
-    if (!isValidApiUrl(url)) {
-      throw Exception('URL invalide: $url');
-    }
-    
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_apiUrlKey, url);
+    // Cette méthode est un placeholder puisque nous utilisons maintenant n8n
+    // et n'avons plus besoin de sauvegarder l'URL
   }
 
-  /// Réinitialiser l'URL de l'API à sa valeur par défaut
-  static Future<void> resetApiUrl() async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_apiUrlKey, _defaultApiUrl);
+  /// Vérifier si l'URL de l'API est valide
+  static bool isValidApiUrl(String url) {
+    // Vérifier si l'URL est valide
+    return url.isNotEmpty && (url.startsWith('http://') || url.startsWith('https://'));
   }
-} 
+}

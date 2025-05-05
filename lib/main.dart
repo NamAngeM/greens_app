@@ -1,6 +1,7 @@
+import 'package:flutter/material.dart';
+import 'package:greens_app/screens/home_screen.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/app_router.dart';
-import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:greens_app/controllers/auth_controller.dart';
@@ -9,26 +10,22 @@ import 'package:greens_app/controllers/reward_controller.dart';
 import 'package:greens_app/controllers/product_controller.dart';
 import 'package:greens_app/controllers/article_controller.dart';
 import 'package:greens_app/firebase/firebase_config.dart';
-import 'package:greens_app/utils/app_router.dart';
-import 'package:greens_app/utils/app_colors.dart';
-import 'package:greens_app/views/splash_view.dart';
 import 'package:greens_app/services/favorites_service.dart';
-
-import 'controllers/article_controller.dart';
-import 'controllers/auth_controller.dart';
-import 'controllers/carbon_footprint_controller.dart';
-import 'controllers/product_controller.dart';
-import 'controllers/reward_controller.dart';
-import 'firebase/firebase_config.dart';
 import 'package:greens_app/controllers/eco_goal_controller.dart';
 import 'package:greens_app/controllers/community_controller.dart';
 import 'package:greens_app/controllers/product_scan_controller.dart';
+import 'package:greens_app/services/chatbot_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   // Initialiser Firebase avec la configuration
-  await FirebaseConfig.initializeFirebase();
+  try {
+    await FirebaseConfig.initializeFirebase();
+  } catch (e) {
+    print('Erreur lors de l\'initialisation de Firebase: $e');
+    // Continuer l'application même si Firebase échoue
+  }
   
   runApp(const MyApp());
 }
@@ -49,9 +46,10 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EcoGoalController()),
         ChangeNotifierProvider(create: (_) => CommunityController()),
         ChangeNotifierProvider(create: (_) => ProductScanController()),
+        ChangeNotifierProvider(create: (_) => N8nChatbotService.instance),
       ],
       child: MaterialApp(
-        title: 'GreenMinds',
+        title: 'Green Minds',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           primaryColor: AppColors.primaryColor,
@@ -134,8 +132,9 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: AppRoutes.splash,
+        initialRoute: AppRoutes.home,
         onGenerateRoute: AppRouter.generateRoute,
+        home: const HomeScreen(),
       ),
     );
   }

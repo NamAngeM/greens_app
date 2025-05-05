@@ -1,5 +1,5 @@
 name: greens_app
-description: "Application GreenMinds pour la sensibilisation écologique et le suivi d'empreinte carbone."
+description: "A new Flutter project."
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -19,14 +19,12 @@ publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 version: 1.0.0+1
 
 environment:
-  sdk: '>=3.3.1 <4.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 # Dependencies specify other packages that your package needs in order to work.
 # To automatically upgrade your package dependencies to the latest versions
-# consider running `flutter pub upgrade --major-versions`. Alternatively,
-# dependencies can be manually updated by changing the version numbers below to
-# the latest version available on pub.dev. To see which dependencies have newer
-# versions available, run `flutter pub outdated`.
+# consider running `flutter pub upgrade --major-versions`.
+# To see which dependencies have newer versions available, run `flutter pub outdated`.
 dependencies:
   flutter:
     sdk: flutter
@@ -39,22 +37,19 @@ dependencies:
   shared_preferences: ^2.2.2
   flutter_markdown: ^0.6.18+2
   percent_indicator: ^4.2.3
-  syncfusion_flutter_charts: ^20.2.45  # Version plus stable
+  syncfusion_flutter_charts: ^23.1.44
   flutter_barcode_scanner: ^2.0.0
   uuid: ^4.5.1
-  intl: ^0.17.0  # Downgraded to be compatible with charts_flutter
-  cached_network_image: ^3.3.0  # Pour la mise en cache des images réseau
-  flutter_cache_manager: ^3.3.1  # Gestionnaire de cache avancé
+  intl: ^0.18.1  # Updated from ^0.17.0 to resolve conflict with syncfusion_flutter_charts
+  cached_network_image: ^3.3.0
+  flutter_cache_manager: ^3.3.1
   qr_code_scanner: ^1.0.1
-  fl_chart: ^0.65.0
+  fl_chart: ^0.65.0  # Mise à jour vers la dernière version
   image_picker: ^1.0.5
-  # Commenté temporairement pour permettre la compilation
-  # geolocator: ^9.0.2
-  # geolocator_android: ^4.1.9
+  location: ^5.0.3  # Replace geolocator with location package
   url_launcher: ^6.2.2
   path_provider: ^2.1.5
   permission_handler: ^11.1.0
-  
   # Http pour les requêtes API
   http: ^0.13.5
   googleapis: ^11.0.0
@@ -64,85 +59,20 @@ dependencies:
   carousel_slider: ^5.0.0
   smooth_page_indicator: ^1.2.1
 
+# Dependency overrides pour résoudre les conflits
+dependency_overrides:
+  fl_chart: ^0.65.0
+  intl: ^0.18.1
+
 dev_dependencies:
-  integration_test:
-    sdk: flutter
   flutter_test:
     sdk: flutter
-
-
-  # The "flutter_lints" package below contains a set of recommended lints to
-  # encourage good coding practices. The lint set provided by the package is
-  # activated in the `analysis_options.yaml` file located at the root of your
-  # package. See that file for information about deactivating specific lint
-  # rules and activating additional ones.
   flutter_lints: ^3.0.0
 
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
 flutter:
-
-  # The following line ensures that the Material Icons font is
-  # included with your application, so that you can use the icons in
-  # the material Icons class.
   uses-material-design: true
-
-  # To add assets to your application, add an assets section, like this:
   assets:
-    - assets/images/backgrounds/
+    - assets/images/
     - assets/images/logo/
-    - assets/images/products/
     - assets/images/icons/
-    - assets/images/articles/  # Assurez-vous que ce dossier existe
-    - assets/images/misc/      # Assurez-vous que ce dossier existe
-    - assets/images/avatars/
-    - assets/fonts/
-
-
-  # An image asset can refer to one or more resolution-specific "variants", see
-  # https://flutter.dev/assets-and-images/#resolution-aware
-
-  # For details regarding adding assets from package dependencies, see
-  # https://flutter.dev/assets-and-images/#from-packages
-
-  # To add custom fonts to your application, add a fonts section here,
-  # in this "flutter" section. Each entry in this list should have a
-  # "family" key with the font family name, and a "fonts" key with a
-  # list giving the asset and other descriptors for the font. For
-  # example:
-  fonts:
-    # Rethink Sans
-    - family: RethinkSans
-      fonts:
-        - asset: assets/fonts/RethinkSans-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/RethinkSans-Bold.ttf
-          weight: 700
-    # Sofia Pro
-    - family: SofiaPro
-      fonts:
-        - asset: assets/fonts/SofiaProBold.otf
-          weight: 700
-        - asset: assets/fonts/SofiaProExtraLight.otf
-          weight: 200
-    # Manrope
-    - family: Manrope
-      fonts:
-        - asset: assets/fonts/manrope-regular.otf
-          weight: 400
-        - asset: assets/fonts/manrope-semibold.otf
-          weight: 600
-    # Poppins (ajouté car utilisé dans main.dart)
-    - family: Poppins
-      fonts:
-        - asset: assets/fonts/Poppins-Regular.ttf
-          weight: 400
-        - asset: assets/fonts/Poppins-Medium.ttf
-          weight: 500
-        - asset: assets/fonts/Poppins-Bold.ttf
-          weight: 700
-  #
-  # For details regarding fonts from package dependencies,
-  # see https://flutter.dev/custom-fonts/#from-packages
+    - assets/images/products/
