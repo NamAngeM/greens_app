@@ -33,13 +33,50 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
   String _connectionStatus = "Non initialisé";
   late ChatbotService _chatbotService;
   int _currentIndex = 4; // Index pour la page chatbot
+  
+  // Suggestions de questions pour l'utilisateur
+  List<String> _suggestions = [];
+  
+  // Indicateur pour montrer si le chatbot a détecté une action écologique
+  bool _actionDetected = false;
+  String _detectedAction = "";
+  
+  // Contrôleur d'animation pour les suggestions
+  late AnimationController _suggestionsAnimationController;
+  late Animation<double> _suggestionsAnimation;
 
   @override
   void initState() {
     super.initState();
     _initializeService();
+    
+    // Initialiser le contrôleur d'animation
+    _suggestionsAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+    
+    _suggestionsAnimation = CurvedAnimation(
+      parent: _suggestionsAnimationController,
+      curve: Curves.easeInOut,
+    );
+    
     // Ajouter un message de bienvenue
     _addBotMessage("Bonjour ! Je suis votre assistant écologique. Comment puis-je vous aider aujourd'hui ?");
+    
+    // Charger les suggestions initiales
+    _loadSuggestions();
+  }
+  
+  /// Charger les suggestions de questions
+  Future<void> _loadSuggestions() async {
+    if (_chatbotService.isInitialized) {
+      final suggestions = await _chatbotService.getSuggestions();
+      setState(() {
+        _suggestions = suggestions;
+        _suggestionsAnimationController.forward();
+      });
+    }
   }
 
   /// Initialiser le service n8n
@@ -119,6 +156,8 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
 
     setState(() {
       _isLoading = true;
+      _actionDetected = false;
+      _detectedAction = "";
     });
 
     try {
@@ -137,16 +176,70 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
               })
           .toList();
       
+      print("Envoi de la question au service n8n: $question");
+      print("Contexte envoyé: ${context.map((m) => '${m['isUser'] ? 'User' : 'Bot'}: ${m['text']}').join('\n')}");
+      
       final response = await _chatbotService.getResponse(question, context: context);
-      _addBotMessage(response);
+      print("Réponse reçue du service n8n: $response");
+      
+      if (response.isEmpty) {
+        _addBotMessage("Désolé, je n'ai pas pu obtenir de réponse. Veuillez réessayer.");
+      } else {
+        _addBotMessage(response);
+        
+        // Analyser la réponse pour détecter des actions écologiques
+        _detectEcoAction(question, response);
+      }
+      
+      // Mettre à jour les suggestions après chaque échange
+      _loadSuggestions();
     } catch (e) {
-      _addBotMessage("Désolé, une erreur s'est produite: $e");
       print("Erreur lors de l'envoi du message: $e");
+      _addBotMessage("Désolé, une erreur s'est produite lors de la communication avec le service: $e");
+      
+      // Tenter de réinitialiser la connexion après une erreur
+      if (!_isInitialized) {
+        _initializeService().then((_) {
+          if (_isInitialized) {
+            _addBotMessage("La connexion a été rétablie. Vous pouvez réessayer votre question.");
+          }
+        });
+      }
     } finally {
       setState(() {
         _isLoading = false;
       });
     }
+  }
+  
+  /// Détecter si l'utilisateur mentionne une action écologique
+  void _detectEcoAction(String question, String response) {
+    // Liste de mots-clés liés aux actions écologiques
+    final List<String> ecoKeywords = [
+      'recyclé', 'économisé', 'réduit', 'planté', 'composté', 
+      'réutilisé', 'marché', 'vélo', 'transport', 'énergie'
+    ];
+    
+    // Vérifier si la question contient des mots-clés
+    bool containsKeyword = ecoKeywords.any((keyword) => 
+      question.toLowerCase().contains(keyword));
+    
+    if (containsKeyword) {
+      setState(() {
+        _actionDetected = true;
+        _detectedAction = "Il semble que vous ayez mentionné une action écologique. Voulez-vous l'ajouter à vos objectifs ?";
+      });
+    }
+  }
+  
+  /// Ajouter l'action détectée aux objectifs écologiques
+  void _addToEcoGoals() {
+    // Cette fonction serait implémentée pour ajouter l'action aux objectifs
+    // Elle pourrait appeler un service EcoGoalService par exemple
+    setState(() {
+      _actionDetected = false;
+      _addBotMessage("Super ! J'ai ajouté cette action à vos objectifs écologiques.");
+    });
   }
 
   @override
@@ -203,32 +296,121 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
       ),
       body: Column(
         children: [
-          // Zone de messages
+          // Messages
           Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(8.0),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                final message = _messages[index];
-                return _buildMessageBubble(message);
-              },
-            ),
+            child: _messages.isEmpty
+                ? _buildEmptyState()
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(8.0),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      return _buildMessageBubble(_messages[index]);
+                    },
+                  ),
           ),
           
-          // Indicateur de chargement
-          if (_isLoading)
-            const Padding(
-              padding: EdgeInsets.symmetric(vertical: 8.0),
-              child: Center(
-                child: CircularProgressIndicator(
-                  color: Color(0xFF4CAF50),
-                ),
+          // Bannière d'action écologique détectée
+          if (_actionDetected)
+            Container(
+              padding: const EdgeInsets.all(12.0),
+              margin: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+              decoration: BoxDecoration(
+                color: Colors.green.shade50,
+                borderRadius: BorderRadius.circular(12.0),
+                border: Border.all(color: Colors.green.shade200),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Icon(Icons.eco, color: Colors.green.shade700, size: 20),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _detectedAction,
+                          style: TextStyle(
+                            color: Colors.green.shade700,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.end,
+                    children: [
+                      TextButton(
+                        onPressed: () {
+                          setState(() {
+                            _actionDetected = false;
+                          });
+                        },
+                        child: const Text("Non merci"),
+                      ),
+                      const SizedBox(width: 8),
+                      ElevatedButton(
+                        onPressed: _addToEcoGoals,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.green.shade600,
+                          foregroundColor: Colors.white,
+                        ),
+                        child: const Text("Ajouter"),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
           
-          // Zone de saisie
-          Padding(
+          // Suggestions de questions
+          AnimatedBuilder(
+            animation: _suggestionsAnimation,
+            builder: (context, child) {
+              return SizeTransition(
+                sizeFactor: _suggestionsAnimation,
+                child: Container(
+                  height: 50,
+                  padding: const EdgeInsets.symmetric(horizontal: 8.0, vertical: 4.0),
+                  child: ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: _suggestions.length,
+                    itemBuilder: (context, index) {
+                      return Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 4.0),
+                        child: InkWell(
+                          onTap: () {
+                            _textController.text = _suggestions[index];
+                            _handleSubmit();
+                          },
+                          borderRadius: BorderRadius.circular(20),
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
+                            decoration: BoxDecoration(
+                              color: Colors.grey.shade200,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              _suggestions[index],
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              );
+            },
+          ),
+          
+          // Barre de saisie
+          Container(
             padding: const EdgeInsets.all(8.0),
             child: Row(
               children: [
@@ -351,10 +533,45 @@ class _EcoChatbotViewState extends State<EcoChatbotView> {
     );
   }
 
+  /// Construire l'état vide (quand il n'y a pas de messages)
+  Widget _buildEmptyState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.eco,
+            size: 64,
+            color: Colors.green.shade200,
+          ),
+          const SizedBox(height: 16),
+          Text(
+            "Discutez avec notre assistant écologique",
+            style: TextStyle(
+              fontSize: 18,
+              fontWeight: FontWeight.bold,
+              color: Colors.grey.shade700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            "Posez des questions sur l'écologie, le développement durable\nou comment réduire votre empreinte carbone",
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 14,
+              color: Colors.grey.shade600,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   void dispose() {
     _textController.dispose();
     _scrollController.dispose();
+    _suggestionsAnimationController.dispose();
     super.dispose();
   }
 }

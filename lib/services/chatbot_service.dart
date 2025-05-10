@@ -5,153 +5,34 @@ import 'package:http/http.dart' as http;
 import 'package:greens_app/models/chatbot_message.dart';
 import 'package:uuid/uuid.dart';
 
-/// Service qui gère la communication avec n8n pour le chatbot écologique
-class N8nChatbotService extends ChangeNotifier {
-  static final N8nChatbotService _instance = N8nChatbotService._internal();
-  
-  factory N8nChatbotService() {
-    return _instance;
-  }
-  
-  N8nChatbotService._internal();
-  
-  static N8nChatbotService get instance => _instance;
-  
-  final String _sessionId = const Uuid().v4();
-  bool _isInitialized = false;
-  String _n8nWebhookUrl = '';
-  
-  bool get isInitialized => _isInitialized;
-  
-  /// Initialise le service avec l'URL du webhook n8n
-  Future<void> initialize({required String webhookUrl}) async {
-    try {
-      _n8nWebhookUrl = webhookUrl;
-      
-      // Vérifier que le webhook est accessible
-      final response = await http.get(Uri.parse('$_n8nWebhookUrl/health'));
-      
-      if (response.statusCode == 200) {
-        _isInitialized = true;
-        print('N8nChatbotService initialisé avec succès');
-      } else {
-        print('Erreur lors de l\'initialisation de N8nChatbotService: ${response.statusCode}');
-        _isInitialized = false;
-      }
-    } catch (e) {
-      print('Exception lors de l\'initialisation de N8nChatbotService: $e');
-      _isInitialized = false;
-    }
-  }
-  
-  /// Envoie un message au chatbot via n8n et récupère la réponse
-  Future<String> getResponse(String message, {List<Map<String, dynamic>>? context}) async {
-    if (!_isInitialized) {
-      return "Le service n8n n'est pas initialisé. Veuillez vérifier votre configuration.";
-    }
-    
-    try {
-      // Préparer les données à envoyer à n8n
-      final payload = {
-        'message': message,
-        'sessionId': _sessionId,
-        'context': context ?? [],
-        'timestamp': DateTime.now().toIso8601String(),
-        'type': 'eco_chatbot',
-      };
-      
-      // Envoyer la requête à n8n
-      final response = await http.post(
-        Uri.parse('$_n8nWebhookUrl/chat'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-      
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return responseData['response'] ?? "Désolé, je n'ai pas pu comprendre votre demande.";
-      } else {
-        print('Erreur lors de la communication avec n8n: ${response.statusCode}');
-        return "Désolé, une erreur s'est produite lors de la communication avec le service n8n.";
-      }
-    } catch (e) {
-      print('Exception lors de la communication avec n8n: $e');
-      return "Désolé, une erreur s'est produite: $e";
-    }
-  }
-  
-  /// Récupère des suggestions de questions basées sur le contexte actuel
-  Future<List<String>> getSuggestions({String? currentTopic}) async {
-    if (!_isInitialized) {
-      return ["Comment réduire mon empreinte carbone ?", 
-              "Quels sont les produits écologiques recommandés ?", 
-              "Comment économiser l'eau au quotidien ?"];
-    }
-    
-    try {
-      final payload = {
-        'sessionId': _sessionId,
-        'currentTopic': currentTopic,
-        'type': 'suggestions',
-      };
-      
-      final response = await http.post(
-        Uri.parse('$_n8nWebhookUrl/suggestions'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-      
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return List<String>.from(responseData['suggestions'] ?? []);
-      } else {
-        return ["Comment réduire mon empreinte carbone ?", 
-                "Quels sont les produits écologiques recommandés ?", 
-                "Comment économiser l'eau au quotidien ?"];
-      }
-    } catch (e) {
-      print('Exception lors de la récupération des suggestions: $e');
-      return ["Comment réduire mon empreinte carbone ?", 
-              "Quels sont les produits écologiques recommandés ?", 
-              "Comment économiser l'eau au quotidien ?"];
-    }
-  }
-  
-  /// Exécute une action spécifique via n8n
-  Future<String> executeAction(String actionId, Map<String, dynamic> parameters) async {
-    if (!_isInitialized) {
-      return "Le service n8n n'est pas initialisé. Veuillez vérifier votre configuration.";
-    }
-    
-    try {
-      final payload = {
-        'actionId': actionId,
-        'parameters': parameters,
-        'sessionId': _sessionId,
-        'timestamp': DateTime.now().toIso8601String(),
-        'type': 'action',
-      };
-      
-      final response = await http.post(
-        Uri.parse('$_n8nWebhookUrl/action'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-      
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return responseData['response'] ?? "Action exécutée avec succès.";
-      } else {
-        print('Erreur lors de l\'exécution de l\'action: ${response.statusCode}');
-        return "Désolé, l'action n'a pas pu être exécutée.";
-      }
-    } catch (e) {
-      print('Exception lors de l\'exécution de l\'action: $e');
-      return "Désolé, une erreur s'est produite lors de l'exécution de l'action: $e";
-    }
+/// Modèle pour représenter le contexte d'une conversation
+class ChatContext {
+  final String message;
+  final String sessionId;
+  final List<Map<String, dynamic>> previousMessages;
+  final DateTime timestamp;
+  final String type;
+
+  ChatContext({
+    required this.message,
+    required this.sessionId,
+    required this.previousMessages,
+    required this.timestamp,
+    this.type = 'eco_chatbot',
+  });
+
+  Map<String, dynamic> toJson() {
+    return {
+      'message': message,
+      'sessionId': sessionId,
+      'context': previousMessages,
+      'timestamp': timestamp.toIso8601String(),
+      'type': type,
+    };
   }
 }
 
+/// Service qui gère la communication avec n8n pour le chatbot écologique
 class ChatbotService extends ChangeNotifier {
   static final ChatbotService _instance = ChatbotService._internal();
   
@@ -159,7 +40,7 @@ class ChatbotService extends ChangeNotifier {
     return _instance;
   }
   
-  ChatbotService._internal() : _n8nWebhookUrl = '';
+  ChatbotService._internal() : _sessionId = const Uuid().v4();
   
   static ChatbotService get instance => _instance;
   
@@ -168,7 +49,7 @@ class ChatbotService extends ChangeNotifier {
     return _instance;
   }
   
-  final String _n8nWebhookUrl;
+  final String _sessionId;
   String _webhookUrl = '';
   final List<ChatbotMessage> _messages = [];
   bool _isLoading = false;
@@ -183,15 +64,31 @@ class ChatbotService extends ChangeNotifier {
     try {
       _webhookUrl = webhookUrl;
       
-      // Vérifier que le webhook est accessible
-      final response = await http.get(Uri.parse('$_webhookUrl/health'));
+      // On considère le service comme initialisé sans vérification préalable
+      // car l'endpoint /health n'est pas standard dans tous les webhooks n8n
+      _isInitialized = true;
+      print('ChatbotService initialisé avec succès: $_webhookUrl');
       
-      if (response.statusCode == 200) {
-        _isInitialized = true;
-        print('ChatbotService initialisé avec succès');
-      } else {
-        print('Erreur lors de l\'initialisation de ChatbotService: ${response.statusCode}');
-        _isInitialized = false;
+      // Envoyer un message de test pour vérifier la connexion
+      try {
+        final testContext = ChatContext(
+          message: 'test_connection',
+          sessionId: _sessionId,
+          previousMessages: [],
+          timestamp: DateTime.now(),
+          type: 'connection_test',
+        );
+        
+        final response = await http.post(
+          Uri.parse(_webhookUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode(testContext.toJson()),
+        ).timeout(const Duration(seconds: 5));
+        
+        print('Test de connexion n8n: ${response.statusCode} - ${response.body}');
+      } catch (e) {
+        // On ne change pas l'état d'initialisation même si le test échoue
+        print('Test de connexion n8n échoué, mais le service reste initialisé: $e');
       }
     } catch (e) {
       print('Exception lors de l\'initialisation de ChatbotService: $e');
@@ -202,36 +99,46 @@ class ChatbotService extends ChangeNotifier {
   /// Envoie un message au chatbot via n8n et récupère la réponse
   Future<String> getResponse(String message, {List<Map<String, dynamic>>? context}) async {
     if (!_isInitialized) {
-      return "Le service n8n n'est pas initialisé. Veuillez vérifier votre configuration.";
+      return "Le service n'est pas initialisé. Veuillez vérifier votre configuration.";
     }
     
     try {
-      // Préparer les données à envoyer à n8n
-      final payload = {
-        'message': message,
-        'sessionId': DateTime.now().millisecondsSinceEpoch.toString(),
-        'context': context ?? [],
-        'timestamp': DateTime.now().toIso8601String(),
-        'type': 'eco_chatbot',
-      };
+      // Préparer le contexte de la conversation
+      final chatContext = ChatContext(
+        message: message,
+        sessionId: _sessionId,
+        previousMessages: context ?? [],
+        timestamp: DateTime.now(),
+      );
+      
+      print('Envoi de la requête à n8n: $_webhookUrl');
+      print('Payload: ${jsonEncode(chatContext.toJson())}');
       
       // Envoyer la requête à n8n
       final response = await http.post(
-        Uri.parse('$_webhookUrl/chat'),
+        Uri.parse(_webhookUrl),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
+        body: jsonEncode(chatContext.toJson()),
+      ).timeout(const Duration(seconds: 30));
       
-      if (response.statusCode == 200) {
-        final responseData = jsonDecode(response.body);
-        return responseData['response'] ?? "Désolé, je n'ai pas pu comprendre votre demande.";
+      print('Réponse de n8n: ${response.statusCode}');
+      print('Corps de la réponse: ${response.body}');
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        try {
+          final responseData = jsonDecode(response.body);
+          return responseData['response'] ?? "J'ai bien reçu votre message, mais je n'ai pas de réponse spécifique.";
+        } catch (e) {
+          // Si la réponse n'est pas du JSON valide, retourner le corps de la réponse directement
+          return response.body;
+        }
       } else {
         print('Erreur lors de la communication avec n8n: ${response.statusCode}');
-        return "Désolé, une erreur s'est produite lors de la communication avec le service n8n.";
+        return "Désolé, une erreur s'est produite lors de la communication avec le service (code ${response.statusCode}).";
       }
     } catch (e) {
       print('Exception lors de la communication avec n8n: $e');
-      return "Désolé, une erreur s'est produite: $e";
+      return "Désolé, une erreur s'est produite lors de la communication: $e";
     }
   }
 
@@ -251,67 +158,41 @@ class ChatbotService extends ChangeNotifier {
       _messages.add(userMessage);
       notifyListeners();
 
-      // Préparer les données à envoyer à n8n
-      final payload = {
-        'message': message,
-        'userId': userId,
-        'context': {
-          'previousMessages': _messages
-              .where((msg) => _messages.indexOf(msg) >= _messages.length - 5)
-              .map((msg) => {
-                    'text': msg.text,
-                    'isUser': msg.isUser,
-                    'timestamp': msg.timestamp.toIso8601String(),
-                  })
-              .toList(),
-          'timestamp': DateTime.now().toIso8601String(),
-        },
-      };
-
-      // Envoyer la requête à n8n
-      final response = await http.post(
-        Uri.parse(_webhookUrl),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
+      // Récupérer la réponse via getResponse
+      final responseText = await getResponse(message, 
+        context: _messages
+          .where((msg) => _messages.indexOf(msg) >= _messages.length - 5)
+          .map((msg) => {
+                'text': msg.text,
+                'isUser': msg.isUser,
+                'timestamp': msg.timestamp.toIso8601String(),
+              })
+          .toList()
       );
 
-      if (response.statusCode == 200) {
-        // Traiter la réponse
-        final responseData = jsonDecode(response.body);
-        final botMessage = ChatbotMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: responseData['response'] ?? 'Désolé, je n\'ai pas pu comprendre votre demande.',
-          isUser: false,
-          timestamp: DateTime.now(),
-          suggestions: List<String>.from(responseData['suggestions'] ?? []),
-          actions: Map<String, dynamic>.from(responseData['actions'] ?? {}),
-        );
+      // Créer le message de réponse
+      final botMessage = ChatbotMessage(
+        id: DateTime.now().millisecondsSinceEpoch.toString(),
+        text: responseText,
+        isUser: false,
+        timestamp: DateTime.now(),
+        suggestions: [], // Pas de suggestions pour l'instant
+        actions: {}, // Pas d'actions pour l'instant
+      );
 
-        _messages.add(botMessage);
-        _isLoading = false;
-        notifyListeners();
-        return botMessage;
-      } else {
-        // Gérer l'erreur
-        final errorMessage = ChatbotMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: 'Désolé, une erreur est survenue. Veuillez réessayer plus tard.',
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-        _messages.add(errorMessage);
-        _isLoading = false;
-        notifyListeners();
-        return errorMessage;
-      }
+      _messages.add(botMessage);
+      _isLoading = false;
+      notifyListeners();
+      return botMessage;
     } catch (e) {
-      // Gérer les exceptions
+      // Gérer l'erreur
       final errorMessage = ChatbotMessage(
         id: DateTime.now().millisecondsSinceEpoch.toString(),
         text: 'Désolé, une erreur est survenue: $e',
         isUser: false,
         timestamp: DateTime.now(),
       );
+
       _messages.add(errorMessage);
       _isLoading = false;
       notifyListeners();
@@ -319,65 +200,59 @@ class ChatbotService extends ChangeNotifier {
     }
   }
 
-  /// Exécute une action spécifique du chatbot
-  Future<void> executeAction(String actionId, Map<String, dynamic> parameters) async {
-    try {
-      _isLoading = true;
-      notifyListeners();
-
-      // Préparer les données à envoyer à n8n
-      final payload = {
-        'actionId': actionId,
-        'parameters': parameters,
-        'userId': parameters['userId'] ?? '',
-      };
-
-      // Envoyer la requête à n8n
-      final response = await http.post(
-        Uri.parse('$_webhookUrl/action'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(payload),
-      );
-
-      if (response.statusCode == 200) {
-        // Traiter la réponse
-        final responseData = jsonDecode(response.body);
-        final botMessage = ChatbotMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: responseData['response'] ?? 'Action exécutée avec succès.',
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-
-        _messages.add(botMessage);
-      } else {
-        // Gérer l'erreur
-        final errorMessage = ChatbotMessage(
-          id: DateTime.now().millisecondsSinceEpoch.toString(),
-          text: 'Désolé, l\'action n\'a pas pu être exécutée.',
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-        _messages.add(errorMessage);
-      }
-    } catch (e) {
-      // Gérer les exceptions
-      final errorMessage = ChatbotMessage(
-        id: DateTime.now().millisecondsSinceEpoch.toString(),
-        text: 'Erreur lors de l\'exécution de l\'action: $e',
-        isUser: false,
-        timestamp: DateTime.now(),
-      );
-      _messages.add(errorMessage);
-    } finally {
-      _isLoading = false;
-      notifyListeners();
-    }
-  }
-
   /// Efface l'historique des messages
   void clearMessages() {
     _messages.clear();
     notifyListeners();
+  }
+  
+  /// Récupère des suggestions de questions basées sur le contexte actuel
+  Future<List<String>> getSuggestions() async {
+    if (!_isInitialized) {
+      return [
+        "Comment réduire mon empreinte carbone ?", 
+        "Quels sont les produits écologiques recommandés ?", 
+        "Comment économiser l'eau au quotidien ?"
+      ];
+    }
+    
+    try {
+      final context = ChatContext(
+        message: '',
+        sessionId: _sessionId,
+        previousMessages: _messages
+          .take(5)
+          .map((msg) => {
+                'text': msg.text,
+                'isUser': msg.isUser,
+                'timestamp': msg.timestamp.toIso8601String(),
+              })
+          .toList(),
+        timestamp: DateTime.now(),
+        type: 'suggestions',
+      );
+      
+      final response = await http.post(
+        Uri.parse(_webhookUrl),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(context.toJson()),
+      ).timeout(const Duration(seconds: 10));
+      
+      if (response.statusCode >= 200 && response.statusCode < 300) {
+        final responseData = jsonDecode(response.body);
+        if (responseData['suggestions'] != null && responseData['suggestions'] is List) {
+          return List<String>.from(responseData['suggestions']);
+        }
+      }
+    } catch (e) {
+      print('Erreur lors de la récupération des suggestions: $e');
+    }
+    
+    // Suggestions par défaut en cas d'erreur
+    return [
+      "Comment réduire mon empreinte carbone ?", 
+      "Quels sont les produits écologiques recommandés ?", 
+      "Comment économiser l'eau au quotidien ?"
+    ];
   }
 }
