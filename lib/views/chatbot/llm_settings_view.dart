@@ -11,13 +11,13 @@ class LLMSettingsView extends StatefulWidget {
 
 class _LLMSettingsViewState extends State<LLMSettingsView> {
   final TextEditingController _apiUrlController = TextEditingController();
-  late N8nChatbotService _n8nService;
+  late ChatbotService _n8nService;
   bool _isSaving = false;
 
   @override
   void initState() {
     super.initState();
-    _n8nService = N8nChatbotService.instance;
+    _n8nService = ChatbotService.instance;
     _loadCurrentSettings();
   }
 

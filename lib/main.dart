@@ -46,7 +46,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EcoGoalController()),
         ChangeNotifierProvider(create: (_) => CommunityController()),
         ChangeNotifierProvider(create: (_) => ProductScanController()),
-        ChangeNotifierProvider(create: (_) => N8nChatbotService.instance),
+        ChangeNotifierProvider(create: (_) => ChatbotService.instance),
       ],
       child: MaterialApp(
         title: 'Green Minds',
@@ -134,7 +134,6 @@ class MyApp extends StatelessWidget {
         ),
         initialRoute: AppRoutes.splash,
         onGenerateRoute: AppRouter.generateRoute,
-        home: AppRouter.initialRoute(),
       ),
     );
   }

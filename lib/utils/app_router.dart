@@ -20,7 +20,6 @@ import 'package:greens_app/views/blogs/blog_view.dart';
 import 'package:greens_app/views/legale/legale_notice_view.dart';
 import 'package:greens_app/views/settings/setting_view.dart';
 import 'package:greens_app/views/chatbot/chatbot_view.dart';
-import 'package:greens_app/views/chatbot/eco_chatbot_view.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/views/profile/profile_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -109,7 +108,7 @@ class AppRouter {
       case AppRoutes.chatbot:
         return MaterialPageRoute(builder: (_) => const ChatbotView());
       case AppRoutes.ecoChatbot:
-        return MaterialPageRoute(builder: (_) => const EcoChatbotView());
+        return MaterialPageRoute(builder: (_) => const ChatbotView());
       case AppRoutes.rewards:
       case AppRoutes.goals:
         return MaterialPageRoute(builder: (_) => const GoalsView());

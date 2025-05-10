@@ -17,7 +17,7 @@ class _ChatbotViewState extends State<ChatbotView> {
   final ScrollController _scrollController = ScrollController();
   final List<ChatMessage> _messages = [];
   bool _isTyping = false;
-  late N8nChatbotService _n8nService;
+  late ChatbotService _n8nService;
   bool _isN8nAvailable = false;
   final String _sessionId = const Uuid().v4();
 
@@ -34,7 +34,7 @@ class _ChatbotViewState extends State<ChatbotView> {
       if (!mounted) return;
       
       // Initialiser n8n
-      _n8nService = N8nChatbotService.instance;
+      _n8nService = ChatbotService.instance;
       await _n8nService.initialize(webhookUrl: 'https://angenam.app.n8n.cloud/webhook-test/chatbot-eco');
       
       setState(() {
