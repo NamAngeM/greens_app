@@ -132,9 +132,9 @@ class MyApp extends StatelessWidget {
             ),
           ),
         ),
-        initialRoute: AppRoutes.home,
+        initialRoute: AppRoutes.splash,
         onGenerateRoute: AppRouter.generateRoute,
-        home: const HomeScreen(),
+        home: AppRouter.initialRoute(),
       ),
     );
   }
