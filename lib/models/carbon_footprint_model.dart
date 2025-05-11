@@ -6,6 +6,7 @@ class CarbonFootprintModel {
   final double energyScore;
   final double foodScore;
   final double consumptionScore;
+  final double digitalScore;
   final double totalScore;
   final Map<String, dynamic>? details;
   final List<String>? recommendations;
@@ -19,6 +20,7 @@ class CarbonFootprintModel {
     required this.energyScore,
     required this.foodScore,
     required this.consumptionScore,
+    required this.digitalScore,
     required this.totalScore,
     this.details,
     this.recommendations,
@@ -34,6 +36,7 @@ class CarbonFootprintModel {
     double? energyScore,
     double? foodScore,
     double? consumptionScore,
+    double? digitalScore,
     double? totalScore,
     Map<String, dynamic>? details,
     List<String>? recommendations,
@@ -47,6 +50,7 @@ class CarbonFootprintModel {
       energyScore: energyScore ?? this.energyScore,
       foodScore: foodScore ?? this.foodScore,
       consumptionScore: consumptionScore ?? this.consumptionScore,
+      digitalScore: digitalScore ?? this.digitalScore,
       totalScore: totalScore ?? this.totalScore,
       details: details ?? this.details,
       recommendations: recommendations ?? this.recommendations,
@@ -65,6 +69,7 @@ class CarbonFootprintModel {
       energyScore: (json['energyScore'] ?? 0).toDouble(),
       foodScore: (json['foodScore'] ?? 0).toDouble(),
       consumptionScore: (json['consumptionScore'] ?? 0).toDouble(),
+      digitalScore: (json['digitalScore'] ?? 0).toDouble(),
       totalScore: (json['totalScore'] ?? 0).toDouble(),
       details: json['details'],
       recommendations: json['recommendations'] != null 
@@ -83,6 +88,7 @@ class CarbonFootprintModel {
       'energyScore': energyScore,
       'foodScore': foodScore,
       'consumptionScore': consumptionScore,
+      'digitalScore': digitalScore,
       'totalScore': totalScore,
       'details': details,
       'recommendations': recommendations,

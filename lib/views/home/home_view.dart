@@ -68,26 +68,34 @@ class _HomeViewState extends State<HomeView> {
       appBar: AppBar(
         elevation: 0,
         backgroundColor: Colors.white,
-        title: Row(
-          children: [
-            Text(
-              'Hello,',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.normal,
-              ),
-            ),
-            SizedBox(width: 4),
-            Text(
-              'Leah Ward',
-              style: TextStyle(
-                color: Colors.black87,
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-          ],
+        title: Consumer<AuthController>(
+          builder: (context, authController, _) {
+            final String userName = authController.currentUser != null 
+                ? "${authController.currentUser!.firstName ?? ''} ${authController.currentUser!.lastName ?? ''}"
+                : "Invité";
+            
+            return Row(
+              children: [
+                Text(
+                  'Hello,',
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.normal,
+                  ),
+                ),
+                SizedBox(width: 4),
+                Text(
+                  userName.trim(),
+                  style: TextStyle(
+                    color: Colors.black87,
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            );
+          },
         ),
         actions: [
           IconButton(

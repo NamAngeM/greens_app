@@ -13,6 +13,7 @@ class CarbonFootprintService {
     required double energyScore,
     required double foodScore,
     required double consumptionScore,
+    required double digitalScore,
     required Map<String, dynamic> details,
   }) async {
     try {
@@ -22,7 +23,7 @@ class CarbonFootprintService {
       }
 
       // Calcul du score total
-      final totalScore = transportScore + energyScore + foodScore + consumptionScore;
+      final totalScore = transportScore + energyScore + foodScore + consumptionScore + digitalScore;
       
       // Génération de recommandations basées sur les scores
       final recommendations = _generateRecommendations(
@@ -30,6 +31,7 @@ class CarbonFootprintService {
         energyScore: energyScore,
         foodScore: foodScore,
         consumptionScore: consumptionScore,
+        digitalScore: digitalScore,
       );
       
       // Calcul des points gagnés (plus le score est bas, plus les points sont élevés)
@@ -44,6 +46,7 @@ class CarbonFootprintService {
         energyScore: energyScore,
         foodScore: foodScore,
         consumptionScore: consumptionScore,
+        digitalScore: digitalScore,
         totalScore: totalScore,
         details: details,
         recommendations: recommendations,
@@ -125,6 +128,7 @@ class CarbonFootprintService {
     required double energyScore,
     required double foodScore,
     required double consumptionScore,
+    required double digitalScore,
   }) {
     final recommendations = <String>[];
     
@@ -142,6 +146,10 @@ class CarbonFootprintService {
     
     if (consumptionScore > 3) {
       recommendations.add('Favorisez les produits durables et réparables, et limitez les achats impulsifs.');
+    }
+    
+    if (digitalScore > 3) {
+      recommendations.add('Réduisez votre consommation numérique en désactivant les notifications inutiles et en utilisant des applications éco-responsables.');
     }
     
     return recommendations;
