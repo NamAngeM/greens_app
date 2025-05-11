@@ -5,6 +5,7 @@ import 'package:greens_app/models/favorite_item_model.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:greens_app/utils/merchant_urls.dart';
+import 'package:greens_app/utils/app_router.dart';
 
 class FavoritesView extends StatefulWidget {
   const FavoritesView({Key? key}) : super(key: key);
@@ -248,7 +249,8 @@ class _FavoritesViewState extends State<FavoritesView> {
                   const SizedBox(height: 32),
                   ElevatedButton.icon(
                     onPressed: () {
-                      Navigator.pop(context);
+                      // Remplacer la navigation simple par une redirection vers la page des produits
+                      Navigator.pushReplacementNamed(context, '/products');
                     },
                     icon: const Icon(Icons.shopping_bag),
                     label: const Text('Découvrir des produits'),
@@ -493,4 +495,4 @@ class _FavoritesViewState extends State<FavoritesView> {
       ),
     );
   }
-} 
+}

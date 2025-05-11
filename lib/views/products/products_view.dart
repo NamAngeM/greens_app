@@ -297,7 +297,7 @@ class _ProductsViewState extends State<ProductsView> {
         elevation: 0,
         title: Row(
           children: [
-            const Icon(
+            Icon(
               Icons.eco,
               color: Color(0xFF4CAF50),
               size: 24,
@@ -374,11 +374,14 @@ class _ProductsViewState extends State<ProductsView> {
             ],
           ),
         ],
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(30),
-          child: Container(
+      ),
+      body: Column(
+        children: [
+          // Titre "Our latest products"
+          Container(
+            width: double.infinity,
             alignment: Alignment.centerLeft,
-            padding: const EdgeInsets.only(left: 16, bottom: 16),
+            padding: const EdgeInsets.only(left: 16, top: 8, bottom: 16),
             child: const Text(
               "Our latest products",
               style: TextStyle(
@@ -388,113 +391,116 @@ class _ProductsViewState extends State<ProductsView> {
               ),
             ),
           ),
-        ),
-      ),
-      body: _isFavoritesVisible
-          ? _buildCartView()
-          : _isLoading
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-                  ),
-                )
-              : RefreshIndicator(
-                  onRefresh: () async {
-                    setState(() {
-                      _isLoading = true;
-                    });
-                    _initializeProducts();
-                    setState(() {
-                      _isLoading = false;
-                    });
-                  },
-                  child: Column(
-                    children: [
-                      // Category filter
-                      Container(
-                        height: 50,
-                        padding: const EdgeInsets.symmetric(horizontal: 16),
-                        child: ListView.builder(
-                          scrollDirection: Axis.horizontal,
-                          itemCount: _categories.length,
-                          itemBuilder: (context, index) {
-                            final category = _categories[index];
-                            final isSelected = category == _selectedCategory;
-                            
-                            return Padding(
-                              padding: const EdgeInsets.only(right: 16),
-                              child: GestureDetector(
-                                onTap: () => _filterProductsByCategory(category),
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                                  decoration: BoxDecoration(
-                                    color: isSelected ? const Color(0xFF4CAF50) : Colors.grey.shade200,
-                                    borderRadius: BorderRadius.circular(20),
-                                  ),
-                                  child: Center(
-                                    child: Text(
-                                      category,
-                                      style: TextStyle(
-                                        color: isSelected ? Colors.white : Colors.black,
-                                        fontWeight: FontWeight.w500,
+          // Contenu principal
+          Expanded(
+            child: _isFavoritesVisible
+                ? _buildCartView()
+                : _isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(
+                          valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                        ),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: () async {
+                          setState(() {
+                            _isLoading = true;
+                          });
+                          _initializeProducts();
+                          setState(() {
+                            _isLoading = false;
+                          });
+                        },
+                        child: Column(
+                          children: [
+                            // Category filter
+                            Container(
+                              height: 50,
+                              padding: const EdgeInsets.symmetric(horizontal: 16),
+                              child: ListView.builder(
+                                scrollDirection: Axis.horizontal,
+                                itemCount: _categories.length,
+                                itemBuilder: (context, index) {
+                                  final category = _categories[index];
+                                  final isSelected = category == _selectedCategory;
+                                  
+                                  return Padding(
+                                    padding: const EdgeInsets.only(right: 16),
+                                    child: GestureDetector(
+                                      onTap: () => _filterProductsByCategory(category),
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                                        decoration: BoxDecoration(
+                                          color: isSelected ? const Color(0xFF4CAF50) : Colors.grey.shade200,
+                                          borderRadius: BorderRadius.circular(20),
+                                        ),
+                                        child: Center(
+                                          child: Text(
+                                            category,
+                                            style: TextStyle(
+                                              color: isSelected ? Colors.white : Colors.black,
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                          ),
+                                        ),
                                       ),
                                     ),
-                                  ),
-                                ),
+                                  );
+                                },
                               ),
-                            );
-                          },
+                            ),
+                            
+                            // Products grid
+                            Expanded(
+                              child: _filteredProducts.isEmpty
+                                  ? const Center(
+                                      child: Text(
+                                        'Aucun produit disponible',
+                                        style: TextStyle(
+                                          fontSize: 16,
+                                          color: Colors.grey,
+                                        ),
+                                      ),
+                                    )
+                                  : LayoutBuilder(
+                                      builder: (context, constraints) {
+                                        // Calculer le ratio optimal en fonction de la largeur disponible
+                                        // Plus l'écran est petit, plus on réduit le ratio pour éviter les débordements
+                                        final screenWidth = MediaQuery.of(context).size.width;
+                                        // Ratio adaptatif: plus petit sur les petits écrans
+                                        double adaptiveRatio;
+                                        if (screenWidth < 360) {  // Très petits écrans (Galaxy A15, etc.)
+                                          adaptiveRatio = 0.65; // Réduire encore plus pour éviter les débordements
+                                        } else if (screenWidth < 400) {  // Petits écrans
+                                          adaptiveRatio = 0.68;
+                                        } else {  // Écrans moyens et grands
+                                          adaptiveRatio = 0.72;
+                                        }
+                                        
+                                        return GridView.builder(
+                                          padding: const EdgeInsets.all(16),
+                                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                                            crossAxisCount: 2,
+                                            childAspectRatio: adaptiveRatio,
+                                            crossAxisSpacing: 16,
+                                            mainAxisSpacing: 16,
+                                          ),
+                                          itemCount: _filteredProducts.length,
+                                          itemBuilder: (context, index) {
+                                            final product = _filteredProducts[index];
+                                            print('Construction du produit ${product.name} à l\'index $index');
+                                            return _buildProductCard(product);
+                                          },
+                                        );
+                                      }
+                                    ),
+                            ),
+                          ],
                         ),
                       ),
-                      
-                      // Products grid
-                      Expanded(
-                        child: _filteredProducts.isEmpty
-                            ? const Center(
-                                child: Text(
-                                  'Aucun produit disponible',
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    color: Colors.grey,
-                                  ),
-                                ),
-                              )
-                            : LayoutBuilder(
-                                builder: (context, constraints) {
-                                  // Calculer le ratio optimal en fonction de la largeur disponible
-                                  // Plus l'écran est petit, plus on réduit le ratio pour éviter les débordements
-                                  final screenWidth = MediaQuery.of(context).size.width;
-                                  // Ratio adaptatif: plus petit sur les petits écrans
-                                  double adaptiveRatio;
-                                  if (screenWidth < 360) {  // Très petits écrans (Galaxy A15, etc.)
-                                    adaptiveRatio = 0.65; // Réduire encore plus pour éviter les débordements
-                                  } else if (screenWidth < 400) {  // Petits écrans
-                                    adaptiveRatio = 0.68;
-                                  } else {  // Écrans moyens et grands
-                                    adaptiveRatio = 0.72;
-                                  }
-                                  
-                                  return GridView.builder(
-                                    padding: const EdgeInsets.all(16),
-                                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                                      crossAxisCount: 2,
-                                      childAspectRatio: adaptiveRatio,
-                                      crossAxisSpacing: 16,
-                                      mainAxisSpacing: 16,
-                                    ),
-                                    itemCount: _filteredProducts.length,
-                                    itemBuilder: (context, index) {
-                                      final product = _filteredProducts[index];
-                                      print('Construction du produit ${product.name} à l\'index $index');
-                                      return _buildProductCard(product);
-                                    },
-                                  );
-                                }
-                              ),
-                      ),
-                    ],
-                  ),
-                ),
+          ),
+        ],
+      ),
       bottomNavigationBar: CustomMenu(
         currentIndex: 2,
         onTap: (index) {
@@ -1157,13 +1163,10 @@ class _ProductsViewState extends State<ProductsView> {
                                             color: Colors.blue,
                                             borderRadius: BorderRadius.circular(4),
                                           ),
-                                          child: const Text(
-                                            'Buy',
-                                            style: TextStyle(
-                                              color: Colors.white,
-                                              fontSize: 10,
-                                              fontWeight: FontWeight.bold,
-                                            ),
+                                          child: const Icon(
+                                            Icons.shopping_bag_outlined,
+                                            size: 14,
+                                            color: Colors.white,
                                           ),
                                         ),
                                       ),

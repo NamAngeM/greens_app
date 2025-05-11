@@ -32,11 +32,11 @@ class DigitalCarbonService {
 
   /// Calcule l'empreinte carbone du streaming vidéo et audio
   double calculateStreamingEmissions({
-    required double hoursVideoSD = 0,
-    required double hoursVideoHD = 0,
-    required double hoursVideo4K = 0,
-    required double hoursMusic = 0,
-    required double hoursVideoCalls = 0,
+    double hoursVideoSD = 0,
+    double hoursVideoHD = 0,
+    double hoursVideo4K = 0,
+    double hoursMusic = 0,
+    double hoursVideoCalls = 0,
   }) {
     double totalEmissions = 0;
     
