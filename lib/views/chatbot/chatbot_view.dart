@@ -3,6 +3,7 @@ import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/services/chatbot_service.dart';
 import 'package:greens_app/views/chatbot/llm_settings_view.dart';
+import 'package:greens_app/widgets/menu.dart';
 import 'package:uuid/uuid.dart';
 
 class ChatbotView extends StatefulWidget {
@@ -141,10 +142,13 @@ class _ChatbotViewState extends State<ChatbotView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E3246), 
+      backgroundColor: Colors.white,
       appBar: AppBar(
-        backgroundColor: const Color(0xFF1E3246),
+        backgroundColor: Colors.white,
         elevation: 0,
+        iconTheme: const IconThemeData(
+          color: Color(0xFF1F3140),
+        ),
         title: Row(
           children: [
             Image.asset(
@@ -155,11 +159,11 @@ class _ChatbotViewState extends State<ChatbotView> {
             ),
             const SizedBox(width: 8),
             const Text(
-              "Hello I'm GreenBot,",
+              "GreenBot",
               style: TextStyle(
-                color: Colors.white,
+                color: Color(0xFF1F3140),
                 fontSize: 18,
-                fontWeight: FontWeight.w400,
+                fontWeight: FontWeight.w600,
                 fontFamily: 'RethinkSans',
               ),
             ),
@@ -170,13 +174,13 @@ class _ChatbotViewState extends State<ChatbotView> {
           Icon(
             Icons.circle,
             size: 12,
-            color: _isN8nAvailable ? Colors.green : Colors.red,
+            color: _isN8nAvailable ? AppColors.successColor : AppColors.errorColor,
           ),
           const SizedBox(width: 8),
           IconButton(
             icon: const Icon(
               Icons.settings,
-              color: Colors.white,
+              color: Color(0xFF1F3140),
             ),
             onPressed: () {
               Navigator.push(
@@ -191,38 +195,128 @@ class _ChatbotViewState extends State<ChatbotView> {
       ),
       body: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          // Titre "Eco Chatbot" - similaire au titre "Our latest products"
+          Container(
+            width: double.infinity,
+            alignment: Alignment.centerLeft,
+            padding: const EdgeInsets.only(left: 16, top: 8, bottom: 16),
+            child: const Text(
+              "Hello I'm GreenBot, your eco assistant",
+              style: TextStyle(
+                color: Color(0xFF1F3140),
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          // Contenu principal
+          Expanded(
+            child: Column(
               children: [
+                // Indicateur de statut du service
+                Padding(
+                  padding: const EdgeInsets.all(8.0),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF4CAF50).withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          _isN8nAvailable ? "Service connecté" : "Service hors ligne",
+                          style: TextStyle(
+                            color: _isN8nAvailable ? AppColors.successColor : AppColors.errorColor,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                // Liste des messages
+                Expanded(
+                  child: ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: _messages.length,
+                    itemBuilder: (context, index) {
+                      return _buildMessageBubble(_messages[index]);
+                    },
+                  ),
+                ),
+                // Indicateur de chargement
+                if (_isTyping)
+                  const Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
+                          ),
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          "GreenBot est en train d'écrire...",
+                          style: TextStyle(
+                            color: Color(0xFF1F3140),
+                            fontSize: 14,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                // Zone de saisie
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: Colors.purple,
-                    borderRadius: BorderRadius.circular(16),
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black12,
+                        blurRadius: 4,
+                        offset: Offset(0, -2),
+                      ),
+                    ],
                   ),
                   child: Row(
                     children: [
-                      const Icon(
-                        Icons.api,
-                        color: Colors.white,
-                        size: 16,
-                      ),
-                      const SizedBox(width: 4),
-                      const Text(
-                        "n8n (agent IA)",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontSize: 12,
-                          fontWeight: FontWeight.bold,
+                      Expanded(
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: 'Posez votre question écologique...',
+                            hintStyle: TextStyle(color: Color(0xFF1F3140).withOpacity(0.6)),
+                            filled: true,
+                            fillColor: Colors.grey.shade100,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(24),
+                              borderSide: BorderSide.none,
+                            ),
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                          ),
+                          style: const TextStyle(color: Color(0xFF1F3140)),
+                          onSubmitted: (_) => _handleSubmit(),
                         ),
                       ),
-                      const SizedBox(width: 4),
-                      Icon(
-                        Icons.circle,
-                        size: 8,
-                        color: _isN8nAvailable ? Colors.green : Colors.red,
+                      const SizedBox(width: 8),
+                      FloatingActionButton(
+                        onPressed: _handleSubmit,
+                        backgroundColor: const Color(0xFF4CAF50),
+                        elevation: 0,
+                        mini: true,
+                        child: const Icon(Icons.send),
                       ),
                     ],
                   ),
@@ -230,79 +324,10 @@ class _ChatbotViewState extends State<ChatbotView> {
               ],
             ),
           ),
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(16),
-              itemCount: _messages.length,
-              itemBuilder: (context, index) {
-                return _buildMessageBubble(_messages[index]);
-              },
-            ),
-          ),
-          if (_isTyping)
-            const Padding(
-              padding: EdgeInsets.all(8.0),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    "GreenBot est en train d'écrire...",
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 14,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-            color: const Color(0xFF162736),
-            child: Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _messageController,
-                    decoration: InputDecoration(
-                      hintText: 'Posez votre question écologique...',
-                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.6)),
-                      filled: true,
-                      fillColor: const Color(0xFF1E3246),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                      contentPadding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 12,
-                      ),
-                    ),
-                    style: const TextStyle(color: Colors.white),
-                    onSubmitted: (_) => _handleSubmit(),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                FloatingActionButton(
-                  onPressed: _handleSubmit,
-                  backgroundColor: AppColors.secondaryColor,
-                  elevation: 0,
-                  child: const Icon(Icons.send),
-                ),
-              ],
-            ),
-          ),
         ],
       ),
+      // Ajouter le menu de navigation en bas de la page
+      bottomNavigationBar: const CustomMenu(currentIndex: 4),
     );
   }
 
@@ -319,7 +344,7 @@ class _ChatbotViewState extends State<ChatbotView> {
               width: 36,
               height: 36,
               decoration: const BoxDecoration(
-                color: AppColors.secondaryColor,
+                color: Color(0xFF4CAF50),
                 shape: BoxShape.circle,
               ),
               child: const Center(
@@ -340,37 +365,30 @@ class _ChatbotViewState extends State<ChatbotView> {
               ),
               decoration: BoxDecoration(
                 color: message.isUser
-                    ? AppColors.secondaryColor
-                    : const Color(0xFF162736),
+                    ? const Color(0xFF4CAF50)
+                    : Colors.grey.shade100,
                 borderRadius: BorderRadius.circular(20),
               ),
               child: Text(
                 message.text,
-                style: const TextStyle(
-                  color: Colors.white,
+                style: TextStyle(
+                  color: message.isUser ? Colors.white : Color(0xFF1F3140),
                   fontSize: 16,
                 ),
               ),
             ),
           ),
-          if (message.isUser) ...[
-            const SizedBox(width: 8),
-            Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: AppColors.secondaryColor,
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.person,
-                  color: Colors.white,
-                  size: 20,
-                ),
+          if (message.isUser) const SizedBox(width: 8),
+          if (message.isUser)
+            const CircleAvatar(
+              radius: 18,
+              backgroundColor: Color(0xFF1F3140),
+              child: Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 20,
               ),
             ),
-          ],
         ],
       ),
     );
