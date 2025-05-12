@@ -31,6 +31,9 @@ class _FavoritesViewState extends State<FavoritesView> {
       final merchantInfo = MerchantUrls.getMerchantForProduct(productId);
       if (merchantInfo != null) {
         url = merchantInfo.url;
+        print('URL récupérée via MerchantUrls: $url pour le produit $productId');
+      } else {
+        print('Aucune information marchande trouvée pour le produit $productId');
       }
     }
     
@@ -45,29 +48,41 @@ class _FavoritesViewState extends State<FavoritesView> {
     }
 
     try {
+      print('Tentative d\'ouverture de l\'URL: $url');
       final uri = Uri.parse(url);
+      
+      // Vérifier si l'URL peut être lancée
       if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
+        print('Lancement de l\'URL: $uri');
+        final result = await launchUrl(uri, mode: LaunchMode.externalApplication);
+        print('Résultat du lancement: $result');
+        
+        if (!result) {
+          // Si le lancement a échoué malgré canLaunchUrl retournant true
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Impossible d'ouvrir le site marchand"),
+            SnackBar(
+              content: Text('Impossible d\'ouvrir l\'URL: $url'),
               backgroundColor: Colors.red,
             ),
           );
         }
-      }
-    } catch (e) {
-      print('Erreur lors de l\'ouverture de l\'URL: $e');
-      if (mounted) {
+      } else {
+        print('Impossible de lancer l\'URL: $uri');
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Erreur: $e'),
+            content: Text('Impossible d\'ouvrir l\'URL: $url'),
             backgroundColor: Colors.red,
           ),
         );
       }
+    } catch (e) {
+      print('Erreur lors de l\'ouverture de l\'URL: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erreur: $e'),
+          backgroundColor: Colors.red,
+        ),
+      );
     }
   }
 

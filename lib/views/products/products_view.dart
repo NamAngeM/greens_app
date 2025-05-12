@@ -10,6 +10,7 @@ import 'package:greens_app/models/product.dart';
 import 'package:greens_app/utils/merchant_urls.dart';
 import 'package:greens_app/views/favorites/favorites_view.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:greens_app/utils/api_tester.dart';
 
 class ProductsView extends StatefulWidget {
   const ProductsView({Key? key}) : super(key: key);
@@ -211,7 +212,7 @@ class _ProductsViewState extends State<ProductsView> {
         brand: product.brand,
         description: product.description,
         price: product.price,
-        imageUrl: product.imageAsset,
+        imageUrl: product.imageAsset ?? 'chemin_par_défaut',
         categories: [product.category],
         isEcoFriendly: product.isEcoFriendly,
       );
@@ -317,6 +318,15 @@ class _ProductsViewState extends State<ProductsView> {
           ],
         ),
         actions: [
+          // Bouton de test des domaines (visible uniquement en mode debug)
+          if (true) // Remplacer par !kReleaseMode pour la version finale
+            IconButton(
+              icon: const Icon(Icons.network_check),
+              tooltip: 'Tester les domaines',
+              onPressed: () {
+                ApiTester.showDomainTestDialog(context);
+              },
+            ),
           Stack(
             alignment: Alignment.center,
             children: [
@@ -786,7 +796,7 @@ class _ProductsViewState extends State<ProductsView> {
                                     icon: const Icon(Icons.shopping_bag_outlined),
                                     color: Colors.blue,
                                     onPressed: () {
-                                      _openMerchantUrl(item.product.merchantUrl);
+                                      _openMerchantUrl(item.product.id);
                                     },
                                     tooltip: 'Acheter',
                                   ),
@@ -867,34 +877,23 @@ class _ProductsViewState extends State<ProductsView> {
     );
   }
 
-  // Ouvrir l'URL du marchand
-  Future<void> _openMerchantUrl(String? url) async {
-    if (url == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Aucune URL de marchand disponible'),
-          backgroundColor: Colors.red,
-        ),
-      );
-      return;
-    }
-
+  // Méthode pour ouvrir l'URL du marchand
+  Future<void> _openMerchantUrl(String productId) async {
     try {
-      final uri = Uri.parse(url);
-      if (await canLaunchUrl(uri)) {
-        await launchUrl(uri, mode: LaunchMode.externalApplication);
-      } else {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text("Impossible d'ouvrir le site marchand"),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
+      print('Ouverture de l\'URL marchand pour le produit $productId');
+      final success = await MerchantUrls.openMerchantUrl(productId, context: context);
+      
+      if (!success && mounted) {
+        // Si l'ouverture a échoué et qu'aucun message n'a été affiché par le gestionnaire
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Impossible d\'ouvrir le site marchand. Veuillez vérifier votre connexion internet.'),
+            backgroundColor: Colors.red,
+          ),
+        );
       }
     } catch (e) {
-      print('Erreur lors de l\'ouverture de l\'URL: $e');
+      print('Erreur lors de l\'ouverture de l\'URL marchand: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -945,20 +944,12 @@ class _ProductsViewState extends State<ProductsView> {
     
     return GestureDetector(
       onTap: () {
-        // Navigation vers la page de détail du produit
         Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) => ProductDetailView(product: product),
           ),
-        ).then((showCart) {
-          // Si showCart est true, afficher les favoris
-          if (showCart == true) {
-            setState(() {
-              _isFavoritesVisible = true;
-            });
-          }
-        });
+        );
       },
       child: Container(
         decoration: BoxDecoration(
@@ -967,222 +958,141 @@ class _ProductsViewState extends State<ProductsView> {
           boxShadow: [
             BoxShadow(
               color: Colors.black.withOpacity(0.05),
-              blurRadius: 5,
+              blurRadius: 8,
               offset: const Offset(0, 2),
             ),
           ],
         ),
-        // Utiliser un layout plus adaptable avec des tailles relatives
-        child: LayoutBuilder(
-          builder: (context, constraints) {
-            // La hauteur maximale disponible pour la carte
-            final cardHeight = constraints.maxHeight;
-            // Allouer 55% pour l'image et 45% pour les infos
-            final imageHeight = cardHeight * 0.55;
-            final infoHeight = cardHeight * 0.45;
-            
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Image du produit
+            Stack(
               children: [
-                // Product image - hauteur fixe pour éviter les débordements
-                SizedBox(
-                  height: imageHeight,
-                  child: Stack(
-                    children: [
-                      Hero(
-                        tag: 'product-${product.id}',
-                        child: ClipRRect(
-                          borderRadius: const BorderRadius.only(
-                            topLeft: Radius.circular(12),
-                            topRight: Radius.circular(12),
-                          ),
-                          child: Container(
-                            width: double.infinity,
-                            color: Colors.grey.shade100,
-                            child: product.imageAsset != null
-                                ? Image.asset(
-                                    product.imageAsset!,
-                                    fit: BoxFit.cover,
-                                    errorBuilder: (context, error, stackTrace) {
-                                      print('Erreur de chargement de l\'image produit: ${product.name}, erreur: $error');
-                                      return Center(
-                                        child: Icon(
-                                          Icons.image_not_supported_outlined,
-                                          color: Colors.grey,
-                                          size: 48,
-                                        ),
-                                      );
-                                    },
-                                  )
-                                : Center(
-                                    child: Icon(
-                                      Icons.image_not_supported_outlined,
-                                      color: Colors.grey,
-                                      size: 48,
-                                    ),
-                                  ),
-                          ),
-                        ),
-                      ),
-                      if (product.isEcoFriendly)
-                        Positioned(
-                          top: 8,
-                          right: 8,
-                          child: Container(
-                            width: 28,
-                            height: 28,
-                            decoration: const BoxDecoration(
-                              color: Color(0xFF4CAF50),
-                              shape: BoxShape.circle,
-                            ),
-                            child: const Center(
-                              child: Icon(
-                                Icons.eco,
-                                color: Colors.white,
-                                size: 16,
-                              ),
-                            ),
-                          ),
-                        ),
-                    ],
+                ClipRRect(
+                  borderRadius: const BorderRadius.only(
+                    topLeft: Radius.circular(12),
+                    topRight: Radius.circular(12),
+                  ),
+                  child: Image.asset(
+                    product.imageAsset ?? 'chemin_par_défaut',
+                    height: 120,
+                    width: double.infinity,
+                    fit: BoxFit.cover,
                   ),
                 ),
-                
-                // Product info - hauteur fixe basée sur le layout
-                SizedBox(
-                  height: infoHeight,
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        // Nom du produit
-                        Text(
-                          product.name,
+                if (product.isEcoFriendly)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      width: 28,
+                      height: 28,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF4CAF50),
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.eco,
+                          color: Colors.white,
+                          size: 16,
+                        ),
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+            // Informations du produit
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.name,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.bold,
+                      fontSize: 14,
+                      color: Color(0xFF1F3140),
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    product.brand,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                  const SizedBox(height: 8),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          '\$${product.price.toStringAsFixed(2)}',
                           style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 13,
                             color: Color(0xFF1F3140),
                           ),
-                          maxLines: 1,
                           overflow: TextOverflow.ellipsis,
                         ),
-                        const SizedBox(height: 1),
-                        // Description - hauteur flexible limitée
-                        Flexible(
-                          child: Text(
-                            product.description,
-                            style: TextStyle(
-                              color: Colors.grey.shade600,
-                              fontSize: 12,
+                      ),
+                      const SizedBox(width: 4),
+                      // Boutons d'action compacts
+                      Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          // Bouton d'ajout aux favoris
+                          InkWell(
+                            onTap: () => _addToFavorites(product),
+                            child: Container(
+                              padding: const EdgeInsets.all(4),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF4CAF50),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Icon(
+                                Icons.favorite,
+                                size: 14,
+                                color: Colors.white,
+                              ),
                             ),
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
                           ),
-                        ),
-                        const Spacer(),
-                        // Prix et boutons - hauteur fixe
-                        SizedBox(
-                          height: 30,
-                          child: Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            crossAxisAlignment: CrossAxisAlignment.center,
-                            children: [
-                              // Prix avec contrainte de largeur
-                              Flexible(
-                                child: Text(
-                                  '\$${product.price.toStringAsFixed(2)}',
-                                  style: const TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 13,
-                                    color: Color(0xFF1F3140),
+                          // Si un marchand existe pour ce produit, montrer le bouton Acheter
+                          if (merchantInfo != null)
+                            Padding(
+                              padding: const EdgeInsets.only(left: 4),
+                              child: InkWell(
+                                onTap: () => _openMerchantUrl(product.id),
+                                child: Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                                  decoration: BoxDecoration(
+                                    color: Colors.blue,
+                                    borderRadius: BorderRadius.circular(4),
                                   ),
-                                  overflow: TextOverflow.ellipsis,
+                                  child: const Icon(
+                                    Icons.shopping_bag_outlined,
+                                    size: 14,
+                                    color: Colors.white,
+                                  ),
                                 ),
                               ),
-                              const SizedBox(width: 4),
-                              // Boutons d'action compacts
-                              Row(
-                                mainAxisSize: MainAxisSize.min,
-                                children: [
-                                  // Bouton d'ajout aux favoris
-                                  InkWell(
-                                    onTap: () => _addToFavorites(product),
-                                    child: Container(
-                                      padding: const EdgeInsets.all(4),
-                                      decoration: BoxDecoration(
-                                        color: const Color(0xFF4CAF50),
-                                        borderRadius: BorderRadius.circular(4),
-                                      ),
-                                      child: const Icon(
-                                        Icons.favorite,
-                                        size: 14,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                  // Si un marchand existe pour ce produit, montrer le bouton Acheter
-                                  if (merchantInfo != null) 
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 4),
-                                      child: InkWell(
-                                        onTap: () async {
-                                          try {
-                                            final url = Uri.parse(merchantInfo.url);
-                                            if (await canLaunchUrl(url)) {
-                                              await launchUrl(
-                                                url,
-                                                mode: LaunchMode.externalApplication,
-                                              );
-                                            } else {
-                                              if (mounted) {
-                                                ScaffoldMessenger.of(context).showSnackBar(
-                                                  const SnackBar(
-                                                    content: Text("Impossible d'ouvrir le site marchand"),
-                                                    backgroundColor: Colors.red,
-                                                  ),
-                                                );
-                                              }
-                                            }
-                                          } catch (e) {
-                                            print('Erreur lors de l\'ouverture de l\'URL: $e');
-                                            if (mounted) {
-                                              ScaffoldMessenger.of(context).showSnackBar(
-                                                SnackBar(
-                                                  content: Text('Erreur: $e'),
-                                                  backgroundColor: Colors.red,
-                                                ),
-                                              );
-                                            }
-                                          }
-                                        },
-                                        child: Container(
-                                          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 3),
-                                          decoration: BoxDecoration(
-                                            color: Colors.blue,
-                                            borderRadius: BorderRadius.circular(4),
-                                          ),
-                                          child: const Icon(
-                                            Icons.shopping_bag_outlined,
-                                            size: 14,
-                                            color: Colors.white,
-                                          ),
-                                        ),
-                                      ),
-                                    ),
-                                ],
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
+                            ),
+                        ],
+                      ),
+                    ],
                   ),
-                ),
-              ],
-            );
-          }
+                ],
+              ),
+            ),
+          ],
         ),
       ),
     );

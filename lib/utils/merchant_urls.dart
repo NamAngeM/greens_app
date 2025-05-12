@@ -1,123 +1,135 @@
-import 'package:greens_app/models/merchant_info.dart';
+import 'package:flutter/material.dart';
+import 'domain_manager.dart';
+import 'url_launcher_helper.dart';
+
+class MerchantInfo {
+  final String name;
+  final String url;
+
+  MerchantInfo({
+    required this.name,
+    required this.url,
+  });
+}
 
 class MerchantUrls {
-  static const Map<String, MerchantInfo> productMerchants = {
-    // Produits avec les nouvelles URLs
+  // Mapping des produits vers les URLs (avec des clés de type String)
+  static final Map<String, MerchantInfo> productMerchants = {
     '1': MerchantInfo(
-      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/1',
       name: 'Green Commerce',
+      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/1',
     ),
     '2': MerchantInfo(
-      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/2',
       name: 'Green Commerce',
+      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/2',
     ),
     '3': MerchantInfo(
-      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/3',
       name: 'Green Commerce',
+      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/3',
     ),
     '4': MerchantInfo(
-      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/4',
       name: 'Green Commerce',
+      url: 'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app/produit/4',
     ),
     '5': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/5',
       name: 'Green Commerce',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/5',
     ),
     '6': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/6',
       name: 'Green Commerce',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/6',
     ),
     '7': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/7',
       name: 'Green Commerce',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/7',
     ),
     '8': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/8',
       name: 'Green Commerce',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/8',
     ),
     '9': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/9',
       name: 'Green Commerce',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/9',
     ),
     '10': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/10',
       name: 'Green Commerce',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/10',
     ),
     '11': MerchantInfo(
-      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/11',
       name: 'Green Commerce',
-    ),
-    
-    // Conserver les anciens produits pour la rétrocompatibilité
-    'amoseeds-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/amoseeds-chia-seeds',
-      name: 'GreenMinds',
-    ),
-    'juneshine-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/juneshine-kombucha',
-      name: 'GreenMinds',
-    ),
-    'jens-sorbet-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/jens-sorbet',
-      name: 'GreenMinds',
-    ),
-    'amoseeds-2': MerchantInfo(
-      url: 'https://www.greenminds.com/products/amoseeds-zen-bio',
-      name: 'GreenMinds',
-    ),
-    'allbirds-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/allbirds-runners',
-      name: 'GreenMinds',
-    ),
-    'organic-basics-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/organic-basics-tee',
-      name: 'GreenMinds',
-    ),
-    'qapel-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/qapel-leather-bag',
-      name: 'GreenMinds',
-    ),
-    'organic-basics-2': MerchantInfo(
-      url: 'https://www.greenminds.com/products/organic-basics-black',
-      name: 'GreenMinds',
-    ),
-    'ecobottle-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/ecobottle',
-      name: 'GreenMinds',
-    ),
-    'lift-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/lift-ergonomic',
-      name: 'GreenMinds',
-    ),
-    'mofpw-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/mofpw-keyboard',
-      name: 'GreenMinds',
-    ),
-    'lenovo-1': MerchantInfo(
-      url: 'https://www.greenminds.com/products/lenovo-thinkpad',
-      name: 'GreenMinds',
+      url: 'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app/produit/11',
     ),
   };
-  
-  /// Récupère les informations du marchand pour un produit donné
+
+  // Récupérer les informations du marchand pour un produit donné
   static MerchantInfo? getMerchantForProduct(String productId) {
-    // Essayer d'abord avec l'ID tel quel
+    // Si le produit est dans le mapping statique, utiliser cette URL
     if (productMerchants.containsKey(productId)) {
       return productMerchants[productId];
     }
     
-    // Si l'ID n'est pas trouvé directement, essayer de le convertir en format numérique
-    // pour les nouveaux produits qui utilisent des IDs numériques
-    try {
-      final numericId = productId.replaceAll(RegExp(r'[^0-9]'), '');
-      if (numericId.isNotEmpty && productMerchants.containsKey(numericId)) {
-        return productMerchants[numericId];
-      }
-    } catch (e) {
-      print('Erreur lors de la conversion de l\'ID: $e');
+    // Essayer d'extraire un ID numérique si possible
+    String numericId = productId.replaceAll(RegExp(r'[^0-9]'), '');
+    if (numericId.isNotEmpty && productMerchants.containsKey(numericId)) {
+      return productMerchants[numericId];
     }
     
-    // Si aucune correspondance n'est trouvée, retourner null
-    return null;
+    // Sinon, construire une URL dynamique basée sur le produit
+    // Cette approche est plus flexible et permet d'ajouter de nouveaux produits sans modifier le code
+    return MerchantInfo(
+      name: 'Green Commerce',
+      url: '${DomainManager.currentDomain}/produit/${numericId.isNotEmpty ? numericId : productId}',
+    );
+  }
+  
+  // Nouvelle méthode pour ouvrir l'URL du marchand avec gestion des erreurs
+  static Future<bool> openMerchantUrl(String productId, {BuildContext? context}) async {
+    print('MerchantUrls: Tentative d\'ouverture de l\'URL pour le produit: $productId');
+    
+    // Vérifier d'abord si nous avons une URL statique pour ce produit
+    if (productMerchants.containsKey(productId)) {
+      try {
+        final merchantInfo = productMerchants[productId]!;
+        print('MerchantUrls: URL statique trouvée: ${merchantInfo.url}');
+        
+        // Utiliser notre nouvel utilitaire pour lancer l'URL
+        final success = await UrlLauncherHelper.launchUrlWithFallback(
+          merchantInfo.url,
+          context: context,
+        );
+        
+        if (success) {
+          return true;
+        }
+      } catch (e) {
+        print('MerchantUrls: Erreur avec l\'URL statique: $e');
+        // Si l'URL statique échoue, continuer avec l'approche dynamique
+      }
+    }
+    
+    // Extraire l'ID numérique si possible
+    String numericId = productId.replaceAll(RegExp(r'[^0-9]'), '');
+    if (numericId.isEmpty) {
+      numericId = '1'; // Fallback sur l'ID 1 si aucun ID numérique n'est trouvé
+    }
+    
+    // Essayer avec chaque domaine jusqu'à ce qu'un fonctionne
+    for (String domain in DomainManager.domains) {
+      final url = '$domain/produit/$numericId';
+      print('MerchantUrls: Essai avec le domaine: $url');
+      
+      final success = await UrlLauncherHelper.launchUrlWithFallback(
+        url,
+        context: context,
+        // Ne pas afficher d'erreur pour chaque domaine, seulement pour le dernier
+        showErrorMessage: domain == DomainManager.domains.last,
+      );
+      
+      if (success) {
+        return true;
+      }
+    }
+    
+    return false;
   }
 }
