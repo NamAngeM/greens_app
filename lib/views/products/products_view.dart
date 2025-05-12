@@ -880,7 +880,16 @@ class _ProductsViewState extends State<ProductsView> {
   // Méthode pour ouvrir l'URL du marchand
   Future<void> _openMerchantUrl(String productId) async {
     try {
-      print('Ouverture de l\'URL marchand pour le produit $productId');
+      print('ProductsView: Ouverture de l\'URL marchand pour le produit $productId');
+      
+      // Obtenir les informations du marchand pour ce produit
+      final merchantInfo = MerchantUrls.getMerchantForProduct(productId);
+      if (merchantInfo != null) {
+        print('ProductsView: Info marchand trouvée - URL: ${merchantInfo.url}');
+      } else {
+        print('ProductsView: Aucune info marchand trouvée pour $productId');
+      }
+      
       final success = await MerchantUrls.openMerchantUrl(productId, context: context);
       
       if (!success && mounted) {

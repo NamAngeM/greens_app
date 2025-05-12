@@ -6,11 +6,10 @@ import 'package:url_launcher/url_launcher.dart';
 class DomainManager {
   // Liste des domaines disponibles, par ordre de priorité
   static final List<String> domains = [
+    'https://green-commerce.vercel.app', // Domaine de production public
     'https://green-commerce-gamma.vercel.app', // Nouveau domaine principal
     'https://green-commerce-ecg15tmtx-nams-projects-08436685.vercel.app',
     'https://green-commerce-m4wttggxd-nams-projects-08436685.vercel.app',
-    // Ajouter ici le domaine de production quand disponible
-    // 'https://green-commerce.vercel.app',
   ];
   
   // Domaine actuellement utilisé (par défaut le premier)
