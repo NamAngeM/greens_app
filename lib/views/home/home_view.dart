@@ -26,6 +26,7 @@ import 'package:greens_app/models/article_model.dart';
 import 'package:greens_app/models/eco_badge.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'dart:math' as math;
+import 'package:greens_app/widgets/scanner_quick_access.dart';
 
 class HomeView extends StatefulWidget {
   const HomeView({Key? key}) : super(key: key);
@@ -154,7 +155,11 @@ class _HomeViewState extends State<HomeView> {
             
             // Section: Parcours écologique et défis
             const EcoJourneyCard(),
-            const SizedBox(height: 32),
+            const SizedBox(height: 16),
+            
+            // Section: Scanner de produit
+            const ScannerQuickAccess(),
+            const SizedBox(height: 16),
             
             // Section: Green tips of the day
             _buildSectionHeader('Green tips of the day'),

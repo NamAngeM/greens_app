@@ -23,6 +23,7 @@ import 'package:greens_app/views/blogs/blog_view.dart';
 import 'package:greens_app/views/legale/legale_notice_view.dart';
 import 'package:greens_app/views/settings/setting_view.dart';
 import 'package:greens_app/views/chatbot/chatbot_view.dart';
+import 'package:greens_app/views/chatbot/chatbot_settings_view.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/views/profile/profile_view.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -37,6 +38,7 @@ import 'package:greens_app/views/onboarding/improved_onboarding_view.dart';
 import 'package:greens_app/views/impact/environmental_impact_view.dart';
 import 'package:greens_app/views/digital_twin/eco_digital_twin_view.dart';
 import 'package:greens_app/views/ar/ar_eco_impact_view.dart';
+import 'package:greens_app/features/product_scanner/screens/enhanced_scanner_screen.dart';
 
 // Classe pour définir les constantes de routes
 class AppRoutes {
@@ -81,6 +83,7 @@ class AppRoutes {
   static const String digitalTwin = '/digital_twin';
   static const String digitalTwinSettings = '/digital_twin_settings';
   static const String arEcoImpact = '/ar_eco_impact';
+  static const String chatbotSettings = '/chatbot_settings';
 }
 
 class AppRouter {
@@ -132,13 +135,15 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const ChatbotView());
       case AppRoutes.ecoChatbot:
         return MaterialPageRoute(builder: (_) => const ChatbotView());
+      case AppRoutes.chatbotSettings:
+        return MaterialPageRoute(builder: (_) => const ChatbotSettingsView());
       case AppRoutes.rewards:
       case AppRoutes.goals:
         return MaterialPageRoute(builder: (_) => const GoalsView());
       case AppRoutes.community:
         return MaterialPageRoute(builder: (_) => const CommunityView());
       case AppRoutes.productScanner:
-        return MaterialPageRoute(builder: (_) => const ProductScannerView());
+        return MaterialPageRoute(builder: (_) => const EnhancedScannerScreen());
       case AppRoutes.profile:
         return MaterialPageRoute(
           builder: (_) => const ProfileView(), 

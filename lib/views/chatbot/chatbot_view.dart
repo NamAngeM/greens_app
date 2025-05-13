@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
-import 'package:greens_app/services/chatbot_service.dart';
-import 'package:greens_app/views/chatbot/llm_settings_view.dart';
+import 'package:greens_app/services/hybrid_chatbot_service.dart';
+import 'package:greens_app/views/chatbot/chatbot_settings_view.dart';
 import 'package:greens_app/widgets/menu.dart';
-import 'package:uuid/uuid.dart';
+import 'package:greens_app/models/chatbot_message.dart';
+import 'package:provider/provider.dart';
 
 class ChatbotView extends StatefulWidget {
   const ChatbotView({Key? key}) : super(key: key);
@@ -16,36 +17,84 @@ class ChatbotView extends StatefulWidget {
 class _ChatbotViewState extends State<ChatbotView> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  final List<ChatMessage> _messages = [];
-  bool _isTyping = false;
-  late ChatbotService _n8nService;
-  bool _isN8nAvailable = false;
-  final String _sessionId = const Uuid().v4();
-
+  late HybridChatbotService _chatbotService;
+  int _currentIndex = 4; // Index pour le menu (4 = Chatbot)
+  
   @override
   void initState() {
     super.initState();
-    _initAIService();
-    
-    _addBotMessage("Bonjour ! Je suis GreenBot, votre assistant spécialisé en écologie. Je peux vous aider sur des sujets comme le développement durable, la réduction des déchets, ou la conservation de l'énergie. Que souhaitez-vous savoir aujourd'hui ?");
+    _initChatbotService();
   }
   
-  Future<void> _initAIService() async {
+  Future<void> _initChatbotService() async {
     try {
-      if (!mounted) return;
+      _chatbotService = HybridChatbotService.instance;
       
-      // Initialiser n8n
-      _n8nService = ChatbotService.instance;
-      await _n8nService.initialize(webhookUrl: 'https://angenam.app.n8n.cloud/webhook-test/chatbot-eco');
+      // Configuration des URLs pour les services locaux
+      // Utiliser l'adresse IP de l'ordinateur sur le réseau local
+      // pour permettre l'accès depuis un appareil physique
+      await _chatbotService.initialize(
+        rasaUrl: 'http://192.168.1.97:5005',  // URL Rasa sur le réseau local
+        ollamaUrl: 'http://192.168.1.97:11434', // URL Ollama sur le réseau local
+        ollamaModel: 'llama3',  // Modèle par défaut
+      );
       
-      setState(() {
-        _isN8nAvailable = _n8nService.isInitialized;
-      });
+      if (!_chatbotService.messages.any((msg) => !msg.isUser)) {
+        // Ajouter un message de bienvenue si aucun message du bot n'existe encore
+        final welcomeMessage = ChatbotMessage(
+          id: 'welcome',
+          text: "Bonjour ! Je suis GreenBot, votre assistant écologique. Comment puis-je vous aider aujourd'hui ?",
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+        _chatbotService.clearHistory();
+        await _chatbotService.sendMessage("", initialMessage: welcomeMessage);
+        if (mounted) setState(() {});
+      }
+      
+      // Vérifier si nous sommes en mode hors ligne et afficher une notification
+      if (!_chatbotService.isRasaAvailable && !_chatbotService.isOllamaAvailable) {
+        // Ajouter un message informant l'utilisateur du mode hors ligne
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text(
+                'Chatbot en mode hors ligne : fonctionnalités limitées. Appuyez sur ? pour l\'aide.',
+                style: TextStyle(fontSize: 13),
+              ),
+              backgroundColor: Colors.orange,
+              duration: const Duration(seconds: 8),
+              action: SnackBarAction(
+                label: 'AIDE',
+                textColor: Colors.white,
+                onPressed: () => _showHelpDialog(context),
+              ),
+            ),
+          );
+        });
+      }
     } catch (e) {
-      print('Erreur lors de l\'initialisation du service d\'IA: $e');
-      setState(() {
-        _isN8nAvailable = false;
-      });
+      print('Erreur lors de l\'initialisation du service de chatbot: $e');
+      
+      // Ajouter un message d'erreur pour l'utilisateur
+      if (mounted) {
+        // Informer l'utilisateur de l'erreur et comment la résoudre
+        final errorMessage = ChatbotMessage(
+          id: 'error',
+          text: "Je rencontre des problèmes de connexion avec les services de chatbot (Rasa/Ollama).\n\n"
+               "Pour utiliser le chatbot sur un appareil physique :\n\n"
+               "1. Assurez-vous que votre téléphone et votre ordinateur sont sur le même réseau WiFi\n"
+               "2. Sur votre ordinateur, exécutez :\n"
+               "   • Rasa : 'rasa run --enable-api --cors \"*\" --host 0.0.0.0 --port 5005'\n"
+               "   • Ollama : 'ollama run llama3'\n\n"
+               "3. Vérifiez que les services sont accessibles depuis votre téléphone en visitant http://192.168.1.97:5005 et http://192.168.1.97:11434 dans un navigateur.",
+          isUser: false,
+          timestamp: DateTime.now(),
+        );
+        
+        _chatbotService.addMessage(errorMessage);
+        setState(() {});
+      }
     }
   }
 
@@ -55,138 +104,69 @@ class _ChatbotViewState extends State<ChatbotView> {
     _scrollController.dispose();
     super.dispose();
   }
-
-  void _addUserMessage(String text) {
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text,
-          isUser: true,
-        ),
-      );
-    });
-    
-    _scrollToBottom();
-  }
-
-  void _addBotMessage(String text) {
-    setState(() {
-      _messages.add(
-        ChatMessage(
-          text: text,
-          isUser: false,
-        ),
-      );
-    });
-    
-    _scrollToBottom();
-  }
-
+  
   void _scrollToBottom() {
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (_scrollController.hasClients) {
+    if (_scrollController.hasClients) {
+      Future.delayed(const Duration(milliseconds: 100), () {
         _scrollController.animateTo(
           _scrollController.position.maxScrollExtent,
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOut,
         );
-      }
-    });
+      });
+    }
   }
 
-  Future<void> _handleSubmit() async {
-    final text = _messageController.text.trim();
-    if (text.isEmpty) return;
+  void _sendMessage() async {
+    final message = _messageController.text.trim();
+    if (message.isEmpty) return;
     
-    _addUserMessage(text);
     _messageController.clear();
     
-    setState(() {
-      _isTyping = true;
-    });
-    
-    // Vérifier la disponibilité du service
-    if (!_isN8nAvailable) {
-      await Future.delayed(const Duration(seconds: 1));
-      _addBotMessage("Désolé, je ne peux pas me connecter au service n8n. Veuillez vérifier votre configuration.");
-      setState(() {
-        _isTyping = false;
-      });
-      return;
-    }
-    
-    try {
-      // Convertir les 5 derniers messages pour le contexte
-      final context = _messages
-          .where((msg) => _messages.indexOf(msg) >= _messages.length - 5)
-          .map((msg) => {
-                'text': msg.text,
-                'isUser': msg.isUser,
-                'timestamp': DateTime.now().toIso8601String(),
-              })
-          .toList();
-      
-      String response = await _n8nService.getResponse(text, context: context);
-      
-      _addBotMessage(response);
-    } catch (e) {
-      print('Erreur lors de la communication avec le service d\'IA: $e');
-      _addBotMessage("Désolé, une erreur s'est produite lors de la communication avec le service d'IA. Veuillez réessayer plus tard.");
-    } finally {
-      setState(() {
-        _isTyping = false;
-      });
-    }
+    await _chatbotService.sendMessage(message);
+    _scrollToBottom();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.white,
+      backgroundColor: AppColors.backgroundColor,
       appBar: AppBar(
         backgroundColor: Colors.white,
         elevation: 0,
-        iconTheme: const IconThemeData(
-          color: Color(0xFF1F3140),
-        ),
         title: Row(
           children: [
-            Image.asset(
-              'assets/images/logo/green_minds_logo.png',
-              width: 24,
-              height: 24,
-              color: AppColors.secondaryColor,
+            Icon(
+              Icons.chat_bubble_outline,
+              color: AppColors.primaryColor,
+              size: 24,
             ),
             const SizedBox(width: 8),
             const Text(
-              "GreenBot",
+              "Assistant Écologique",
               style: TextStyle(
                 color: Color(0xFF1F3140),
-                fontSize: 18,
-                fontWeight: FontWeight.w600,
-                fontFamily: 'RethinkSans',
+                fontSize: 16,
+                fontWeight: FontWeight.w500,
               ),
             ),
           ],
         ),
         actions: [
-          // Indicateur d'état
-          Icon(
-            Icons.circle,
-            size: 12,
-            color: _isN8nAvailable ? AppColors.successColor : AppColors.errorColor,
-          ),
-          const SizedBox(width: 8),
+          // Bouton d'aide
           IconButton(
-            icon: const Icon(
-              Icons.settings,
-              color: Color(0xFF1F3140),
-            ),
+            icon: const Icon(Icons.help_outline, color: Color(0xFF1F3140)),
+            onPressed: () {
+              _showHelpDialog(context);
+            },
+          ),
+          IconButton(
+            icon: const Icon(Icons.settings, color: Color(0xFF1F3140)),
             onPressed: () {
               Navigator.push(
                 context,
                 MaterialPageRoute(
-                  builder: (context) => const LLMSettingsView(),
+                  builder: (context) => const ChatbotSettingsView(),
                 ),
               );
             },
@@ -195,13 +175,13 @@ class _ChatbotViewState extends State<ChatbotView> {
       ),
       body: Column(
         children: [
-          // Titre "Eco Chatbot" - similaire au titre "Our latest products"
+          // Titre "Discutez avec notre IA"
           Container(
             width: double.infinity,
             alignment: Alignment.centerLeft,
             padding: const EdgeInsets.only(left: 16, top: 8, bottom: 16),
             child: const Text(
-              "Hello I'm GreenBot, your eco assistant",
+              "Discutez avec notre IA",
               style: TextStyle(
                 color: Color(0xFF1F3140),
                 fontSize: 24,
@@ -209,198 +189,394 @@ class _ChatbotViewState extends State<ChatbotView> {
               ),
             ),
           ),
-          // Contenu principal
+          // Zone d'informations sur le statut du chatbot
+          _buildStatusBar(),
+          
+          // Zone de messages
           Expanded(
-            child: Column(
-              children: [
-                // Indicateur de statut du service
-                Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4CAF50).withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          _isN8nAvailable ? "Service connecté" : "Service hors ligne",
-                          style: TextStyle(
-                            color: _isN8nAvailable ? AppColors.successColor : AppColors.errorColor,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+            child: AnimatedBuilder(
+              animation: _chatbotService,
+              builder: (context, child) {
+                return _buildMessageList();
+              },
+            ),
+          ),
+          
+          // Zone de saisie
+          _buildInputArea(),
+        ],
+      ),
+      bottomNavigationBar: CustomMenu(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+      ),
+    );
+  }
+  
+  Widget _buildStatusBar() {
+    return AnimatedBuilder(
+      animation: _chatbotService,
+      builder: (context, child) {
+        final isRasaAvailable = _chatbotService.isRasaAvailable;
+        final isOllamaAvailable = _chatbotService.isOllamaAvailable;
+        
+        return Column(
+          children: [
+            Container(
+              color: AppColors.cardColor,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Row(
+                children: [
+                  const Icon(Icons.info_outline, size: 16, color: AppColors.primaryColor),
+                  const SizedBox(width: 8),
+                  Text(
+                    'Système: ${isRasaAvailable && isOllamaAvailable ? "Hybride (Rasa + Ollama)" : isRasaAvailable ? "Rasa" : isOllamaAvailable ? "Ollama" : "Hors ligne"}',
+                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                  ),
+                  const Spacer(),
+                  // Bouton pour tester manuellement la connexion
+                  if (!isRasaAvailable || !isOllamaAvailable)
+                    TextButton.icon(
+                      icon: const Icon(Icons.refresh, size: 16),
+                      label: const Text("Reconnecter", style: TextStyle(fontSize: 12)),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                        minimumSize: Size.zero,
+                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                       ),
-                    ],
+                      onPressed: () => _initChatbotService(),
+                    ),
+                  if (_chatbotService.isProcessing)
+                    SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
+                      ),
+                    ),
+                ],
+              ),
+            ),
+            // Ligne d'état de Rasa et Ollama
+            Container(
+              color: Colors.grey.shade100,
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+              child: Row(
+                children: [
+                  Icon(
+                    isRasaAvailable ? Icons.check_circle : Icons.error_outline,
+                    size: 14, 
+                    color: isRasaAvailable ? Colors.green : Colors.orange,
                   ),
-                ),
-                // Liste des messages
-                Expanded(
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: _messages.length,
-                    itemBuilder: (context, index) {
-                      return _buildMessageBubble(_messages[index]);
-                    },
-                  ),
-                ),
-                // Indicateur de chargement
-                if (_isTyping)
-                  const Padding(
-                    padding: EdgeInsets.all(8.0),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                            strokeWidth: 2,
-                            valueColor: AlwaysStoppedAnimation<Color>(Color(0xFF4CAF50)),
-                          ),
-                        ),
-                        SizedBox(width: 8),
-                        Text(
-                          "GreenBot est en train d'écrire...",
-                          style: TextStyle(
-                            color: Color(0xFF1F3140),
-                            fontSize: 14,
-                          ),
-                        ),
-                      ],
+                  const SizedBox(width: 4),
+                  Text(
+                    'Rasa: ${isRasaAvailable ? "Connecté" : "Déconnecté"}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isRasaAvailable ? Colors.green : Colors.orange,
                     ),
                   ),
-                // Zone de saisie
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 4,
-                        offset: Offset(0, -2),
-                      ),
-                    ],
+                  const SizedBox(width: 16),
+                  Icon(
+                    isOllamaAvailable ? Icons.check_circle : Icons.error_outline,
+                    size: 14, 
+                    color: isOllamaAvailable ? Colors.green : Colors.orange,
                   ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextField(
-                          controller: _messageController,
-                          decoration: InputDecoration(
-                            hintText: 'Posez votre question écologique...',
-                            hintStyle: TextStyle(color: Color(0xFF1F3140).withOpacity(0.6)),
-                            filled: true,
-                            fillColor: Colors.grey.shade100,
-                            border: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(24),
-                              borderSide: BorderSide.none,
-                            ),
-                            contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                          ),
-                          style: const TextStyle(color: Color(0xFF1F3140)),
-                          onSubmitted: (_) => _handleSubmit(),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      FloatingActionButton(
-                        onPressed: _handleSubmit,
-                        backgroundColor: const Color(0xFF4CAF50),
-                        elevation: 0,
-                        mini: true,
-                        child: const Icon(Icons.send),
-                      ),
-                    ],
+                  const SizedBox(width: 4),
+                  Text(
+                    'Ollama: ${isOllamaAvailable ? "Connecté" : "Déconnecté"}',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isOllamaAvailable ? Colors.green : Colors.orange,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
-      ),
-      // Ajouter le menu de navigation en bas de la page
-      bottomNavigationBar: const CustomMenu(currentIndex: 4),
+          ],
+        );
+      },
     );
   }
-
-  Widget _buildMessageBubble(ChatMessage message) {
+  
+  Widget _buildMessageList() {
+    final messages = _chatbotService.messages;
+    
+    if (messages.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 64,
+              color: AppColors.primaryColor.withOpacity(0.3),
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              'Commencez la conversation !',
+              style: TextStyle(
+                fontSize: 16,
+                color: Colors.grey,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+    
+    return ListView.builder(
+      controller: _scrollController,
+      padding: const EdgeInsets.all(16),
+      itemCount: messages.length,
+      itemBuilder: (context, index) {
+        final message = messages[index];
+        return _buildMessageBubble(message);
+      },
+    );
+  }
+  
+  Widget _buildMessageBubble(ChatbotMessage message) {
+    final isUser = message.isUser;
+    
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 8.0),
+      padding: const EdgeInsets.only(bottom: 16),
       child: Row(
-        mainAxisAlignment:
-            message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!message.isUser) ...[
-            Container(
-              width: 36,
-              height: 36,
-              decoration: const BoxDecoration(
-                color: Color(0xFF4CAF50),
-                shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.eco,
-                  color: Colors.white,
-                  size: 20,
-                ),
-              ),
+          if (!isUser)
+            CircleAvatar(
+              backgroundColor: AppColors.secondaryColor,
+              radius: 18,
+              child: const Icon(Icons.eco, color: Colors.white, size: 18),
             ),
-            const SizedBox(width: 8),
-          ],
+          if (!isUser) const SizedBox(width: 8),
+          
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 16,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
               decoration: BoxDecoration(
-                color: message.isUser
-                    ? const Color(0xFF4CAF50)
-                    : Colors.grey.shade100,
-                borderRadius: BorderRadius.circular(20),
+                color: isUser ? AppColors.primaryColor : AppColors.cardColor,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 3,
+                    offset: const Offset(0, 1),
+                  ),
+                ],
               ),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: message.isUser ? Colors.white : Color(0xFF1F3140),
-                  fontSize: 16,
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    message.text,
+                    style: TextStyle(
+                      color: isUser ? Colors.white : Colors.black87,
+                      fontSize: 15,
+                    ),
+                  ),
+                  
+                  // Afficher les suggestions s'il y en a
+                  if (!isUser && message.suggestedActions.isNotEmpty)
+                    Padding(
+                      padding: const EdgeInsets.only(top: 12),
+                      child: Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: message.suggestedActions.map((suggestion) {
+                          return GestureDetector(
+                            onTap: () {
+                              _messageController.text = suggestion;
+                              _sendMessage();
+                            },
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                              decoration: BoxDecoration(
+                                color: AppColors.secondaryColor.withOpacity(0.1),
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(
+                                  color: AppColors.secondaryColor.withOpacity(0.3),
+                                ),
+                              ),
+                              child: Text(
+                                suggestion,
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  color: AppColors.secondaryColor,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ),
+                          );
+                        }).toList(),
+                      ),
+                    ),
+                ],
               ),
             ),
           ),
-          if (message.isUser) const SizedBox(width: 8),
-          if (message.isUser)
-            const CircleAvatar(
+          
+          if (isUser) const SizedBox(width: 8),
+          if (isUser)
+            CircleAvatar(
+              backgroundColor: Colors.blueGrey.shade300,
               radius: 18,
-              backgroundColor: Color(0xFF1F3140),
-              child: Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 20,
-              ),
+              child: const Icon(Icons.person, color: Colors.white, size: 18),
             ),
         ],
       ),
     );
   }
-}
+  
+  Widget _buildInputArea() {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: AppColors.cardColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 5,
+            offset: const Offset(0, -1),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _messageController,
+              decoration: InputDecoration(
+                hintText: 'Tapez votre message...',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+                filled: true,
+                fillColor: Colors.grey.shade100,
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 14,
+                ),
+                prefixIcon: Icon(
+                  Icons.chat_bubble_outline,
+                  color: AppColors.primaryColor.withOpacity(0.7),
+                ),
+              ),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendMessage(),
+            ),
+          ),
+          const SizedBox(width: 8),
+          AnimatedBuilder(
+            animation: _chatbotService,
+            builder: (context, child) {
+              return FloatingActionButton(
+                onPressed: _chatbotService.isProcessing ? null : _sendMessage,
+                backgroundColor: AppColors.secondaryColor,
+                elevation: 2,
+                child: const Icon(Icons.send, color: Colors.white),
+              );
+            },
+          ),
+        ],
+      ),
+    );
+  }
 
-class ChatMessage {
-  final String text;
-  final bool isUser;
-
-  ChatMessage({
-    required this.text,
-    required this.isUser,
-  });
+  // Afficher un dialogue d'aide
+  void _showHelpDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            Icon(Icons.help_outline, color: AppColors.primaryColor),
+            const SizedBox(width: 8),
+            const Text('Guide de configuration'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                'Pour utiliser toutes les fonctionnalités du chatbot :',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text('1. Configuration de Rasa sur votre PC :'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'rasa run --enable-api --cors "*" --host 0.0.0.0 --port 5005',
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text('2. Configuration d\'Ollama sur votre PC :'),
+              const SizedBox(height: 8),
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'ollama run llama3',
+                  style: TextStyle(fontFamily: 'monospace', fontSize: 12),
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                '3. Vérifiez que votre téléphone et votre PC sont sur le même réseau WiFi.',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Adresses utilisées :',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              Text('• Rasa : http://192.168.1.97:5005'),
+              Text('• Ollama : http://192.168.1.97:11434'),
+              const SizedBox(height: 16),
+              const Text(
+                'Note : Sans Rasa et Ollama, le chatbot fonctionnera en mode limité.',
+                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+            },
+            child: const Text('Fermer'),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.of(context).pop();
+              _initChatbotService(); // Réessayer la connexion
+            },
+            child: const Text('Reconnecter'),
+          ),
+        ],
+      ),
+    );
+  }
 }

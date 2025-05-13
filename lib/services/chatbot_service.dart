@@ -316,8 +316,8 @@ class ChatbotService extends ChangeNotifier {
         text: response['response'] as String,
         isUser: false,
         timestamp: DateTime.now(),
-        suggestions: suggestions,
-        actions: _convertActionsToMap(actions),
+        suggestedActions: suggestions,
+        metadata: _convertActionsToMap(actions),
       );
 
       _messages.add(botMessage);

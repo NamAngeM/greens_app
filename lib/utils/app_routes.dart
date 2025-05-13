@@ -18,6 +18,7 @@ class AppRoutes {
   static const String productScan = '/product-scan';
   static const String productScanner = '/productScanner'; // Alias pour compatibilité
   static const String scanner = '/scanner'; // Alias pour compatibilité
+  static const String enhancedScanner = '/enhanced_scanner'; // Nouveau scanner amélioré
   static const String productDetails = '/product-details';
   static const String productComparison = '/product-comparison';
   static const String products = '/products';
@@ -28,6 +29,7 @@ class AppRoutes {
   static const String goals = '/goals';
   static const String chatbot = '/chatbot';
   static const String ecoChatbot = '/ecoChatbot';
+  static const String chatbotSettings = '/chatbot-settings';
   static const String question1 = '/question1';
   static const String question2 = '/question2';
   static const String question3 = '/question3';

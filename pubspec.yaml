@@ -63,6 +63,10 @@ dependencies:
   confetti: ^0.7.0
   camera: ^0.10.0
   share_plus: ^10.0.0
+  # Nouvelles dépendances pour le scanner de produits
+  lottie: ^2.6.0
+  csv: ^5.1.1
+  web_socket_channel: ^2.4.0  # Pour la communication WebSocket avec Rasa
 
 # Dependency overrides pour résoudre les conflits
 dependency_overrides:
@@ -83,3 +87,5 @@ flutter:
     - assets/images/icons/
     - assets/images/products/
     - assets/images/profile/
+    - assets/animations/
+    - assets/data/
