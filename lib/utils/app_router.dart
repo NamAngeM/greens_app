@@ -33,6 +33,10 @@ import 'package:greens_app/views/methodology_view.dart';
 import 'package:greens_app/views/community_impact_view.dart';
 import 'package:greens_app/controllers/community_controller.dart';
 import 'package:greens_app/controllers/eco_goal_controller.dart';
+import 'package:greens_app/views/onboarding/improved_onboarding_view.dart';
+import 'package:greens_app/views/impact/environmental_impact_view.dart';
+import 'package:greens_app/views/digital_twin/eco_digital_twin_view.dart';
+import 'package:greens_app/views/ar/ar_eco_impact_view.dart';
 
 // Classe pour définir les constantes de routes
 class AppRoutes {
@@ -70,6 +74,13 @@ class AppRoutes {
   static const String methodology = '/methodology';
   static const String communityImpact = '/community_impact';
   static const String onboardingNew = '/onboarding_new';
+  static const String improvedOnboarding = '/improved_onboarding';
+  static const String environmentalImpact = '/environmental_impact';
+  
+  // Nouvelles routes
+  static const String digitalTwin = '/digital_twin';
+  static const String digitalTwinSettings = '/digital_twin_settings';
+  static const String arEcoImpact = '/ar_eco_impact';
 }
 
 class AppRouter {
@@ -169,6 +180,23 @@ class AppRouter {
         return MaterialPageRoute(
           builder: (_) => const OnboardingView(),
         );
+      case AppRoutes.improvedOnboarding:
+        return MaterialPageRoute(builder: (_) => const ImprovedOnboardingView());
+      case AppRoutes.environmentalImpact:
+        return MaterialPageRoute(builder: (_) => const EnvironmentalImpactView());
+      
+      // Nouvelles routes
+      case AppRoutes.digitalTwin:
+        return MaterialPageRoute(builder: (_) => const EcoDigitalTwinView());
+      case AppRoutes.arEcoImpact:
+        // Récupérer les arguments s'ils existent
+        String? barcode;
+        if (settings.arguments != null && settings.arguments is Map<String, dynamic>) {
+          final args = settings.arguments as Map<String, dynamic>;
+          barcode = args['barcode'] as String?;
+        }
+        return MaterialPageRoute(builder: (_) => AREnvironmentalImpactView(barcode: barcode));
+        
       default:
         return MaterialPageRoute(
           builder: (_) => Scaffold(

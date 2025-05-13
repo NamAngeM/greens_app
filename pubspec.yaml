@@ -61,6 +61,8 @@ dependencies:
   # Pour le parcours écologique et les défis
   timeline_tile: ^2.0.0
   confetti: ^0.7.0
+  camera: ^0.10.0
+  share_plus: ^10.0.0
 
 # Dependency overrides pour résoudre les conflits
 dependency_overrides:

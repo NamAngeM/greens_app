@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:greens_app/models/eco_challenge_model.dart';
 import 'package:greens_app/services/eco_challenge_service.dart';
 import 'package:greens_app/widgets/menu.dart';
+import 'package:greens_app/models/challenge_enums.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:percent_indicator/linear_percent_indicator.dart';
@@ -573,18 +574,20 @@ class _DailyChallengesViewState extends State<DailyChallengesView> with SingleTi
       case ChallengeCategory.transport:
         return Colors.blue;
       case ChallengeCategory.energy:
-        return Colors.orange;
+        return Colors.amber;
       case ChallengeCategory.food:
-        return Colors.red;
+        return Colors.green;
       case ChallengeCategory.waste:
-        return Colors.purple;
+        return Colors.brown;
       case ChallengeCategory.water:
         return Colors.lightBlue;
       case ChallengeCategory.digital:
-        return Colors.teal;
+        return Colors.purple;
       case ChallengeCategory.community:
-        return Colors.pink;
-      case ChallengeCategory.general:
+        return Colors.orange;
+      case ChallengeCategory.nature:
+        return Colors.teal;
+      default:
         return Colors.grey;
     }
   }
@@ -594,7 +597,7 @@ class _DailyChallengesViewState extends State<DailyChallengesView> with SingleTi
       case ChallengeCategory.transport:
         return Icons.directions_car;
       case ChallengeCategory.energy:
-        return Icons.bolt;
+        return Icons.flash_on;
       case ChallengeCategory.food:
         return Icons.restaurant;
       case ChallengeCategory.waste:
@@ -605,7 +608,9 @@ class _DailyChallengesViewState extends State<DailyChallengesView> with SingleTi
         return Icons.devices;
       case ChallengeCategory.community:
         return Icons.people;
-      case ChallengeCategory.general:
+      case ChallengeCategory.nature:
+        return Icons.nature;
+      default:
         return Icons.eco;
     }
   }
@@ -626,8 +631,10 @@ class _DailyChallengesViewState extends State<DailyChallengesView> with SingleTi
         return 'Numérique';
       case ChallengeCategory.community:
         return 'Communauté';
-      case ChallengeCategory.general:
-        return 'Général';
+      case ChallengeCategory.nature:
+        return 'Nature';
+      default:
+        return 'Écologie';
     }
   }
   

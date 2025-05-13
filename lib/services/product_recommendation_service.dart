@@ -1,6 +1,6 @@
 // lib/services/product_recommendation_service.dart
 import 'package:flutter/material.dart';
-import 'package:greens_app/models/product.dart';
+import 'package:greens_app/models/product_model.dart';
 import 'package:greens_app/models/eco_goal_model.dart';
 import 'package:greens_app/controllers/eco_goal_controller.dart';
 import 'package:greens_app/controllers/product_controller.dart';
@@ -36,14 +36,14 @@ class ProductRecommendationService extends ChangeNotifier {
   static ProductRecommendationService get instance => _instance;
   
   // Cache des recommandations
-  Map<String, List<Product>> _recommendationCache = {};
+  Map<String, List<ProductModel>> _recommendationCache = {};
   DateTime _lastCacheUpdate = DateTime.now().subtract(const Duration(days: 1));
   
   // Durée de validité du cache (en heures)
   static const int _cacheDuration = 24;
   
   /// Récupère les produits recommandés pour un utilisateur spécifique
-  Future<List<Product>> getRecommendedProducts(String userId) async {
+  Future<List<ProductModel>> getRecommendedProducts(String userId) async {
     // Vérifier si le cache est valide
     final cacheAge = DateTime.now().difference(_lastCacheUpdate).inHours;
     if (_recommendationCache.containsKey(userId) && cacheAge < _cacheDuration) {
@@ -59,7 +59,8 @@ class ProductRecommendationService extends ChangeNotifier {
       final footprint = await _carbonService.getUserCarbonFootprint(userId);
       
       // Récupérer tous les produits
-      final allProducts = await _productController.getAllProducts();
+      await _productController.getAllProducts();
+      final allProducts = _productController.allProducts;
       
       // Calculer le score de pertinence pour chaque produit
       final scoredProducts = <Map<String, dynamic>>[];
@@ -96,7 +97,7 @@ class ProductRecommendationService extends ChangeNotifier {
       // Prendre les 10 produits les plus pertinents
       final recommendedProducts = scoredProducts
           .take(10)
-          .map((item) => item['product'] as Product)
+          .map((item) => item['product'] as ProductModel)
           .toList();
       
       // Mettre à jour le cache
@@ -111,7 +112,7 @@ class ProductRecommendationService extends ChangeNotifier {
   }
   
   /// Calcule la pertinence d'un produit par rapport à un objectif écologique
-  double _calculateGoalProductRelevance(EcoGoal goal, Product product) {
+  double _calculateGoalProductRelevance(EcoGoal goal, ProductModel product) {
     double score = 0.0;
     
     // Vérifier le type d'objectif
@@ -144,7 +145,7 @@ class ProductRecommendationService extends ChangeNotifier {
         }
         // Bonus pour les produits alimentaires si l'objectif concerne l'alimentation
         if (goal.title.toLowerCase().contains('aliment') && 
-            product.category.toLowerCase().contains('aliment')) {
+            product.categories.any((cat) => cat.toLowerCase().contains('aliment'))) {
           score += 2.0;
         }
         break;
@@ -179,7 +180,7 @@ class ProductRecommendationService extends ChangeNotifier {
   }
   
   /// Calcule la pertinence d'un produit par rapport à l'empreinte carbone
-  double _calculateFootprintProductRelevance(dynamic footprint, Product product) {
+  double _calculateFootprintProductRelevance(dynamic footprint, ProductModel product) {
     double score = 0.0;
     
     // Vérifier les différentes catégories d'empreinte carbone
@@ -223,13 +224,13 @@ class ProductRecommendationService extends ChangeNotifier {
   }
   
   /// Vérifie si un produit contient certains mots-clés dans son nom ou sa description
-  bool _containsKeywords(Product product, List<String> keywords) {
+  bool _containsKeywords(ProductModel product, List<String> keywords) {
     final text = (product.name + ' ' + product.description).toLowerCase();
     return keywords.any((keyword) => text.contains(keyword.toLowerCase()));
   }
   
   /// Vérifie si un produit contient au moins un des mots-clés
-  bool _containsAnyKeyword(Product product, List<String> keywords) {
+  bool _containsAnyKeyword(ProductModel product, List<String> keywords) {
     final text = (product.name + ' ' + product.description).toLowerCase();
     return keywords.any((keyword) => text.contains(keyword.toLowerCase()));
   }
@@ -249,10 +250,11 @@ class ProductRecommendationService extends ChangeNotifier {
   }
   
   /// Récupère les produits recommandés pour un objectif spécifique
-  Future<List<Product>> getProductsForGoal(EcoGoal goal) async {
+  Future<List<ProductModel>> getProductsForGoal(EcoGoal goal) async {
     try {
       // Récupérer tous les produits
-      final allProducts = await _productController.getAllProducts();
+      await _productController.getAllProducts();
+      final allProducts = _productController.allProducts;
       
       // Calculer le score de pertinence pour chaque produit
       final scoredProducts = allProducts.map((product) {
@@ -274,7 +276,7 @@ class ProductRecommendationService extends ChangeNotifier {
       // Prendre les 5 produits les plus pertinents
       return filteredProducts
           .take(5)
-          .map((item) => item['product'] as Product)
+          .map((item) => item['product'] as ProductModel)
           .toList();
     } catch (e) {
       print('ProductRecommendationService: Erreur lors de la récupération des produits pour un objectif: $e');
@@ -283,10 +285,11 @@ class ProductRecommendationService extends ChangeNotifier {
   }
   
   /// Récupère les produits recommandés pour une catégorie d'empreinte carbone
-  Future<List<Product>> getProductsForCarbonCategory(String category, double score) async {
+  Future<List<ProductModel>> getProductsForCarbonCategory(String category, double score) async {
     try {
       // Récupérer tous les produits
-      final allProducts = await _productController.getAllProducts();
+      await _productController.getAllProducts();
+      final allProducts = _productController.allProducts;
       
       // Mots-clés par catégorie
       final categoryKeywords = {

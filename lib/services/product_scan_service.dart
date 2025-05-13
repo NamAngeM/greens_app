@@ -1,13 +1,33 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:greens_app/models/product_scan_model.dart';
 import 'dart:math';
+import 'package:flutter/material.dart';
 
-class ProductScanService {
+class ProductScanService extends ChangeNotifier {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  
+  // Liste des scans récents
+  List<ProductScan> _recentScans = [];
+  List<ProductScan> get recentScans => _recentScans;
+  
+  // Scan actuel
+  ProductScan? _currentScan;
+  ProductScan? get currentScan => _currentScan;
+  
+  // État de chargement
+  bool _isLoading = false;
+  bool get isLoading => _isLoading;
+  
+  // Message d'erreur
+  String? _error;
+  String? get error => _error;
   
   // Obtenir l'historique des scans d'un utilisateur
   Future<List<ProductScan>> getUserScanHistory(String userId) async {
     try {
+      _isLoading = true;
+      notifyListeners();
+      
       final snapshot = await _firestore
           .collection('product_scans')
           .where('userId', isEqualTo: userId)
@@ -21,9 +41,17 @@ class ProductScanService {
         history.add(ProductScan.fromJson(data));
       }
       
+      _recentScans = history;
+      _isLoading = false;
+      _error = null;
+      notifyListeners();
+      
       return history;
     } catch (e) {
       print('Erreur lors de la récupération de l\'historique: $e');
+      _isLoading = false;
+      _error = 'Erreur lors de la récupération de l\'historique: $e';
+      notifyListeners();
       return [];
     }
   }
@@ -31,12 +59,18 @@ class ProductScanService {
   // Obtenir les informations d'un produit scanné
   Future<ProductScan> getProductInfo(String barcode, String? userId, {String category = 'Alimentation'}) async {
     try {
+      _isLoading = true;
+      _error = null;
+      notifyListeners();
+      
       // Vérifier si le produit existe déjà dans la base de données
       final existingProduct = await _firestore
           .collection('products')
           .where('barcode', isEqualTo: barcode)
           .limit(1)
           .get();
+      
+      ProductScan productScan;
       
       if (existingProduct.docs.isNotEmpty) {
         // Produit trouvé, créer un scan basé sur les données existantes
@@ -61,15 +95,42 @@ class ProductScanService {
           await _firestore.collection('product_scans').add(scanData);
         }
         
-        return ProductScan.fromJson(scanData);
+        productScan = ProductScan.fromJson(scanData);
       } else {
         // Produit non trouvé, générer des données fictives
-        return _generateMockProductData(barcode, userId, category);
+        productScan = _generateMockProductData(barcode, userId, category);
       }
+      
+      // Mise à jour du scan actuel
+      _currentScan = productScan;
+      
+      // Ajouter aux scans récents si pas déjà présent
+      final existingScanIndex = _recentScans.indexWhere((scan) => scan.barcode == barcode);
+      if (existingScanIndex >= 0) {
+        _recentScans[existingScanIndex] = productScan;
+      } else {
+        _recentScans.insert(0, productScan);
+        // Limiter le nombre de scans récents en mémoire
+        if (_recentScans.length > 10) {
+          _recentScans = _recentScans.sublist(0, 10);
+        }
+      }
+      
+      _isLoading = false;
+      notifyListeners();
+      
+      return productScan;
     } catch (e) {
       print('Erreur lors de la récupération des infos produit: $e');
       // En cas d'erreur, générer des données fictives
-      return _generateMockProductData(barcode, userId, category);
+      final mockProduct = _generateMockProductData(barcode, userId, category);
+      
+      _currentScan = mockProduct;
+      _isLoading = false;
+      _error = 'Erreur lors de la récupération des infos produit: $e';
+      notifyListeners();
+      
+      return mockProduct;
     }
   }
   

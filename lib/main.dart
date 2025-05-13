@@ -17,7 +17,13 @@ import 'package:greens_app/controllers/product_scan_controller.dart';
 import 'package:greens_app/services/chatbot_service.dart';
 import 'package:greens_app/services/eco_challenge_service.dart';
 import 'package:greens_app/services/eco_journey_service.dart';
+import 'package:greens_app/services/environmental_impact_service.dart';
+import 'package:greens_app/services/user_preferences_service.dart';
 import 'package:greens_app/controllers/eco_badge_controller.dart';
+import 'package:greens_app/services/product_scan_service.dart';
+import 'package:greens_app/services/product_recommendation_service.dart';
+import 'package:greens_app/services/eco_digital_twin_service.dart';
+import 'package:greens_app/services/ar_eco_impact_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -52,6 +58,22 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => ChatbotService.instance),
         ChangeNotifierProvider(create: (_) => EcoChallengeService()),
         ChangeNotifierProvider(create: (_) => EcoBadgeController()),
+        ChangeNotifierProvider(create: (_) => EnvironmentalImpactService()),
+        ChangeNotifierProvider(create: (_) => UserPreferencesService()),
+        ChangeNotifierProvider(create: (_) => EcoDigitalTwinService()),
+        ChangeNotifierProvider(create: (_) => ProductScanService()),
+        ChangeNotifierProvider(create: (_) => ProductRecommendationService()),
+        ChangeNotifierProxyProvider2<ProductScanService, EnvironmentalImpactService, AREnvironmentalImpactService>(
+          create: (context) => AREnvironmentalImpactService(
+            productScanService: Provider.of<ProductScanService>(context, listen: false),
+            environmentalImpactService: Provider.of<EnvironmentalImpactService>(context, listen: false),
+          ),
+          update: (_, productScanService, environmentalImpactService, previousService) =>
+            previousService ?? AREnvironmentalImpactService(
+              productScanService: productScanService,
+              environmentalImpactService: environmentalImpactService,
+            ),
+        ),
         ChangeNotifierProxyProvider3<EcoGoalController, EcoBadgeController, CommunityController, EcoJourneyService>(
           create: (context) => EcoJourneyService(
             goalController: Provider.of<EcoGoalController>(context, listen: false),

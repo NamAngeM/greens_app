@@ -168,4 +168,25 @@ class CarbonFootprintService {
       return 25;
     }
   }
+  
+  // Méthode pour récupérer la dernière empreinte carbone d'un utilisateur
+  Future<CarbonFootprintModel?> getUserCarbonFootprint(String userId) async {
+    try {
+      final snapshot = await _firestore
+          .collection('carbon_footprints')
+          .where('userId', isEqualTo: userId)
+          .orderBy('date', descending: true)
+          .limit(1)
+          .get();
+      
+      if (snapshot.docs.isEmpty) {
+        return null;
+      }
+      
+      return CarbonFootprintModel.fromJson(snapshot.docs.first.data());
+    } catch (e) {
+      debugPrint('Erreur lors de la récupération de l\'empreinte carbone: $e');
+      return null;
+    }
+  }
 }

@@ -95,4 +95,38 @@ class CarbonFootprintModel {
       'pointsEarned': pointsEarned,
     };
   }
+
+  // Méthode pour créer une instance initiale avec des valeurs par défaut
+  factory CarbonFootprintModel.initial() {
+    return CarbonFootprintModel(
+      id: 'initial',
+      userId: 'initial',
+      date: DateTime.now(),
+      transportScore: 0.0,
+      energyScore: 0.0,
+      foodScore: 0.0,
+      consumptionScore: 0.0,
+      digitalScore: 0.0,
+      totalScore: 0.0,
+      details: {
+        'transport': {'car': 0, 'public': 0, 'bike': 0, 'walk': 0},
+        'energy': {'electricity': 0, 'heating': 0},
+        'food': {'meat': 0, 'dairy': 0, 'vegetable': 0},
+        'consumption': {'clothing': 0, 'electronics': 0, 'others': 0},
+        'digital': {'streaming': 0, 'emails': 0, 'cloud': 0},
+      },
+      recommendations: [
+        'Privilégiez les transports en commun ou le vélo pour vos déplacements quotidiens',
+        'Réduisez votre consommation de viande',
+        'Éteignez les appareils en veille'
+      ],
+      pointsEarned: 0,
+    );
+  }
+  
+  // Getter pour obtenir l'empreinte carbone totale en kg de CO2
+  double get totalFootprint {
+    // Conversion arbitraire du score en kg de CO2 (à ajuster selon votre logique)
+    return totalScore * 100; // par exemple, 1 point = 100 kg de CO2
+  }
 }

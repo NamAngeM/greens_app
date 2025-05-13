@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:greens_app/models/eco_challenge_model.dart';
+import 'package:greens_app/models/challenge_enums.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:math';
 
@@ -400,5 +401,121 @@ class EcoChallengeService extends ChangeNotifier {
       'totalImpact': totalImpact,
       'challengesByCategory': challengesByCategory,
     };
+  }
+  
+  /// Permet à l'utilisateur de rejoindre un défi spécifique
+  Future<void> joinChallenge(String userId, String challengeId) async {
+    try {
+      // Vérifier si le défi existe dans les défis disponibles
+      final challengeToJoin = _availableChallenges.firstWhere(
+        (challenge) => challenge.id == challengeId,
+        orElse: () => throw Exception('Défi non trouvé dans les défis disponibles'),
+      );
+      
+      // Vérifier si l'utilisateur participe déjà à ce défi
+      final alreadyJoined = _userChallenges.any((challenge) => challenge.id == challengeId);
+      
+      if (alreadyJoined) {
+        throw Exception('Vous participez déjà à ce défi');
+      }
+      
+      // Créer une copie du défi avec les informations de l'utilisateur
+      final now = DateTime.now();
+      final userChallenge = challengeToJoin.copyWith(
+        startDate: now,
+        progressPercentage: 0.0,
+        isCompleted: false,
+      );
+      
+      // Ajouter le défi à la liste des défis de l'utilisateur
+      _userChallenges.add(userChallenge);
+      
+      // Sauvegarder le défi dans Firestore
+      await _saveUserChallenge(userId, userChallenge);
+      
+      notifyListeners();
+    } catch (e) {
+      print('Erreur lors de la participation au défi: $e');
+      rethrow;
+    }
+  }
+  
+  /// Obtient un défi recommandé pour l'utilisateur en fonction de son historique et de ses préférences
+  Future<EcoChallengeModel?> getRecommendedChallenge(String userId) async {
+    try {
+      // Si aucun défi disponible, retourner null
+      if (_availableChallenges.isEmpty) {
+        return null;
+      }
+      
+      // Vérifier les défis complétés pour déterminer les préférences de l'utilisateur
+      final userStats = getUserChallengeStats();
+      final challengesByCategory = userStats['challengesByCategory'] as Map<ChallengeCategory, int>? ?? {};
+      
+      // Déterminer la catégorie préférée
+      ChallengeCategory? preferredCategory;
+      int maxCount = 0;
+      
+      challengesByCategory.forEach((category, count) {
+        if (count > maxCount) {
+          maxCount = count;
+          preferredCategory = category;
+        }
+      });
+      
+      // Filtrer les défis que l'utilisateur n'a pas encore rejoint
+      final userChallengeIds = _userChallenges.map((c) => c.id).toList();
+      final completedChallengeIds = _completedChallenges.map((c) => c.id).toList();
+      
+      final availableNewChallenges = _availableChallenges.where((challenge) => 
+        !userChallengeIds.contains(challenge.id) && 
+        !completedChallengeIds.contains(challenge.id)
+      ).toList();
+      
+      // Si aucun nouveau défi disponible, retourner null
+      if (availableNewChallenges.isEmpty) {
+        return null;
+      }
+      
+      // Si l'utilisateur a une catégorie préférée, privilégier ces défis
+      if (preferredCategory != null) {
+        final preferredChallenges = availableNewChallenges.where(
+          (challenge) => challenge.category == preferredCategory
+        ).toList();
+        
+        if (preferredChallenges.isNotEmpty) {
+          // Convertir EcoChallenge vers EcoChallengeModel
+          final challenge = preferredChallenges[_random.nextInt(preferredChallenges.length)];
+          return _convertToEcoChallengeModel(challenge);
+        }
+      }
+      
+      // Sinon, recommander un défi aléatoire
+      final randomChallenge = availableNewChallenges[_random.nextInt(availableNewChallenges.length)];
+      return _convertToEcoChallengeModel(randomChallenge);
+    } catch (e) {
+      print('Erreur lors de la récupération du défi recommandé: $e');
+      return null;
+    }
+  }
+  
+  /// Convertit un EcoChallenge en EcoChallengeModel
+  EcoChallengeModel _convertToEcoChallengeModel(EcoChallenge challenge) {
+    return EcoChallengeModel(
+      id: challenge.id,
+      title: challenge.title,
+      description: challenge.description,
+      category: challenge.category.toString().split('.').last,
+      duration: challenge.duration.inDays,
+      carbonImpact: challenge.estimatedImpact,
+      startDate: challenge.startDate ?? DateTime.now(),
+      endDate: challenge.startDate?.add(challenge.duration),
+      isCompleted: challenge.isCompleted,
+      rewards: {
+        'points': challenge.pointsValue,
+        'badge': 'eco_challenge_${challenge.category.toString().split('.').last.toLowerCase()}',
+      },
+      imageUrl: challenge.imageUrl,
+    );
   }
 } 

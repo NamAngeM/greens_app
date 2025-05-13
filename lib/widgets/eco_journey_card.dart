@@ -4,6 +4,7 @@ import 'package:greens_app/models/user_eco_level.dart';
 import 'package:greens_app/models/eco_challenge_model.dart';
 import 'package:greens_app/services/eco_journey_service.dart';
 import 'package:greens_app/services/eco_challenge_service.dart';
+import 'package:greens_app/models/challenge_enums.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -495,18 +496,20 @@ class _EcoJourneyCardState extends State<EcoJourneyCard> {
       case ChallengeCategory.transport:
         return Colors.blue;
       case ChallengeCategory.energy:
-        return Colors.orange;
+        return Colors.amber;
       case ChallengeCategory.food:
-        return Colors.red;
+        return Colors.green;
       case ChallengeCategory.waste:
-        return Colors.purple;
+        return Colors.brown;
       case ChallengeCategory.water:
         return Colors.lightBlue;
       case ChallengeCategory.digital:
-        return Colors.teal;
+        return Colors.purple;
       case ChallengeCategory.community:
-        return Colors.pink;
-      case ChallengeCategory.general:
+        return Colors.orange;
+      case ChallengeCategory.nature:
+        return Colors.teal;
+      default:
         return Colors.grey;
     }
   }
@@ -516,7 +519,7 @@ class _EcoJourneyCardState extends State<EcoJourneyCard> {
       case ChallengeCategory.transport:
         return Icons.directions_car;
       case ChallengeCategory.energy:
-        return Icons.bolt;
+        return Icons.flash_on;
       case ChallengeCategory.food:
         return Icons.restaurant;
       case ChallengeCategory.waste:
@@ -527,7 +530,9 @@ class _EcoJourneyCardState extends State<EcoJourneyCard> {
         return Icons.devices;
       case ChallengeCategory.community:
         return Icons.people;
-      case ChallengeCategory.general:
+      case ChallengeCategory.nature:
+        return Icons.nature;
+      default:
         return Icons.eco;
     }
   }

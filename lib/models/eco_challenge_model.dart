@@ -1,27 +1,4 @@
-enum ChallengeCategory {
-  transport,
-  energy,
-  food,
-  waste,
-  water,
-  digital,
-  community,
-  general
-}
-
-enum ChallengeFrequency {
-  daily,
-  weekly,
-  monthly,
-  once
-}
-
-enum ChallengeLevel {
-  beginner,
-  intermediate,
-  advanced,
-  expert
-}
+import 'package:greens_app/models/challenge_enums.dart';
 
 /// Représente un défi écologique que l'utilisateur peut accomplir
 class EcoChallenge {
@@ -196,7 +173,7 @@ class EcoChallenge {
   static ChallengeCategory _categoryFromString(String value) {
     return ChallengeCategory.values.firstWhere(
       (e) => e.toString().split('.').last == value,
-      orElse: () => ChallengeCategory.general,
+      orElse: () => ChallengeCategory.waste,
     );
   }
   
@@ -211,6 +188,96 @@ class EcoChallenge {
     return ChallengeLevel.values.firstWhere(
       (e) => e.toString().split('.').last == value,
       orElse: () => ChallengeLevel.beginner,
+    );
+  }
+}
+
+// Modèle pour représenter un défi écologique
+
+class EcoChallengeModel {
+  final String id;
+  final String title;
+  final String description;
+  final String category;
+  final int duration; // en jours
+  final double carbonImpact;
+  final DateTime startDate;
+  final DateTime? endDate;
+  final bool isCompleted;
+  final Map<String, dynamic>? rewards;
+  final String? imageUrl;
+
+  EcoChallengeModel({
+    required this.id,
+    required this.title,
+    required this.description,
+    required this.category,
+    required this.duration,
+    required this.carbonImpact,
+    required this.startDate,
+    this.endDate,
+    this.isCompleted = false,
+    this.rewards,
+    this.imageUrl,
+  });
+
+  factory EcoChallengeModel.fromJson(Map<String, dynamic> json) {
+    return EcoChallengeModel(
+      id: json['id'],
+      title: json['title'],
+      description: json['description'],
+      category: json['category'],
+      duration: json['duration'],
+      carbonImpact: json['carbonImpact'].toDouble(),
+      startDate: DateTime.parse(json['startDate']),
+      endDate: json['endDate'] != null ? DateTime.parse(json['endDate']) : null,
+      isCompleted: json['isCompleted'] ?? false,
+      rewards: json['rewards'],
+      imageUrl: json['imageUrl'],
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'title': title,
+      'description': description,
+      'category': category,
+      'duration': duration,
+      'carbonImpact': carbonImpact,
+      'startDate': startDate.toIso8601String(),
+      'endDate': endDate?.toIso8601String(),
+      'isCompleted': isCompleted,
+      'rewards': rewards,
+      'imageUrl': imageUrl,
+    };
+  }
+
+  EcoChallengeModel copyWith({
+    String? id,
+    String? title,
+    String? description,
+    String? category,
+    int? duration,
+    double? carbonImpact,
+    DateTime? startDate,
+    DateTime? endDate,
+    bool? isCompleted,
+    Map<String, dynamic>? rewards,
+    String? imageUrl,
+  }) {
+    return EcoChallengeModel(
+      id: id ?? this.id,
+      title: title ?? this.title,
+      description: description ?? this.description,
+      category: category ?? this.category,
+      duration: duration ?? this.duration,
+      carbonImpact: carbonImpact ?? this.carbonImpact,
+      startDate: startDate ?? this.startDate,
+      endDate: endDate ?? this.endDate,
+      isCompleted: isCompleted ?? this.isCompleted,
+      rewards: rewards ?? this.rewards,
+      imageUrl: imageUrl ?? this.imageUrl,
     );
   }
 } 
