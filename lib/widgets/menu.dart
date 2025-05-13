@@ -175,7 +175,7 @@ class CustomMenu extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Icon(
-              Icons.more_horiz,
+              Icons.apps_rounded,
               size: 24,
               color: AppColors.textLightColor,
             ),
@@ -227,64 +227,157 @@ class CustomMenu extends StatelessWidget {
             Text(
               'Plus d\'options',
               style: TextStyle(
-                fontSize: 18,
+                fontSize: 20,
                 fontWeight: FontWeight.bold,
                 color: AppColors.textColor,
               ),
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 24),
             Expanded(
               child: SingleChildScrollView(
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     // Section Empreinte Carbone
-                    _buildMoreMenuItem(
-                      context,
-                      Icons.calculate,
-                      'Calculateur d\'empreinte carbone',
-                      () => Navigator.pushNamed(context, AppRoutes.carbonCalculator),
-                    ),
-                    const Divider(),
-                    _buildMoreMenuItem(
-                      context,
-                      Icons.bar_chart,
-                      'Tableau de bord carbone',
-                      () => Navigator.pushNamed(context, AppRoutes.carbonDashboard),
-                    ),
-                    const Divider(),
-                    // Section Objectifs et Défis
-                    _buildMoreMenuItem(
-                      context,
-                      Icons.eco,
-                      'Objectifs écologiques',
-                      () => Navigator.pushNamed(context, AppRoutes.goals),
-                    ),
-                    const Divider(),
-                    _buildMoreMenuItem(
-                      context,
-                      Icons.people,
-                      'Défis communautaires',
-                      () => Navigator.pushNamed(context, AppRoutes.community),
-                    ),
-                    const Divider(),
-                    // Section Scanner
-                    _buildMoreMenuItem(
-                      context,
-                      Icons.qr_code_scanner,
-                      'Scanner de produits',
-                      () => Navigator.pushNamed(context, AppRoutes.productScanner),
-                    ),
-                    const Divider(),
-                    _buildMoreMenuItem(
-                      context,
-                      Icons.chat,
-                      'Assistant écologique',
-                      () => Navigator.pushNamed(context, AppRoutes.ecoChatbot),
-                    ),
+                    _buildSectionHeader('Empreinte Carbone', Icons.nature),
+                    
+                    _buildGridMenuItems(context, [
+                      MenuOption(
+                        icon: Icons.calculate,
+                        label: 'Calculateur',
+                        color: AppColors.secondaryColor, 
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.carbonCalculator),
+                      ),
+                      MenuOption(
+                        icon: Icons.bar_chart,
+                        label: 'Tableau de bord',
+                        color: AppColors.accentColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.carbonDashboard),
+                      ),
+                    ]),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Section Défis et Communauté
+                    _buildSectionHeader('Défis et Objectifs', Icons.emoji_events),
+                    
+                    _buildGridMenuItems(context, [
+                      MenuOption(
+                        icon: Icons.eco,
+                        label: 'Objectifs',
+                        color: AppColors.successColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.goals),
+                      ),
+                      MenuOption(
+                        icon: Icons.people,
+                        label: 'Communauté',
+                        color: AppColors.warningColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.community),
+                      ),
+                    ]),
+                    
+                    const SizedBox(height: 16),
+                    
+                    // Section Outils
+                    _buildSectionHeader('Outils', Icons.handyman),
+                    
+                    _buildGridMenuItems(context, [
+                      MenuOption(
+                        icon: Icons.qr_code_scanner,
+                        label: 'Scanner produits',
+                        color: AppColors.primaryColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.productScanner),
+                      ),
+                      MenuOption(
+                        icon: Icons.chat,
+                        label: 'Assistant éco',
+                        color: AppColors.infoColor,
+                        onTap: () => Navigator.pushNamed(context, AppRoutes.ecoChatbot),
+                      ),
+                    ]),
+                    
                     const SizedBox(height: 20),
                   ],
                 ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSectionHeader(String title, IconData icon) {
+    return Padding(
+      padding: const EdgeInsets.only(left: 8, bottom: 12),
+      child: Row(
+        children: [
+          Icon(
+            icon,
+            size: 20,
+            color: AppColors.primaryColor,
+          ),
+          const SizedBox(width: 8),
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: 16,
+              fontWeight: FontWeight.bold,
+              color: AppColors.primaryColor,
+              letterSpacing: 0.5,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildGridMenuItems(BuildContext context, List<MenuOption> options) {
+    return GridView.count(
+      crossAxisCount: 2,
+      shrinkWrap: true,
+      physics: const NeverScrollableScrollPhysics(),
+      childAspectRatio: 1.4,
+      mainAxisSpacing: 16,
+      crossAxisSpacing: 16,
+      padding: const EdgeInsets.symmetric(horizontal: 8),
+      children: options.map((option) => _buildGridMenuItem(context, option)).toList(),
+    );
+  }
+  
+  Widget _buildGridMenuItem(BuildContext context, MenuOption option) {
+    return InkWell(
+      onTap: () {
+        Navigator.pop(context); // Fermer le menu
+        option.onTap();
+      },
+      borderRadius: BorderRadius.circular(12),
+      child: Container(
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: option.color.withOpacity(0.1),
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: option.color.withOpacity(0.3),
+            width: 1,
+          ),
+        ),
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              option.icon,
+              color: option.color,
+              size: 32,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              option.label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textColor,
               ),
             ),
           ],
@@ -324,4 +417,19 @@ class CustomMenu extends StatelessWidget {
       },
     );
   }
+}
+
+/// Classe pour les options du menu en grille
+class MenuOption {
+  final IconData icon;
+  final String label;
+  final Color color;
+  final VoidCallback onTap;
+
+  MenuOption({
+    required this.icon,
+    required this.label,
+    required this.color,
+    required this.onTap,
+  });
 }
