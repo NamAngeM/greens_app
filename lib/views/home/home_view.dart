@@ -12,6 +12,7 @@ import 'package:greens_app/utils/merchant_urls.dart';
 import 'package:greens_app/widgets/custom_button.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/widgets/eco_progress_tree.dart';
+import 'package:greens_app/widgets/eco_journey_card.dart';
 import 'package:greens_app/views/products/products_view.dart';
 import 'package:greens_app/views/product_detail_view.dart';
 import 'package:greens_app/services/favorites_service.dart';
@@ -150,6 +151,10 @@ class _HomeViewState extends State<HomeView> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             const SizedBox(height: 24),
+            
+            // Section: Parcours écologique et défis
+            const EcoJourneyCard(),
+            const SizedBox(height: 32),
             
             // Section: Green tips of the day
             _buildSectionHeader('Green tips of the day'),

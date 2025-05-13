@@ -15,6 +15,9 @@ import 'package:greens_app/controllers/eco_goal_controller.dart';
 import 'package:greens_app/controllers/community_controller.dart';
 import 'package:greens_app/controllers/product_scan_controller.dart';
 import 'package:greens_app/services/chatbot_service.dart';
+import 'package:greens_app/services/eco_challenge_service.dart';
+import 'package:greens_app/services/eco_journey_service.dart';
+import 'package:greens_app/controllers/eco_badge_controller.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -47,6 +50,21 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => CommunityController()),
         ChangeNotifierProvider(create: (_) => ProductScanController()),
         ChangeNotifierProvider(create: (_) => ChatbotService.instance),
+        ChangeNotifierProvider(create: (_) => EcoChallengeService()),
+        ChangeNotifierProvider(create: (_) => EcoBadgeController()),
+        ChangeNotifierProxyProvider3<EcoGoalController, EcoBadgeController, CommunityController, EcoJourneyService>(
+          create: (context) => EcoJourneyService(
+            goalController: Provider.of<EcoGoalController>(context, listen: false),
+            badgeController: Provider.of<EcoBadgeController>(context, listen: false),
+            communityController: Provider.of<CommunityController>(context, listen: false),
+          ),
+          update: (_, goalController, badgeController, communityController, service) => 
+            EcoJourneyService(
+              goalController: goalController,
+              badgeController: badgeController,
+              communityController: communityController,
+            ),
+        ),
       ],
       child: MaterialApp(
         title: 'Green Minds',

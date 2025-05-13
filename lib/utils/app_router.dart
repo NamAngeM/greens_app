@@ -10,6 +10,9 @@ import 'package:greens_app/views/splash_view.dart';
 import 'package:greens_app/views/splash_view_connect.dart';
 import 'package:greens_app/views/carbon/carbon_calculator_view.dart';
 import 'package:greens_app/views/carbon/carbon_dashboard_view.dart';
+import 'package:greens_app/views/dashboard/unified_dashboard_view.dart';
+import 'package:greens_app/views/challenges/daily_challenges_view.dart';
+import 'package:greens_app/views/journey/eco_journey_view.dart';
 import 'package:greens_app/views/questions/question_1_view.dart';
 import 'package:greens_app/views/questions/question_2_view.dart';
 import 'package:greens_app/views/questions/question_3_view.dart';
@@ -41,6 +44,9 @@ class AppRoutes {
   static const String home = '/home';
   static const String carbonCalculator = '/carbon_calculator';
   static const String carbonDashboard = '/carbon_dashboard';
+  static const String unifiedDashboard = '/unified_dashboard';
+  static const String challenges = '/challenges';
+  static const String ecoJourney = '/eco_journey';
   static const String products = '/products';
   static const String rewards = '/rewards';
   static const String profile = '/profile';
@@ -85,6 +91,12 @@ class AppRouter {
         return MaterialPageRoute(builder: (_) => const CarbonCalculatorView());
       case AppRoutes.carbonDashboard:
         return MaterialPageRoute(builder: (_) => const CarbonDashboardView());
+      case AppRoutes.unifiedDashboard:
+        return MaterialPageRoute(builder: (_) => const UnifiedDashboardView());
+      case AppRoutes.challenges:
+        return MaterialPageRoute(builder: (_) => const DailyChallengesView());
+      case AppRoutes.ecoJourney:
+        return MaterialPageRoute(builder: (_) => const EcoJourneyView());
       case AppRoutes.question1:
         return MaterialPageRoute(builder: (_) => const Question1View());
       case AppRoutes.question2:

@@ -58,6 +58,9 @@ dependencies:
   sqflite: ^2.4.1
   carousel_slider: ^5.0.0
   smooth_page_indicator: ^1.2.1
+  # Pour le parcours écologique et les défis
+  timeline_tile: ^2.0.0
+  confetti: ^0.7.0
 
 # Dependency overrides pour résoudre les conflits
 dependency_overrides:
