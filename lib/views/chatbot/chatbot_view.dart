@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
-import 'package:greens_app/services/hybrid_chatbot_service.dart';
+import 'package:greens_app/services/gemini_chatbot_service.dart';
 import 'package:greens_app/views/chatbot/chatbot_settings_view.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/models/chatbot_message.dart';
@@ -17,7 +17,7 @@ class ChatbotView extends StatefulWidget {
 class _ChatbotViewState extends State<ChatbotView> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late HybridChatbotService _chatbotService;
+  late GeminiChatbotService _chatbotService;
   int _currentIndex = 4; // Index pour le menu (4 = Chatbot)
   
   @override
@@ -28,22 +28,18 @@ class _ChatbotViewState extends State<ChatbotView> {
   
   Future<void> _initChatbotService() async {
     try {
-      _chatbotService = HybridChatbotService.instance;
+      _chatbotService = GeminiChatbotService.instance;
       
-      // Configuration des URLs pour les services locaux
-      // Utiliser l'adresse IP de l'ordinateur sur le réseau local
-      // pour permettre l'accès depuis un appareil physique
+      // Initialiser le service avec la clé API Gemini
       await _chatbotService.initialize(
-        rasaUrl: 'http://192.168.1.97:5005',  // URL Rasa sur le réseau local
-        ollamaUrl: 'http://192.168.1.97:11434', // URL Ollama sur le réseau local
-        ollamaModel: 'llama3',  // Modèle par défaut
+        apiKey: 'AIzaSyBaxf3w-7kaMJo5UF_feoSb7_xJ6fQOjok',
       );
       
       if (!_chatbotService.messages.any((msg) => !msg.isUser)) {
         // Ajouter un message de bienvenue si aucun message du bot n'existe encore
         final welcomeMessage = ChatbotMessage(
           id: 'welcome',
-          text: "Bonjour ! Je suis GreenBot, votre assistant écologique. Comment puis-je vous aider aujourd'hui ?",
+          text: "Bonjour ! Je suis GreenBot, votre assistant écologique propulsé par Gemini. Comment puis-je vous aider aujourd'hui ?",
           isUser: false,
           timestamp: DateTime.now(),
         );
@@ -53,7 +49,7 @@ class _ChatbotViewState extends State<ChatbotView> {
       }
       
       // Vérifier si nous sommes en mode hors ligne et afficher une notification
-      if (!_chatbotService.isRasaAvailable && !_chatbotService.isOllamaAvailable) {
+      if (!_chatbotService.isInitialized) {
         // Ajouter un message informant l'utilisateur du mode hors ligne
         WidgetsBinding.instance.addPostFrameCallback((_) {
           ScaffoldMessenger.of(context).showSnackBar(
@@ -81,13 +77,11 @@ class _ChatbotViewState extends State<ChatbotView> {
         // Informer l'utilisateur de l'erreur et comment la résoudre
         final errorMessage = ChatbotMessage(
           id: 'error',
-          text: "Je rencontre des problèmes de connexion avec les services de chatbot (Rasa/Ollama).\n\n"
-               "Pour utiliser le chatbot sur un appareil physique :\n\n"
-               "1. Assurez-vous que votre téléphone et votre ordinateur sont sur le même réseau WiFi\n"
-               "2. Sur votre ordinateur, exécutez :\n"
-               "   • Rasa : 'rasa run --enable-api --cors \"*\" --host 0.0.0.0 --port 5005'\n"
-               "   • Ollama : 'ollama run llama3'\n\n"
-               "3. Vérifiez que les services sont accessibles depuis votre téléphone en visitant http://192.168.1.97:5005 et http://192.168.1.97:11434 dans un navigateur.",
+          text: "Je rencontre des problèmes de connexion avec l'API Gemini.\n\n"
+               "Pour utiliser le chatbot :\n\n"
+               "1. Assurez-vous que votre appareil est connecté à Internet\n"
+               "2. Vérifiez que la clé API Gemini est valide\n\n"
+               "Si le problème persiste, contactez le support technique.",
           isUser: false,
           timestamp: DateTime.now(),
         );
@@ -160,17 +154,6 @@ class _ChatbotViewState extends State<ChatbotView> {
               _showHelpDialog(context);
             },
           ),
-          IconButton(
-            icon: const Icon(Icons.settings, color: Color(0xFF1F3140)),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => const ChatbotSettingsView(),
-                ),
-              );
-            },
-          ),
         ],
       ),
       body: Column(
@@ -209,123 +192,77 @@ class _ChatbotViewState extends State<ChatbotView> {
       bottomNavigationBar: CustomMenu(
         currentIndex: _currentIndex,
         onTap: (index) {
-          setState(() {
-            _currentIndex = index;
-          });
+          if (index != _currentIndex) {
+            setState(() {
+              _currentIndex = index;
+            });
+            
+            // Navigation vers la page correspondante
+            switch (index) {
+              case 0:
+                Navigator.pushReplacementNamed(context, AppRoutes.home);
+                break;
+              case 1:
+                Navigator.pushReplacementNamed(context, AppRoutes.products);
+                break;
+              case 2:
+                Navigator.pushReplacementNamed(context, AppRoutes.carbonCalculator);
+                break;
+              case 3:
+                Navigator.pushReplacementNamed(context, AppRoutes.community);
+                break;
+              case 4:
+                // Déjà sur la page chatbot
+                break;
+            }
+          }
         },
       ),
     );
   }
   
   Widget _buildStatusBar() {
-    return AnimatedBuilder(
-      animation: _chatbotService,
-      builder: (context, child) {
-        final isRasaAvailable = _chatbotService.isRasaAvailable;
-        final isOllamaAvailable = _chatbotService.isOllamaAvailable;
-        
-        return Column(
-          children: [
-            Container(
-              color: AppColors.cardColor,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              child: Row(
-                children: [
-                  const Icon(Icons.info_outline, size: 16, color: AppColors.primaryColor),
-                  const SizedBox(width: 8),
-                  Text(
-                    'Système: ${isRasaAvailable && isOllamaAvailable ? "Hybride (Rasa + Ollama)" : isRasaAvailable ? "Rasa" : isOllamaAvailable ? "Ollama" : "Hors ligne"}',
-                    style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-                  ),
-                  const Spacer(),
-                  // Bouton pour tester manuellement la connexion
-                  if (!isRasaAvailable || !isOllamaAvailable)
-                    TextButton.icon(
-                      icon: const Icon(Icons.refresh, size: 16),
-                      label: const Text("Reconnecter", style: TextStyle(fontSize: 12)),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                        minimumSize: Size.zero,
-                        tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                      ),
-                      onPressed: () => _initChatbotService(),
-                    ),
-                  if (_chatbotService.isProcessing)
-                    SizedBox(
-                      width: 16,
-                      height: 16,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primaryColor),
-                      ),
-                    ),
-                ],
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      color: _chatbotService.isInitialized 
+          ? Colors.green.withOpacity(0.1)
+          : Colors.orange.withOpacity(0.1),
+      child: Row(
+        children: [
+          Icon(
+            _chatbotService.isInitialized ? Icons.check_circle : Icons.warning,
+            size: 16,
+            color: _chatbotService.isInitialized ? Colors.green : Colors.orange,
+          ),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              _chatbotService.isInitialized
+                  ? "Connecté à l'API Gemini"
+                  : "Mode hors ligne - Fonctionnalités limitées",
+              style: TextStyle(
+                fontSize: 12,
+                color: _chatbotService.isInitialized ? Colors.green : Colors.orange,
               ),
             ),
-            // Ligne d'état de Rasa et Ollama
-            Container(
-              color: Colors.grey.shade100,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              child: Row(
-                children: [
-                  Icon(
-                    isRasaAvailable ? Icons.check_circle : Icons.error_outline,
-                    size: 14, 
-                    color: isRasaAvailable ? Colors.green : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Rasa: ${isRasaAvailable ? "Connecté" : "Déconnecté"}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isRasaAvailable ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  Icon(
-                    isOllamaAvailable ? Icons.check_circle : Icons.error_outline,
-                    size: 14, 
-                    color: isOllamaAvailable ? Colors.green : Colors.orange,
-                  ),
-                  const SizedBox(width: 4),
-                  Text(
-                    'Ollama: ${isOllamaAvailable ? "Connecté" : "Déconnecté"}',
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isOllamaAvailable ? Colors.green : Colors.orange,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        );
-      },
+          ),
+        ],
+      ),
     );
   }
-  
+
   Widget _buildMessageList() {
     final messages = _chatbotService.messages;
     
     if (messages.isEmpty) {
-      return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.chat_bubble_outline,
-              size: 64,
-              color: AppColors.primaryColor.withOpacity(0.3),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Commencez la conversation !',
-              style: TextStyle(
-                fontSize: 16,
-                color: Colors.grey,
-              ),
-            ),
-          ],
+      return const Center(
+        child: Text(
+          "Posez une question à notre assistant écologique",
+          style: TextStyle(
+            color: Colors.grey,
+            fontSize: 16,
+          ),
         ),
       );
     }
@@ -350,86 +287,55 @@ class _ChatbotViewState extends State<ChatbotView> {
         mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          if (!isUser)
+          if (!isUser) ...[
             CircleAvatar(
-              backgroundColor: AppColors.secondaryColor,
-              radius: 18,
-              child: const Icon(Icons.eco, color: Colors.white, size: 18),
+              backgroundColor: AppColors.primaryColor.withOpacity(0.1),
+              radius: 16,
+              child: Icon(
+                Icons.eco,
+                color: AppColors.primaryColor,
+                size: 16,
+              ),
             ),
-          if (!isUser) const SizedBox(width: 8),
-          
+            const SizedBox(width: 8),
+          ],
           Flexible(
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: isUser ? AppColors.primaryColor : AppColors.cardColor,
+                color: isUser 
+                    ? AppColors.primaryColor 
+                    : Colors.white,
                 borderRadius: BorderRadius.circular(16),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withOpacity(0.05),
-                    blurRadius: 3,
-                    offset: const Offset(0, 1),
+                    blurRadius: 5,
+                    offset: const Offset(0, 2),
                   ),
                 ],
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    message.text,
-                    style: TextStyle(
-                      color: isUser ? Colors.white : Colors.black87,
-                      fontSize: 15,
-                    ),
-                  ),
-                  
-                  // Afficher les suggestions s'il y en a
-                  if (!isUser && message.suggestedActions.isNotEmpty)
-                    Padding(
-                      padding: const EdgeInsets.only(top: 12),
-                      child: Wrap(
-                        spacing: 8,
-                        runSpacing: 8,
-                        children: message.suggestedActions.map((suggestion) {
-                          return GestureDetector(
-                            onTap: () {
-                              _messageController.text = suggestion;
-                              _sendMessage();
-                            },
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                              decoration: BoxDecoration(
-                                color: AppColors.secondaryColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: AppColors.secondaryColor.withOpacity(0.3),
-                                ),
-                              ),
-                              child: Text(
-                                suggestion,
-                                style: TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.secondaryColor,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                    ),
-                ],
+              child: Text(
+                message.text,
+                style: TextStyle(
+                  color: isUser ? Colors.white : Colors.black87,
+                  fontSize: 14,
+                ),
               ),
             ),
           ),
-          
-          if (isUser) const SizedBox(width: 8),
-          if (isUser)
+          if (isUser) ...[
+            const SizedBox(width: 8),
             CircleAvatar(
-              backgroundColor: Colors.blueGrey.shade300,
-              radius: 18,
-              child: const Icon(Icons.person, color: Colors.white, size: 18),
+              backgroundColor: AppColors.primaryColor,
+              radius: 16,
+              child: const Icon(
+                Icons.person,
+                color: Colors.white,
+                size: 16,
+              ),
             ),
+          ],
         ],
       ),
     );
@@ -439,12 +345,12 @@ class _ChatbotViewState extends State<ChatbotView> {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: AppColors.cardColor,
+        color: Colors.white,
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 5,
-            offset: const Offset(0, -1),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
           ),
         ],
       ),
@@ -454,20 +360,17 @@ class _ChatbotViewState extends State<ChatbotView> {
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: 'Tapez votre message...',
+                hintText: "Posez votre question...",
+                hintStyle: TextStyle(color: Colors.grey[400]),
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
                 ),
                 filled: true,
-                fillColor: Colors.grey.shade100,
+                fillColor: Colors.grey[100],
                 contentPadding: const EdgeInsets.symmetric(
                   horizontal: 16,
-                  vertical: 14,
-                ),
-                prefixIcon: Icon(
-                  Icons.chat_bubble_outline,
-                  color: AppColors.primaryColor.withOpacity(0.7),
+                  vertical: 12,
                 ),
               ),
               textInputAction: TextInputAction.send,
@@ -475,105 +378,105 @@ class _ChatbotViewState extends State<ChatbotView> {
             ),
           ),
           const SizedBox(width: 8),
-          AnimatedBuilder(
-            animation: _chatbotService,
-            builder: (context, child) {
-              return FloatingActionButton(
-                onPressed: _chatbotService.isProcessing ? null : _sendMessage,
-                backgroundColor: AppColors.secondaryColor,
-                elevation: 2,
-                child: const Icon(Icons.send, color: Colors.white),
-              );
-            },
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.primaryColor,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              icon: _chatbotService.isProcessing
+                  ? const SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
+                        strokeWidth: 2,
+                      ),
+                    )
+                  : const Icon(Icons.send, color: Colors.white),
+              onPressed: _chatbotService.isProcessing ? null : _sendMessage,
+            ),
           ),
         ],
       ),
     );
   }
-
-  // Afficher un dialogue d'aide
+  
   void _showHelpDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            Icon(Icons.help_outline, color: AppColors.primaryColor),
+            Icon(
+              Icons.help_outline,
+              color: AppColors.primaryColor,
+            ),
             const SizedBox(width: 8),
-            const Text('Guide de configuration'),
+            const Text("Aide du Chatbot"),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              const Text(
-                'Pour utiliser toutes les fonctionnalités du chatbot :',
-                style: TextStyle(fontWeight: FontWeight.bold),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text(
+              "Exemples de questions:",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-              const SizedBox(height: 16),
-              const Text('1. Configuration de Rasa sur votre PC :'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'rasa run --enable-api --cors "*" --host 0.0.0.0 --port 5005',
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 12),
-                ),
+            ),
+            const SizedBox(height: 8),
+            _buildHelpItem(
+              "Comment réduire mon empreinte carbone ?",
+            ),
+            _buildHelpItem(
+              "Quels sont les produits écologiques recommandés ?",
+            ),
+            _buildHelpItem(
+              "Comment économiser l'eau au quotidien ?",
+            ),
+            _buildHelpItem(
+              "Qu'est-ce que l'empreinte numérique ?",
+            ),
+            const SizedBox(height: 16),
+            const Text(
+              "À propos du chatbot:",
+              style: TextStyle(
+                fontWeight: FontWeight.bold,
+                fontSize: 16,
               ),
-              const SizedBox(height: 16),
-              const Text('2. Configuration d\'Ollama sur votre PC :'),
-              const SizedBox(height: 8),
-              Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.grey.shade100,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Text(
-                  'ollama run llama3',
-                  style: TextStyle(fontFamily: 'monospace', fontSize: 12),
-                ),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                '3. Vérifiez que votre téléphone et votre PC sont sur le même réseau WiFi.',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Adresses utilisées :',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              const SizedBox(height: 8),
-              Text('• Rasa : http://192.168.1.97:5005'),
-              Text('• Ollama : http://192.168.1.97:11434'),
-              const SizedBox(height: 16),
-              const Text(
-                'Note : Sans Rasa et Ollama, le chatbot fonctionnera en mode limité.',
-                style: TextStyle(fontStyle: FontStyle.italic, color: Colors.grey),
-              ),
-            ],
-          ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              "Ce chatbot utilise l'API Gemini de Google pour vous fournir des informations précises sur l'écologie et le développement durable.",
+              style: TextStyle(fontSize: 14),
+            ),
+          ],
         ),
         actions: [
           TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-            },
-            child: const Text('Fermer'),
+            onPressed: () => Navigator.pop(context),
+            child: const Text("Fermer"),
           ),
-          TextButton(
-            onPressed: () {
-              Navigator.of(context).pop();
-              _initChatbotService(); // Réessayer la connexion
-            },
-            child: const Text('Reconnecter'),
+        ],
+      ),
+    );
+  }
+  
+  Widget _buildHelpItem(String text) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Text("• ", style: TextStyle(fontWeight: FontWeight.bold)),
+          Expanded(
+            child: Text(
+              text,
+              style: const TextStyle(fontSize: 14),
+            ),
           ),
         ],
       ),
