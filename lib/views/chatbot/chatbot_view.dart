@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
-import 'package:greens_app/services/gemini_chatbot_service.dart';
+import 'package:greens_app/services/ollama_chatbot_service.dart';
 import 'package:greens_app/views/chatbot/chatbot_settings_view.dart';
 import 'package:greens_app/widgets/menu.dart';
 import 'package:greens_app/models/chatbot_message.dart';
@@ -17,7 +17,7 @@ class ChatbotView extends StatefulWidget {
 class _ChatbotViewState extends State<ChatbotView> {
   final TextEditingController _messageController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
-  late GeminiChatbotService _chatbotService;
+  late OllamaChatbotService _chatbotService;
   int _currentIndex = 4; // Index pour le menu (4 = Chatbot)
   
   @override
@@ -28,23 +28,20 @@ class _ChatbotViewState extends State<ChatbotView> {
   
   Future<void> _initChatbotService() async {
     try {
-      _chatbotService = GeminiChatbotService.instance;
+      _chatbotService = OllamaChatbotService.instance;
       
-      // Initialiser le service avec la clé API Gemini
-      await _chatbotService.initialize(
-        apiKey: 'AIzaSyBaxf3w-7kaMJo5UF_feoSb7_xJ6fQOjok',
-      );
+      // Initialiser le service avec le modèle Llama3
+      await _chatbotService.initialize(model: 'llama3');
       
-      if (!_chatbotService.messages.any((msg) => !msg.isUser)) {
-        // Ajouter un message de bienvenue si aucun message du bot n'existe encore
-        final welcomeMessage = ChatbotMessage(
-          id: 'welcome',
-          text: "Bonjour ! Je suis GreenBot, votre assistant écologique propulsé par Gemini. Comment puis-je vous aider aujourd'hui ?",
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
-        _chatbotService.clearHistory();
-        await _chatbotService.sendMessage("", initialMessage: welcomeMessage);
+      if (_chatbotService.conversationHistory.isEmpty) {
+        // Ajouter un message de bienvenue si aucun message n'existe encore
+        final welcomeMessage = {
+          'id': 'welcome',
+          'role': 'assistant',
+          'content': "Bonjour ! Je suis GreenBot, votre assistant écologique propulsé par Llama3. Comment puis-je vous aider aujourd'hui ?",
+        };
+        _chatbotService.clearConversation();
+        _chatbotService.conversationHistory.add(welcomeMessage);
         if (mounted) setState(() {});
       }
       
@@ -55,7 +52,7 @@ class _ChatbotViewState extends State<ChatbotView> {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: const Text(
-                'Chatbot en mode hors ligne : fonctionnalités limitées. Appuyez sur ? pour l\'aide.',
+                'Chatbot en mode hors ligne : Ollama n\'est pas disponible. Assurez-vous qu\'Ollama est en cours d\'exécution.',
                 style: TextStyle(fontSize: 13),
               ),
               backgroundColor: Colors.orange,
@@ -74,19 +71,18 @@ class _ChatbotViewState extends State<ChatbotView> {
       
       // Ajouter un message d'erreur pour l'utilisateur
       if (mounted) {
-        // Informer l'utilisateur de l'erreur et comment la résoudre
-        final errorMessage = ChatbotMessage(
-          id: 'error',
-          text: "Je rencontre des problèmes de connexion avec l'API Gemini.\n\n"
+        final errorMessage = {
+          'id': 'error',
+          'role': 'assistant',
+          'content': "Je rencontre des problèmes de connexion avec Ollama.\n\n"
                "Pour utiliser le chatbot :\n\n"
-               "1. Assurez-vous que votre appareil est connecté à Internet\n"
-               "2. Vérifiez que la clé API Gemini est valide\n\n"
+               "1. Assurez-vous qu'Ollama est installé sur votre machine\n"
+               "2. Vérifiez qu'Ollama est en cours d'exécution\n"
+               "3. Vérifiez que le modèle llama3 est disponible\n\n"
                "Si le problème persiste, contactez le support technique.",
-          isUser: false,
-          timestamp: DateTime.now(),
-        );
+        };
         
-        _chatbotService.addMessage(errorMessage);
+        _chatbotService.conversationHistory.add(errorMessage);
         setState(() {});
       }
     }
@@ -239,8 +235,8 @@ class _ChatbotViewState extends State<ChatbotView> {
           Expanded(
             child: Text(
               _chatbotService.isInitialized
-                  ? "Connecté à l'API Gemini"
-                  : "Mode hors ligne - Fonctionnalités limitées",
+                  ? "Connecté à Ollama (Llama3)"
+                  : "Mode hors ligne - Ollama non disponible",
               style: TextStyle(
                 fontSize: 12,
                 color: _chatbotService.isInitialized ? Colors.green : Colors.orange,
@@ -253,94 +249,46 @@ class _ChatbotViewState extends State<ChatbotView> {
   }
 
   Widget _buildMessageList() {
-    final messages = _chatbotService.messages;
-    
-    if (messages.isEmpty) {
-      return const Center(
-        child: Text(
-          "Posez une question à notre assistant écologique",
-          style: TextStyle(
-            color: Colors.grey,
-            fontSize: 16,
-          ),
-        ),
-      );
-    }
-    
     return ListView.builder(
       controller: _scrollController,
       padding: const EdgeInsets.all(16),
-      itemCount: messages.length,
+      itemCount: _chatbotService.conversationHistory.length,
       itemBuilder: (context, index) {
-        final message = messages[index];
-        return _buildMessageBubble(message);
-      },
-    );
-  }
-  
-  Widget _buildMessageBubble(ChatbotMessage message) {
-    final isUser = message.isUser;
-    
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 16),
-      child: Row(
-        mainAxisAlignment: isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          if (!isUser) ...[
-            CircleAvatar(
-              backgroundColor: AppColors.primaryColor.withOpacity(0.1),
-              radius: 16,
-              child: Icon(
-                Icons.eco,
-                color: AppColors.primaryColor,
-                size: 16,
-              ),
-            ),
-            const SizedBox(width: 8),
-          ],
-          Flexible(
-            child: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: isUser 
-                    ? AppColors.primaryColor 
-                    : Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 5,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Text(
-                message.text,
-                style: TextStyle(
-                  color: isUser ? Colors.white : Colors.black87,
-                  fontSize: 14,
+        final message = _chatbotService.conversationHistory[index];
+        final isUser = message['role'] == 'user';
+        
+        return Align(
+          alignment: isUser ? Alignment.centerRight : Alignment.centerLeft,
+          child: Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: isUser ? AppColors.primaryColor : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 5,
+                  offset: const Offset(0, 2),
                 ),
+              ],
+            ),
+            constraints: BoxConstraints(
+              maxWidth: MediaQuery.of(context).size.width * 0.75,
+            ),
+            child: Text(
+              message['content'] ?? '',
+              style: TextStyle(
+                color: isUser ? Colors.white : Colors.black87,
+                fontSize: 14,
               ),
             ),
           ),
-          if (isUser) ...[
-            const SizedBox(width: 8),
-            CircleAvatar(
-              backgroundColor: AppColors.primaryColor,
-              radius: 16,
-              child: const Icon(
-                Icons.person,
-                color: Colors.white,
-                size: 16,
-              ),
-            ),
-          ],
-        ],
-      ),
+        );
+      },
     );
   }
-  
+
   Widget _buildInputArea() {
     return Container(
       padding: const EdgeInsets.all(16),
@@ -349,8 +297,8 @@ class _ChatbotViewState extends State<ChatbotView> {
         boxShadow: [
           BoxShadow(
             color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -5),
+            blurRadius: 5,
+            offset: const Offset(0, -2),
           ),
         ],
       ),
@@ -360,8 +308,7 @@ class _ChatbotViewState extends State<ChatbotView> {
             child: TextField(
               controller: _messageController,
               decoration: InputDecoration(
-                hintText: "Posez votre question...",
-                hintStyle: TextStyle(color: Colors.grey[400]),
+                hintText: "Écrivez votre message...",
                 border: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(24),
                   borderSide: BorderSide.none,
@@ -369,11 +316,10 @@ class _ChatbotViewState extends State<ChatbotView> {
                 filled: true,
                 fillColor: Colors.grey[100],
                 contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
+                  horizontal: 20,
+                  vertical: 10,
                 ),
               ),
-              textInputAction: TextInputAction.send,
               onSubmitted: (_) => _sendMessage(),
             ),
           ),
@@ -381,102 +327,67 @@ class _ChatbotViewState extends State<ChatbotView> {
           Container(
             decoration: BoxDecoration(
               color: AppColors.primaryColor,
-              shape: BoxShape.circle,
+              borderRadius: BorderRadius.circular(24),
             ),
             child: IconButton(
-              icon: _chatbotService.isProcessing
-                  ? const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        color: Colors.white,
-                        strokeWidth: 2,
-                      ),
-                    )
-                  : const Icon(Icons.send, color: Colors.white),
-              onPressed: _chatbotService.isProcessing ? null : _sendMessage,
+              icon: const Icon(Icons.send, color: Colors.white),
+              onPressed: _sendMessage,
             ),
           ),
         ],
       ),
     );
   }
-  
+
   void _showHelpDialog(BuildContext context) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: Row(
-          children: [
-            Icon(
-              Icons.help_outline,
-              color: AppColors.primaryColor,
-            ),
-            const SizedBox(width: 8),
-            const Text("Aide du Chatbot"),
-          ],
-        ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              "Exemples de questions:",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+        title: const Text("Aide - Assistant Écologique"),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Text(
+                "Comment utiliser l'assistant :",
+                style: TextStyle(fontWeight: FontWeight.bold),
               ),
-            ),
-            const SizedBox(height: 8),
-            _buildHelpItem(
-              "Comment réduire mon empreinte carbone ?",
-            ),
-            _buildHelpItem(
-              "Quels sont les produits écologiques recommandés ?",
-            ),
-            _buildHelpItem(
-              "Comment économiser l'eau au quotidien ?",
-            ),
-            _buildHelpItem(
-              "Qu'est-ce que l'empreinte numérique ?",
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              "À propos du chatbot:",
-              style: TextStyle(
-                fontWeight: FontWeight.bold,
-                fontSize: 16,
+              const SizedBox(height: 8),
+              const Text(
+                "• Posez vos questions sur l'écologie et le développement durable\n"
+                "• Demandez des conseils pour réduire votre empreinte carbone\n"
+                "• Obtenez des informations sur les pratiques écologiques\n"
+                "• Discutez des sujets liés à l'environnement",
               ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              "Ce chatbot utilise l'API Gemini de Google pour vous fournir des informations précises sur l'écologie et le développement durable.",
-              style: TextStyle(fontSize: 14),
-            ),
-          ],
+              const SizedBox(height: 16),
+              const Text(
+                "Fonctionnalités :",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "• Réponses en temps réel\n"
+                "• Historique des conversations\n"
+                "• Mode hors ligne disponible\n"
+                "• Interface intuitive",
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                "Note :",
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                "Ce chatbot utilise Ollama avec le modèle Llama3 pour vous fournir des informations précises sur l'écologie et le développement durable.",
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: const Text("Fermer"),
-          ),
-        ],
-      ),
-    );
-  }
-  
-  Widget _buildHelpItem(String text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const Text("• ", style: TextStyle(fontWeight: FontWeight.bold)),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(fontSize: 14),
-            ),
           ),
         ],
       ),

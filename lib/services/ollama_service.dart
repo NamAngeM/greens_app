@@ -1,133 +1,123 @@
 import 'dart:convert';
-import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
-/// Service pour interagir avec Ollama (LLM local)
+/// Service pour interagir avec Ollama en local
 class OllamaService {
-  // Singleton pattern
   static final OllamaService _instance = OllamaService._internal();
   factory OllamaService() => _instance;
+  static OllamaService get instance => _instance;
+
+  bool _isInitialized = false;
+  String _model = 'llama3';
+  final String _baseUrl = 'http://localhost:11434';
+
   OllamaService._internal();
 
-  // Configuration par défaut
-  String _baseUrl = 'http://192.168.1.97:11434';
-  String _defaultModel = 'llama3';
-  bool _isInitialized = false;
-
-  // Getters
-  bool get isInitialized => _isInitialized;
-  String get baseUrl => _baseUrl;
-  String get defaultModel => _defaultModel;
-
-  /// Initialiser le service Ollama
-  Future<void> initialize({String? baseUrl, String? defaultModel}) async {
+  /// Initialise le service Ollama
+  Future<bool> initialize({String model = 'llama3'}) async {
     try {
-      if (baseUrl != null) _baseUrl = baseUrl;
-      if (defaultModel != null) _defaultModel = defaultModel;
+      _model = model;
+      // Test de connexion à Ollama
+      final response = await http.get(Uri.parse('$_baseUrl/api/tags'));
+      _isInitialized = response.statusCode == 200;
       
-      // Tester la connexion avec une requête simple
-      final response = await http.get(
-        Uri.parse('$_baseUrl/api/tags'),
-        headers: {'Content-Type': 'application/json'},
-      ).timeout(
-        const Duration(seconds: 20), // Augmenter le timeout à 20 secondes
-        onTimeout: () {
-          print('Délai d\'attente dépassé lors de la connexion à Ollama');
-          throw Exception('Délai d\'attente dépassé lors de la connexion à Ollama');
-        },
-      );
-      
-      if (response.statusCode == 200) {
+      if (_isInitialized) {
         print('OllamaService initialisé avec succès');
-        _isInitialized = true;
+        print('  - Modèle: $_model');
       } else {
-        print('Échec de l\'initialisation d\'OllamaService: ${response.statusCode} ${response.body}');
-        _isInitialized = false;
+        print('OllamaService: échec de la connexion à Ollama');
       }
+      
+      return _isInitialized;
     } catch (e) {
       print('Exception lors de l\'initialisation de OllamaService: $e');
       _isInitialized = false;
+      return false;
     }
   }
 
-  /// Générer une réponse à partir du modèle Ollama
-  Future<String> generateResponse(String prompt) async {
+  /// Teste la connexion à Ollama
+  Future<bool> testConnection() async {
     try {
-      if (!_isInitialized) {
-        return "Désolé, le service Ollama n'est pas disponible actuellement.";
-      }
-      
-      final requestBody = {
-        'model': _defaultModel,
-        'prompt': prompt,
-        'stream': false,
-        'options': {
-          'num_ctx': 4096,  // Contexte plus large
-          'num_predict': 1024  // Limiter la longueur de réponse
-        }
-      };
-      
+      final response = await http.get(Uri.parse('$_baseUrl/api/tags'));
+      return response.statusCode == 200;
+    } catch (e) {
+      print('Erreur lors du test de connexion à Ollama: $e');
+      return false;
+    }
+  }
+
+  /// Génère une réponse à partir d'un message
+  Future<String> generateResponse(String message) async {
+    if (!_isInitialized) {
+      return "Le service Ollama n'est pas initialisé. Veuillez vérifier que Ollama est en cours d'exécution.";
+    }
+
+    try {
       final response = await http.post(
         Uri.parse('$_baseUrl/api/generate'),
         headers: {'Content-Type': 'application/json'},
-        body: jsonEncode(requestBody),
-      ).timeout(
-        const Duration(seconds: 90), // Augmenter le timeout à 90 secondes pour la génération
-        onTimeout: () {
-          print('Délai d\'attente dépassé lors de la génération de réponse par Ollama');
-          throw Exception('La génération de réponse a pris trop de temps. Veuillez réessayer avec un message plus court.');
-        },
+        body: jsonEncode({
+          'model': _model,
+          'prompt': message,
+          'stream': false,
+        }),
       );
-      
+
       if (response.statusCode == 200) {
-        final Map<String, dynamic> data = jsonDecode(response.body);
-        return data['response'] ?? "Désolé, je n'ai pas pu générer de réponse.";
+        final data = jsonDecode(response.body);
+        return data['response'] ?? "Désolé, je n'ai pas pu générer une réponse.";
       } else {
-        print('Erreur lors de la génération de réponse: ${response.statusCode} ${response.body}');
-        return "Une erreur s'est produite lors de la génération de la réponse.";
+        print('Erreur API Ollama: ${response.statusCode} - ${response.body}');
+        return "Une erreur s'est produite lors de la communication avec Ollama (${response.statusCode}).";
       }
     } catch (e) {
-      print('Exception lors de la génération de réponse: $e');
-      return "Une erreur s'est produite: $e";
+      print('Exception lors de la génération de réponse Ollama: $e');
+      return "Une erreur s'est produite lors de la communication avec Ollama.";
     }
   }
 
-  /// Récupérer la liste des modèles disponibles
-  Future<List<String>> getAvailableModels() async {
+  /// Génère une réponse avec un contexte de conversation
+  Future<String> generateResponseWithContext(String message, List<Map<String, String>> context) async {
     if (!_isInitialized) {
-      await initialize();
-      if (!_isInitialized) {
-        return [];
-      }
+      return "Le service Ollama n'est pas initialisé. Veuillez vérifier que Ollama est en cours d'exécution.";
     }
 
     try {
-      final response = await http.get(Uri.parse('$_baseUrl/api/tags'));
+      // Construire le prompt avec le contexte
+      final String contextPrompt = context.map((msg) {
+        final role = msg['role'] == 'user' ? 'Human' : 'Assistant';
+        return '$role: ${msg['content']}';
+      }).join('\n');
+
+      final String fullPrompt = '''
+$contextPrompt
+Human: $message
+Assistant:''';
+
+      final response = await http.post(
+        Uri.parse('$_baseUrl/api/generate'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'model': _model,
+          'prompt': fullPrompt,
+          'stream': false,
+        }),
+      );
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
-        // Vérifier si le format JSON a 'models' ou directement un tableau
-        if (data is Map && data.containsKey('models') && data['models'] is List) {
-          return List<String>.from(
-            (data['models'] as List).map((model) => model['name'].toString())
-          );
-        } else if (data is List) {
-          // Format alternatif où la réponse est directement un tableau
-          return List<String>.from(
-            data.map((model) => model['name'] ?? model['model'] ?? '').where((name) => name.isNotEmpty)
-          );
-        }
-        
-        // Si aucun format reconnu, imprimer la réponse pour investigation
-        print('Format de réponse Ollama non reconnu: $data');
-        return [];
+        return data['response'] ?? "Désolé, je n'ai pas pu générer une réponse.";
       } else {
-        print('Erreur récupération modèles: ${response.statusCode} - ${response.body}');
-        return [];
+        print('Erreur API Ollama: ${response.statusCode} - ${response.body}');
+        return "Une erreur s'est produite lors de la communication avec Ollama (${response.statusCode}).";
       }
     } catch (e) {
-      print('Exception récupération modèles: $e');
-      return [];
+      print('Exception lors de la génération de réponse Ollama: $e');
+      return "Une erreur s'est produite lors de la communication avec Ollama.";
     }
   }
+
+  bool get isInitialized => _isInitialized;
+  String get model => _model;
 } 

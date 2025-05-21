@@ -23,7 +23,7 @@ import 'package:greens_app/services/product_scan_service.dart';
 import 'package:greens_app/services/product_recommendation_service.dart';
 import 'package:greens_app/services/eco_digital_twin_service.dart';
 import 'package:greens_app/services/ar_eco_impact_service.dart';
-import 'package:greens_app/services/gemini_chatbot_service.dart';
+import 'package:greens_app/services/ollama_chatbot_service.dart';
 import 'features/product_scanner/screens/enhanced_scanner_screen.dart';
 import 'features/product_scanner/screens/product_carbon_detail_screen.dart';
 
@@ -57,7 +57,7 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider(create: (_) => EcoGoalController()),
         ChangeNotifierProvider(create: (_) => CommunityController()),
         ChangeNotifierProvider(create: (_) => ProductScanController()),
-        ChangeNotifierProvider(create: (_) => GeminiChatbotService.instance),
+        ChangeNotifierProvider(create: (_) => OllamaChatbotService.instance),
         ChangeNotifierProvider(create: (_) => EcoChallengeService()),
         ChangeNotifierProvider(create: (_) => EcoBadgeController()),
         ChangeNotifierProvider(create: (_) => EnvironmentalImpactService()),
