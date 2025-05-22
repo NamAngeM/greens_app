@@ -36,7 +36,19 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   void initState() {
     super.initState();
+    _initChatbot();
     _addWelcomeMessage();
+  }
+
+  Future<void> _initChatbot() async {
+    try {
+      final chatbotService = Provider.of<LocalChatbotService>(context, listen: false);
+      if (!chatbotService.isInitialized) {
+        await chatbotService.initialize();
+      }
+    } catch (e) {
+      print('Erreur lors de l\'initialisation du chatbot: $e');
+    }
   }
 
   void _addWelcomeMessage() {
@@ -71,22 +83,45 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
       _isTyping = true;
     });
 
+    // Scroll to bottom after adding user message
+    _scrollToBottom();
+
     // Simuler un délai de réponse
     await Future.delayed(const Duration(milliseconds: 500));
 
-    final chatbotService = Provider.of<LocalChatbotService>(context, listen: false);
-    final response = await chatbotService.getResponse(text);
+    try {
+      final chatbotService = Provider.of<LocalChatbotService>(context, listen: false);
+      final response = await chatbotService.getResponse(text);
 
-    setState(() {
-      _messages.add(ChatMessage(
-        text: response,
-        isUser: false,
-        timestamp: DateTime.now(),
-      ));
-      _isTyping = false;
-    });
+      // Vérifier si le widget est toujours monté
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(
+            text: response,
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+          _isTyping = false;
+        });
 
-    _scrollToBottom();
+        // Scroll to bottom after adding bot response
+        _scrollToBottom();
+      }
+    } catch (e) {
+      // Gérer l'erreur
+      if (mounted) {
+        setState(() {
+          _messages.add(ChatMessage(
+            text: "Désolé, je n'ai pas pu traiter votre demande. Veuillez réessayer.",
+            isUser: false,
+            timestamp: DateTime.now(),
+          ));
+          _isTyping = false;
+        });
+        _scrollToBottom();
+      }
+      print("Erreur dans le chatbot: $e");
+    }
   }
 
   void _scrollToBottom() {
@@ -235,7 +270,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     final formattedTime = timeFormat.format(message.timestamp);
 
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Ajuster les marges
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 8.0), // Réduire les marges horizontales
       child: Row(
         mainAxisAlignment:
             message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
@@ -247,29 +282,29 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
             children: [
               Container(
                 constraints: BoxConstraints(
-                  maxWidth: MediaQuery.of(context).size.width * 0.75, // Ajuster la largeur max
+                  maxWidth: MediaQuery.of(context).size.width * 0.65, // Réduire la largeur max
                 ),
-                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0), // Ajuster le padding
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0),
                 decoration: BoxDecoration(
                   color: message.isUser
                       ? AppColors.primaryColor // Vert pour l'utilisateur
-                      : AppColors.backgroundColor, // Gris clair pour le bot (utiliser backgroundColor qui semble approprié)
-                  borderRadius: BorderRadius.circular(16.0), // Arrondir les coins
+                      : AppColors.backgroundColor, // Gris clair pour le bot
+                  borderRadius: BorderRadius.circular(16.0),
                 ),
                 child: Text(
                   message.text,
                   style: TextStyle(
-                    color: message.isUser ? Colors.white : Colors.black87, // Couleur du texte
-                    fontSize: 15.0, // Ajuster la taille de la police
+                    color: message.isUser ? Colors.white : Colors.black87,
+                    fontSize: 15.0,
                   ),
                 ),
               ),
-              const SizedBox(height: 4.0), // Espace entre la bulle et l'heure
+              const SizedBox(height: 4.0),
               Text(
                 formattedTime,
                 style: TextStyle(
-                  color: Colors.grey[600], // Couleur de l'heure
-                  fontSize: 10.0, // Taille de la police pour l'heure
+                  color: Colors.grey[600],
+                  fontSize: 10.0,
                 ),
               ),
             ],
