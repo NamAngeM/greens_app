@@ -1,0 +1,460 @@
+{
+  "qa_pairs": [
+    {
+      "question": "Qu'est-ce que l'écologie ?",
+      "answer": "L'écologie est la science qui étudie les interactions des êtres vivants entre eux et avec leur environnement."
+    },
+    {
+      "question": "Comment réduire ma consommation d'énergie ?",
+      "answer": "Éteignez les lumières inutiles, utilisez des appareils énergétiquement efficients et améliorez l'isolation de votre maison."
+    },
+    {
+      "question": "Qu'est-ce que le réchauffement climatique ?",
+      "answer": "C'est l'augmentation à long terme de la température moyenne de la Terre, principalement due aux émissions de gaz à effet de serre."
+    },
+    {
+      "question": "Comment recycler correctement ?",
+      "answer": "Séparez le verre, le papier/carton, les plastiques et les métaux. Consultez les consignes locales de votre commune."
+    },
+    {
+      "question": "Quels sont les gestes écologiques au quotidien ?",
+      "answer": "Réduisez votre consommation d'eau et d'énergie, utilisez des transports propres, achetez local et de saison."
+    },
+    {
+      "question": "Pourquoi protéger la biodiversité ?",
+      "answer": "La biodiversité est essentielle pour les écosystèmes qui nous fournissent nourriture, air pur, eau potable et médicaments."
+    },
+    {
+      "question": "Qu'est-ce que l'agriculture biologique ?",
+      "answer": "C'est une agriculture qui évite les pesticides et engrais chimiques de synthèse, privilégiant les pratiques naturelles."
+    },
+    {
+      "question": "Comment économiser l'eau ?",
+      "answer": "Prenez des douches courtes, réparez les fuites, utilisez des appareils économes en eau et récupérez l'eau de pluie."
+    },
+    {
+      "question": "Qu'est-ce que le développement durable ?",
+      "answer": "C'est un développement qui répond aux besoins du présent sans compromettre la capacité des générations futures."
+    },
+    {
+      "question": "Comment réduire ses déchets ?",
+      "answer": "Achetez en vrac, utilisez des sacs réutilisables, évitez les produits jetables et compostez les déchets organiques."
+    },
+    {
+      "question": "Quels sont les énergies renouvelables ?",
+      "answer": "Les principales sont : solaire, éolienne, hydraulique, géothermique et la biomasse."
+    },
+    {
+      "question": "Comment fonctionne un panneau solaire ?",
+      "answer": "Les panneaux convertissent la lumière du soleil en électricité grâce à des cellules en silicium qui génèrent un courant électrique."
+    },
+    {
+      "question": "Qu'est-ce que la pollution plastique ?",
+      "answer": "C'est l'accumulation de déchets plastiques dans l'environnement qui nuit à la faune, à la flore et aux écosystèmes."
+    },
+    {
+      "question": "Pourquoi les abeilles sont-elles importantes ?",
+      "answer": "Les abeilles pollinisent 80% des plantes à fleurs, jouant un rôle crucial dans la production alimentaire et les écosystèmes."
+    },
+    {
+      "question": "Qu'est-ce que l'empreinte carbone ?",
+      "answer": "C'est la quantité de gaz à effet de serre émise par une personne, une organisation ou un produit tout au long de son cycle de vie."
+    },
+    {
+      "question": "Comment réduire son empreinte carbone ?",
+      "answer": "Privilégiez les transports en commun, réduisez votre consommation de viande, économisez l'énergie et achetez local."
+    },
+    {
+      "question": "Qu'est-ce que la déforestation ?",
+      "answer": "C'est la destruction permanente des forêts pour convertir les terres à d'autres usages, comme l'agriculture ou l'urbanisation."
+    },
+    {
+      "question": "Pourquoi les forêts sont-elles importantes ?",
+      "answer": "Elles absorbent le CO2, produisent de l'oxygène, régulent le climat, abritent la biodiversité et protègent les sols."
+    },
+    {
+      "question": "Qu'est-ce que la permaculture ?",
+      "answer": "C'est un système de conception inspiré des écosystèmes naturels pour créer des habitats humains durables et autosuffisants."
+    },
+    {
+      "question": "Comment faire son compost ?",
+      "answer": "Mélangez déchets verts (épluchures) et bruns (feuilles mortes) en alternance, arrosez et retournez régulièrement."
+    },
+    {
+      "question": "Qu'est-ce que le zéro déchet ?",
+      "answer": "C'est une philosophie visant à réduire au maximum sa production de déchets en refusant, réduisant, réutilisant, recyclant et compostant."
+    },
+    {
+      "question": "Pourquoi éviter les produits jetables ?",
+      "answer": "Ils génèrent beaucoup de déchets, consomment des ressources pour leur production et sont souvent difficiles à recycler."
+    },
+    {
+      "question": "Qu'est-ce que la fast fashion ?",
+      "answer": "C'est la production rapide et massive de vêtements à bas prix, avec un lourd impact environnemental et social."
+    },
+    {
+      "question": "Comment consommer la mode durablement ?",
+      "answer": "Achetez des vêtements de qualité, seconde main, éthiques, et prenez soin de vos vêtements pour les faire durer."
+    },
+    {
+      "question": "Qu'est-ce que l'économie circulaire ?",
+      "answer": "C'est un modèle économique qui vise à éliminer les déchets en réutilisant, réparant et recyclant les produits et matériaux."
+    },
+    {
+      "question": "Pourquoi manger local et de saison ?",
+      "answer": "Cela réduit les transports polluants, soutient les producteurs locaux et respecte les cycles naturels de production."
+    },
+    {
+      "question": "Qu'est-ce que l'agroécologie ?",
+      "answer": "C'est une agriculture qui s'inspire des écosystèmes naturels pour être productive tout en préservant l'environnement."
+    },
+    {
+      "question": "Comment réduire sa consommation de viande ?",
+      "answer": "Commencez par des repas végétariens réguliers, découvrez des alternatives végétales et réduisez progressivement les portions."
+    },
+    {
+      "question": "Pourquoi la viande a-t-elle un impact environnemental ?",
+      "answer": "Son production nécessite beaucoup d'eau, de terres et d'énergie, et émet des gaz à effet de serre (méthane)."
+    },
+    {
+      "question": "Qu'est-ce que le gaspillage alimentaire ?",
+      "answer": "C'est la perte de nourriture comestible tout au long de la chaîne alimentaire, du producteur au consommateur."
+    },
+    {
+      "question": "Comment éviter le gaspillage alimentaire ?",
+      "answer": "Planifiez vos repas, achetez en quantités adaptées, conservez bien les aliments et cuisinez les restes."
+    },
+    {
+      "question": "Qu'est-ce qu'un éco-geste ?",
+      "answer": "C'est une action simple du quotidien qui réduit son impact environnemental (éteindre la lumière, trier ses déchets...)."
+    },
+    {
+      "question": "Pourquoi utiliser des ampoules LED ?",
+      "answer": "Elles consomment jusqu'à 90% d'énergie en moins que les ampoules classiques et durent beaucoup plus longtemps."
+    },
+    {
+      "question": "Qu'est-ce que la mobilité douce ?",
+      "answer": "Ce sont les modes de transport non motorisés (marche, vélo) ou peu polluants (transports en commun, covoiturage)."
+    },
+    {
+      "question": "Comment choisir un véhicule écologique ?",
+      "answer": "Privilégiez les petits véhicules, électriques si possible, ou hybrides, avec une bonne efficacité énergétique."
+    },
+    {
+      "question": "Qu'est-ce que le covoiturage ?",
+      "answer": "C'est le partage d'un véhicule entre plusieurs personnes effectuant le même trajet, réduisant ainsi les émissions."
+    },
+    {
+      "question": "Pourquoi éviter de prendre l'avion ?",
+      "answer": "L'avion est le mode de transport le plus émetteur de CO2 par passager et par kilomètre parcouru."
+    },
+    {
+      "question": "Qu'est-ce que le tourisme durable ?",
+      "answer": "C'est un tourisme qui respecte l'environnement, les populations locales et participe au développement économique local."
+    },
+    {
+      "question": "Comment voyager écologiquement ?",
+      "answer": "Privilégiez le train, choisissez des hébergements écoresponsables et compensez vos émissions carbone."
+    },
+    {
+      "question": "Qu'est-ce qu'une maison passive ?",
+      "answer": "C'est une maison conçue pour consommer très peu d'énergie grâce à une excellente isolation et ventilation."
+    },
+    {
+      "question": "Comment isoler sa maison écologiquement ?",
+      "answer": "Utilisez des matériaux naturels (laine de bois, chanvre, liège) et traquez les ponts thermiques."
+    },
+    {
+      "question": "Qu'est-ce que la rénovation énergétique ?",
+      "answer": "C'est l'amélioration de la performance énergétique d'un bâtiment (isolation, chauffage, ventilation...)."
+    },
+    {
+      "question": "Pourquoi aérer son logement ?",
+      "answer": "Cela renouvelle l'air intérieur, évacue les polluants et régule l'humidité, même en hiver."
+    },
+    {
+      "question": "Qu'est-ce que la pollution de l'air ?",
+      "answer": "C'est la présence dans l'air de substances nocives pour la santé et l'environnement (particules, gaz...)."
+    },
+    {
+      "question": "Comment améliorer la qualité de l'air intérieur ?",
+      "answer": "Aérez régulièrement, limitez les produits chimiques, utilisez des plantes dépolluantes et un purificateur si nécessaire."
+    },
+    {
+      "question": "Qu'est-ce que la pollution numérique ?",
+      "answer": "C'est l'impact environnemental du numérique (énergie des data centers, fabrication des appareils, déchets électroniques...)."
+    },
+    {
+      "question": "Comment réduire sa pollution numérique ?",
+      "answer": "Limitez le streaming, nettoyez vos emails, prolongez la vie de vos appareils et recyclez-les en fin de vie."
+    },
+    {
+      "question": "Qu'est-ce qu'un data center ?",
+      "answer": "C'est un centre qui héberge des serveurs informatiques, consommant beaucoup d'énergie pour fonctionner et se refroidir."
+    },
+    {
+      "question": "Pourquoi éteindre ses appareils électriques ?",
+      "answer": "Même en veille, ils consomment de l'énergie. Les éteindre complètement permet des économies significatives."
+    },
+    {
+      "question": "Qu'est-ce que l'obsolescence programmée ?",
+      "answer": "C'est la conception délibérée d'un produit pour limiter sa durée de vie et pousser à son remplacement prématuré."
+    },
+    {
+      "question": "Comment lutter contre l'obsolescence programmée ?",
+      "answer": "Choisissez des produits réparables, entretenez-les, réparez-les et privilégiez l'occasion ou la location."
+    },
+    {
+      "question": "Qu'est-ce que le commerce équitable ?",
+      "answer": "C'est un commerce qui garantit des conditions de travail décentes et une juste rémunération aux producteurs."
+    },
+    {
+      "question": "Pourquoi boycotter certaines marques ?",
+      "answer": "Certaines entreprises ont des pratiques environnementales ou sociales néfastes qu'un boycott peut faire évoluer."
+    },
+    {
+      "question": "Qu'est-ce que la surpêche ?",
+      "answer": "C'est la pêche excessive qui empêche le renouvellement des espèces marines, menaçant les écosystèmes."
+    },
+    {
+      "question": "Comment consommer du poisson durablement ?",
+      "answer": "Privilégiez les espèces non menacées, les méthodes de pêche durables et les labels MSC ou ASC."
+    },
+    {
+      "question": "Qu'est-ce que l'aquaculture ?",
+      "answer": "C'est l'élevage d'organismes aquatiques (poissons, crustacés, algues), qui peut être durable ou problématique."
+    },
+    {
+      "question": "Pourquoi protéger les océans ?",
+      "answer": "Ils produisent 50% de notre oxygène, régulent le climat, et abritent une biodiversité essentielle."
+    },
+    {
+      "question": "Qu'est-ce que la grande barrière de corail ?",
+      "answer": "C'est le plus grand récif corallien au monde, abritant une biodiversité exceptionnelle mais menacée par le réchauffement."
+    },
+    {
+      "question": "Comment protéger les coraux ?",
+      "answer": "Réduisez votre empreinte carbone, évitez les crèmes solaires nocives et soutenez les associations de protection."
+    },
+    {
+      "question": "Qu'est-ce que le 7ème continent ?",
+      "answer": "C'est une immense zone d'accumulation de déchets plastiques dans les océans, aussi appelée "soupe plastique"."
+    },
+    {
+      "question": "Comment participer au nettoyage des plages ?",
+      "answer": "Rejoignez des initiatives locales ou organisez-en, en respectant les consignes de sécurité et de tri."
+    },
+    {
+      "question": "Qu'est-ce que la Journée de la Terre ?",
+      "answer": "C'est un événement annuel le 22 avril pour sensibiliser à la protection de l'environnement à travers le monde."
+    },
+    {
+      "question": "Comment sensibiliser ses proches à l'écologie ?",
+      "answer": "Montrez l'exemple, partagez des informations positives et proposez des alternatives simples et accessibles."
+    },
+    {
+      "question": "Qu'est-ce qu'une AMAP ?",
+      "answer": "Une Association pour le Maintien d'une Agriculture Paysanne qui met en lien consommateurs et producteurs locaux."
+    },
+    {
+      "question": "Pourquoi préférer les produits bio ?",
+      "answer": "Ils limitent les pesticides nocifs pour la santé et l'environnement, et favorisent la biodiversité."
+    },
+    {
+      "question": "Qu'est-ce que le label AB ?",
+      "answer": "C'est le label Agriculture Biologique français garantissant qu'un produit contient au moins 95% d'ingrédients bio."
+    },
+    {
+      "question": "Comment reconnaître les labels écologiques ?",
+      "answer": "Renseignez-vous sur les critères des labels (EU Ecolabel, Bio, FSC...) pour éviter le greenwashing."
+    },
+    {
+      "question": "Qu'est-ce que le greenwashing ?",
+      "answer": "C'est une pratique marketing qui donne une image écologique trompeuse à un produit ou une entreprise."
+    },
+    {
+      "question": "Comment détecter le greenwashing ?",
+      "answer": "Méfiez-vous des termes vagues ("naturel", "éco"), vérifiez les labels et les engagements concrets."
+    },
+    {
+      "question": "Qu'est-ce qu'une entreprise responsable ?",
+      "answer": "C'est une entreprise qui intègre les enjeux sociaux et environnementaux dans sa stratégie et ses opérations."
+    },
+    {
+      "question": "Comment investir écologiquement ?",
+      "answer": "Choisissez des fonds ISR (Investissement Socialement Responsable) ou l'épargne solidaire."
+    },
+    {
+      "question": "Qu'est-ce que la finance verte ?",
+      "answer": "C'est l'ensemble des produits financiers qui soutiennent des projets bénéfiques pour l'environnement."
+    },
+    {
+      "question": "Pourquoi boycotter la fast fashion ?",
+      "answer": "Ce secteur pollue beaucoup, exploite les travailleurs et encourage la surconsommation de vêtements."
+    },
+    {
+      "question": "Qu'est-ce que la slow fashion ?",
+      "answer": "C'est l'opposé de la fast fashion : des vêtements durables, éthiques, de qualité et produits en petites quantités."
+    },
+    {
+      "question": "Comment donner une seconde vie à ses vêtements ?",
+      "answer": "Vendez, donnez, échangez ou upcyclez vos vêtements au lieu de les jeter."
+    },
+    {
+      "question": "Qu'est-ce que le upcycling ?",
+      "answer": "C'est transformer des matériaux ou objets inutilisés en produits de meilleure qualité ou valeur."
+    },
+    {
+      "question": "Pourquoi éviter les microbilles de plastique ?",
+      "answer": "Elles polluent les océans, sont ingérées par les poissons et finissent dans notre chaîne alimentaire."
+    },
+    {
+      "question": "Qu'est-ce qu'une cosmétique naturelle ?",
+      "answer": "C'est un cosmétique formulé avec des ingrédients d'origine naturelle, sans substances controversées."
+    },
+    {
+      "question": "Comment faire ses produits ménagers ?",
+      "answer": "Utilisez des ingrédients simples comme vinaigre blanc, bicarbonate, savon noir et huiles essentielles."
+    },
+    {
+      "question": "Qu'est-ce que le zéro déchet en cosmétique ?",
+      "answer": "C'est utiliser des produits solides, rechargeables ou faits maison pour éviter les emballages."
+    },
+    {
+      "question": "Pourquoi choisir des couches lavables ?",
+      "answer": "Elles réduisent considérablement les déchets (une tonne par enfant en couches jetables) et sont économiques."
+    },
+    {
+      "question": "Qu'est-ce que les perturbateurs endocriniens ?",
+      "answer": "Ce sont des substances chimiques qui interfèrent avec le système hormonal, présentes dans certains plastiques et cosmétiques."
+    },
+    {
+      "question": "Comment les éviter ?",
+      "answer": "Préférez les contenants en verre, évitez les plastiques marqués 3, 6 ou 7 et choisissez des produits naturels."
+    },
+    {
+      "question": "Qu'est-ce que le syndrome du bâtiment malsain ?",
+      "answer": "C'est lorsque l'air intérieur d'un bâtiment cause des problèmes de santé à ses occupants, souvent à cause des matériaux."
+    },
+    {
+      "question": "Comment choisir des peintures écologiques ?",
+      "answer": "Optez pour des peintures naturelles (à base d'argile, de chaux) avec des labels écologiques."
+    },
+    {
+      "question": "Qu'est-ce que le monoxyde de carbone ?",
+      "answer": "C'est un gaz toxique produit par une combustion incomplète, inodore et incolore, responsable d'intoxications."
+    },
+    {
+      "question": "Comment prévenir les risques ?",
+      "answer": "Entretenez vos appareils à combustion, aérez et installez des détecteurs de CO."
+    },
+    {
+      "question": "Qu'est-ce que l'habitat participatif ?",
+      "answer": "C'est un mode d'habitat où les résidents conçoivent et gèrent collectivement leur lieu de vie de manière écologique et solidaire."
+    },
+    {
+      "question": "Pourquoi créer un jardin partagé ?",
+      "answer": "Cela permet de cultiver localement, créer du lien social et sensibiliser à l'environnement."
+    },
+    {
+      "question": "Qu'est-ce que la biodiversité urbaine ?",
+      "answer": "C'est la diversité des espèces vivantes en ville, qu'on peut favoriser par des aménagements spécifiques."
+    },
+    {
+      "question": "Comment aider les oiseaux en ville ?",
+      "answer": "Installez des nichoirs, des points d'eau et plantez des espèces locales qui leur fournissent nourriture."
+    },
+    {
+      "question": "Qu'est-ce qu'un hôtel à insectes ?",
+      "answer": "C'est une structure qui offre des abris aux insectes pollinisateurs et auxiliaires pour favoriser la biodiversité."
+    },
+    {
+      "question": "Pourquoi planter des arbres ?",
+      "answer": "Ils absorbent le CO2, produisent de l'oxygène, rafraîchissent les villes et abritent la biodiversité."
+    },
+    {
+      "question": "Qu'est-ce que la végétalisation des villes ?",
+      "answer": "C'est l'introduction de végétation en milieu urbain pour lutter contre les îlots de chaleur et purifier l'air."
+    },
+    {
+      "question": "Comment créer un jardin écologique ?",
+      "answer": "Privilégiez les espèces locales, évitez les pesticides, récupérez l'eau de pluie et favorisez la biodiversité."
+    },
+    {
+      "question": "Qu'est-ce que la permaculture ?",
+      "answer": "C'est une méthode de conception inspirée des écosystèmes naturels pour créer des systèmes agricoles durables."
+    },
+    {
+      "question": "Pourquoi utiliser des engrais naturels ?",
+      "answer": "Ils nourrissent le sol sans le polluer, contrairement aux engrais chimiques qui appauvrissent les terres."
+    },
+    {
+      "question": "Qu'est-ce que le purin d'ortie ?",
+      "answer": "C'est un engrais et insecticide naturel fait à partir d'orties fermentées dans l'eau."
+    },
+    {
+      "question": "Comment lutter contre les limaces écologiquement ?",
+      "answer": "Utilisez des barrières (cendre, coquilles d'œuf), des pièges à bière ou favorisez leurs prédateurs naturels."
+    },
+    {
+      "question": "Qu'est-ce que la phytoépuration ?",
+      "answer": "C'est un système d'épuration des eaux usées par les plantes, sans produits chimiques."
+    },
+    {
+      "question": "Pourquoi installer une mare dans son jardin ?",
+      "answer": "Elle favorise la biodiversité, régule les températures et peut servir de réserve d'eau pour l'arrosage."
+    },
+    {
+      "question": "Qu'est-ce que la trame verte et bleue ?",
+      "answer": "C'est un réseau écologique formé par les milieux naturels (vert) et aquatiques (bleu) pour préserver la biodiversité."
+    },
+    {
+      "question": "Comment participer à des sciences participatives ?",
+      "answer": "Contribuez à des programmes de recensement d'espèces (oiseaux, papillons...) via des applications dédiées."
+    },
+    {
+      "question": "Qu'est-ce que le GIEC ?",
+      "answer": "Le Groupe d'experts Intergouvernemental sur l'Évolution du Climat qui évalue les changements climatiques."
+    },
+    {
+      "question": "Quels sont les objectifs de développement durable ?",
+      "answer": "Ce sont 17 objectifs de l'ONU pour éradiquer la pauvreté, protéger la planète et garantir la prospérité pour tous."
+    },
+    {
+      "question": "Comment agir à son échelle pour la planète ?",
+      "answer": "Chaque geste compte : consommez moins et mieux, militez, votez et sensibilisez votre entourage."
+    },
+    {
+      "question": "Qu'est-ce que la transition écologique ?",
+      "answer": "C'est le passage vers un modèle économique et social plus respectueux de l'environnement et des ressources."
+    },
+    {
+      "question": "Pourquoi s'engager dans une association écologique ?",
+      "answer": "C'est un moyen efficace d'agir concrètement, de rencontrer des personnes partageant les mêmes valeurs et de faire bouger les choses."
+    },
+    {
+      "question": "Qu'est-ce que la désobéissance civile écologique ?",
+      "answer": "Ce sont des actions non-violentes pour alerter sur l'urgence écologique quand les moyens légaux semblent insuffisants."
+    },
+    {
+      "question": "Comment organiser un événement écoresponsable ?",
+      "answer": "Choisissez un lieu accessible, limitez les déchets, proposez une restauration locale et compensez les émissions."
+    },
+    {
+      "question": "Qu'est-ce qu'un écoquartier ?",
+      "answer": "C'est un quartier conçu pour minimiser son impact environnemental (bâtiments écologiques, mobilité douce, espaces verts...)."
+    },
+    {
+      "question": "Pourquoi voter pour des candidats écologistes ?",
+      "answer": "Pour que les enjeux environnementaux soient pris en compte dans les politiques publiques à toutes les échelles."
+    },
+    {
+      "question": "Qu'est-ce que l'éco-anxiété ?",
+      "answer": "C'est l'anxiété liée à la crise écologique, qu'on peut surmonter en agissant concrètement et en rejoignant des collectifs."
+    },
+    {
+      "question": "Comment rester optimiste face à la crise écologique ?",
+      "answer": "Concentrez-vous sur les solutions, les progrès et les nombreuses initiatives positives partout dans le monde."
+    }
+  ]
+}

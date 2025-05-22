@@ -179,7 +179,7 @@ class _CommunityImpactViewState extends State<CommunityImpactView> {
                               Text(
                                 '${co2Impact.toStringAsFixed(2)} kg CO₂e',
                                 style: AppStyles.heading1.copyWith(
-                                  color: AppColors.successGreen,
+                                  color: AppColors.successColor,
                                   fontSize: 32,
                                 ),
                               ),
@@ -206,14 +206,14 @@ class _CommunityImpactViewState extends State<CommunityImpactView> {
                                   children: [
                                     Icon(
                                       Icons.nature,
-                                      color: AppColors.successGreen,
+                                      color: AppColors.successColor,
                                       size: 32,
                                     ),
                                     const SizedBox(width: 8),
                                     Text(
                                       '$treeEquivalent',
                                       style: AppStyles.heading1.copyWith(
-                                        color: AppColors.successGreen,
+                                        color: AppColors.successColor,
                                       ),
                                     ),
                                   ],

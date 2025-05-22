@@ -194,7 +194,7 @@ class EcoProgressTree extends StatelessWidget {
                       leading: Icon(
                         isGoal ? Icons.flag : Icons.emoji_events,
                         color: isGoal 
-                          ? (milestone['isCompleted'] ? AppColors.successGreen : AppColors.primaryColor)
+                          ? (milestone['isCompleted'] ? AppColors.successColor : AppColors.primaryColor)
                           : Colors.amber,
                       ),
                       title: Text(milestone['title']),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:greens_app/utils/app_colors.dart';
+import 'package:greens_app/utils/app_styles.dart';
 
 class CustomMenu extends StatelessWidget {
   final int currentIndex;
@@ -17,7 +18,7 @@ class CustomMenu extends StatelessWidget {
     return Container(
       height: 70,
       decoration: BoxDecoration(
-        color: AppColors.cardColor,
+        color: AppColors.surfaceColor,
         borderRadius: const BorderRadius.only(
           topLeft: Radius.circular(20),
           topRight: Radius.circular(20),
@@ -206,7 +207,7 @@ class CustomMenu extends StatelessWidget {
           maxHeight: MediaQuery.of(context).size.height * 0.7,
         ),
         decoration: BoxDecoration(
-          color: AppColors.cardColor,
+          color: AppColors.surfaceColor,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(20),
             topRight: Radius.circular(20),

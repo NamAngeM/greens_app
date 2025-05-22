@@ -34,13 +34,13 @@ class AppStyles {
   
   static const TextStyle caption = TextStyle(
     fontSize: 14,
-    color: AppColors.secondaryTextColor,
+    color: AppColors.textLightColor,
     height: 1.4,
   );
   
   static const TextStyle smallText = TextStyle(
     fontSize: 12,
-    color: AppColors.secondaryTextColor,
+    color: AppColors.textLightColor,
     height: 1.3,
   );
   

@@ -1,0 +1,416 @@
+{
+  "questions": [
+    {
+      "id": 1,
+      "question": "Quelle est la meilleure façon de réduire son empreinte carbone au quotidien ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Utiliser les transports en commun ou le vélo",
+          "explication": "Les transports en commun et le vélo émettent beaucoup moins de CO2 que la voiture individuelle. Un bus peut transporter jusqu'à 50 personnes, réduisant ainsi considérablement les émissions par personne.",
+          "points": 3
+        },
+        {
+          "id": "b",
+          "texte": "Acheter des produits locaux et de saison",
+          "explication": "Les produits locaux et de saison nécessitent moins de transport et d'énergie pour leur production. Ils sont également plus frais et plus nutritifs.",
+          "points": 2
+        },
+        {
+          "id": "c",
+          "texte": "Éteindre les lumières en quittant une pièce",
+          "explication": "Bien que ce soit une bonne pratique, l'impact est moindre comparé aux autres options. La consommation d'électricité représente une part plus faible de l'empreinte carbone individuelle.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "a",
+      "categorie": "transport",
+      "difficulte": "facile"
+    },
+    {
+      "id": 2,
+      "question": "Quelle action a le plus d'impact sur la réduction des déchets plastiques ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Utiliser des sacs réutilisables pour les courses",
+          "explication": "Les sacs réutilisables peuvent remplacer des centaines de sacs plastiques à usage unique. Un sac réutilisable bien entretenu peut durer plusieurs années.",
+          "points": 1
+        },
+        {
+          "id": "b",
+          "texte": "Acheter des produits en vrac avec ses propres contenants",
+          "explication": "L'achat en vrac élimine complètement les emballages à usage unique. C'est la solution la plus efficace pour réduire les déchets à la source.",
+          "points": 3
+        },
+        {
+          "id": "c",
+          "texte": "Recycler les bouteilles en plastique",
+          "explication": "Le recyclage est important mais moins efficace que la réduction à la source. De plus, tous les plastiques ne sont pas recyclables.",
+          "points": 2
+        }
+      ],
+      "bonne_reponse": "b",
+      "categorie": "dechets",
+      "difficulte": "moyen"
+    },
+    {
+      "id": 3,
+      "question": "Quelle est la méthode la plus efficace pour économiser l'eau à la maison ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Installer des réducteurs de débit sur les robinets",
+          "explication": "Les réducteurs de débit peuvent réduire la consommation d'eau de 30 à 50% sans affecter le confort d'utilisation.",
+          "points": 2
+        },
+        {
+          "id": "b",
+          "texte": "Récupérer l'eau de pluie pour le jardin",
+          "explication": "La récupération d'eau de pluie permet d'économiser jusqu'à 50% de la consommation d'eau potable pour le jardinage et le nettoyage extérieur.",
+          "points": 3
+        },
+        {
+          "id": "c",
+          "texte": "Fermer le robinet pendant le brossage des dents",
+          "explication": "Bien que ce soit une bonne pratique, l'impact est limité car cela ne concerne qu'une petite partie de la consommation d'eau quotidienne.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "b",
+      "categorie": "eau",
+      "difficulte": "facile"
+    },
+    {
+      "id": 4,
+      "question": "Comment réduire l'impact environnemental de son alimentation ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Réduire sa consommation de viande",
+          "explication": "La production de viande est responsable d'environ 14,5% des émissions de gaz à effet de serre mondiales. Réduire sa consommation de viande, notamment de bœuf, a un impact significatif sur l'empreinte carbone.",
+          "points": 3
+        },
+        {
+          "id": "b",
+          "texte": "Acheter des aliments biologiques",
+          "explication": "L'agriculture biologique utilise moins de pesticides et d'engrais chimiques, ce qui réduit la pollution des sols et de l'eau. Cependant, son impact sur les émissions de CO2 est variable.",
+          "points": 1
+        },
+        {
+          "id": "c",
+          "texte": "Éviter le gaspillage alimentaire",
+          "explication": "Le gaspillage alimentaire représente environ 8% des émissions mondiales de gaz à effet de serre. Réduire le gaspillage permet d'économiser les ressources utilisées pour produire, transporter et stocker ces aliments.",
+          "points": 2
+        }
+      ],
+      "bonne_reponse": "a",
+      "categorie": "alimentation",
+      "difficulte": "moyen"
+    },
+    {
+      "id": 5,
+      "question": "Quel est l'impact environnemental du numérique ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Le numérique représente environ 4% des émissions mondiales de gaz à effet de serre",
+          "explication": "Le secteur numérique est responsable d'environ 4% des émissions mondiales de gaz à effet de serre, soit l'équivalent du secteur aérien. Cette empreinte est en constante augmentation avec la multiplication des appareils et des usages.",
+          "points": 3
+        },
+        {
+          "id": "b",
+          "texte": "Le streaming vidéo est l'activité numérique la plus polluante",
+          "explication": "Le streaming vidéo représente plus de 60% du trafic internet mondial et génère une importante quantité d'émissions de CO2, principalement due à l'énergie consommée par les data centers et les réseaux de transmission.",
+          "points": 2
+        },
+        {
+          "id": "c",
+          "texte": "La fabrication des appareils représente la majorité de l'impact environnemental du numérique",
+          "explication": "La phase de fabrication des appareils électroniques (smartphones, ordinateurs, etc.) représente entre 30 et 80% de leur impact environnemental total sur leur cycle de vie, notamment en raison de l'extraction des métaux rares.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "a",
+      "categorie": "numerique",
+      "difficulte": "difficile"
+    },
+    {
+      "id": 6,
+      "question": "Comment réduire l'impact environnemental de sa consommation d'énergie à la maison ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Installer des panneaux solaires",
+          "explication": "Les panneaux solaires permettent de produire de l'électricité renouvelable et de réduire sa dépendance aux énergies fossiles. Cependant, leur fabrication a un impact environnemental non négligeable.",
+          "points": 2
+        },
+        {
+          "id": "b",
+          "texte": "Améliorer l'isolation du logement",
+          "explication": "Une bonne isolation thermique permet de réduire considérablement les besoins en chauffage et en climatisation, qui représentent environ 70% de la consommation d'énergie d'un logement.",
+          "points": 3
+        },
+        {
+          "id": "c",
+          "texte": "Utiliser des ampoules LED",
+          "explication": "Les ampoules LED consomment jusqu'à 90% d'électricité en moins que les ampoules à incandescence et durent beaucoup plus longtemps. Cependant, l'éclairage ne représente qu'environ 10% de la consommation électrique d'un foyer.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "b",
+      "categorie": "energie",
+      "difficulte": "moyen"
+    },
+    {
+      "id": 7,
+      "question": "Quel est l'impact environnemental de la mode ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "L'industrie textile est le 2ème plus grand pollueur d'eau douce au monde",
+          "explication": "La teinture et le traitement des textiles utilisent de grandes quantités d'eau et de produits chimiques, qui sont souvent rejetés sans traitement dans les cours d'eau, particulièrement dans les pays à faible réglementation environnementale.",
+          "points": 2
+        },
+        {
+          "id": "b",
+          "texte": "La production d'un jean consomme environ 10 000 litres d'eau",
+          "explication": "La culture du coton, la teinture et les différents traitements nécessaires à la fabrication d'un jean consomment en moyenne 10 000 litres d'eau, soit l'équivalent de ce qu'une personne boit en 10 ans.",
+          "points": 1
+        },
+        {
+          "id": "c",
+          "texte": "L'industrie de la mode est responsable d'environ 10% des émissions mondiales de CO2",
+          "explication": "L'industrie textile et de l'habillement génère plus d'émissions de gaz à effet de serre que les vols internationaux et le transport maritime réunis, principalement en raison de la production de matières premières, de la fabrication et du transport des vêtements.",
+          "points": 3
+        }
+      ],
+      "bonne_reponse": "c",
+      "categorie": "mode",
+      "difficulte": "difficile"
+    },
+    {
+      "id": 8,
+      "question": "Comment réduire l'impact environnemental de ses déplacements ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Privilégier le train plutôt que l'avion",
+          "explication": "Pour un même trajet, le train émet en moyenne 30 fois moins de CO2 que l'avion. Par exemple, un Paris-Marseille en train émet environ 3 kg de CO2 par passager, contre 90 kg en avion.",
+          "points": 2
+        },
+        {
+          "id": "b",
+          "texte": "Pratiquer le covoiturage",
+          "explication": "Le covoiturage permet de réduire le nombre de véhicules en circulation et donc les émissions de CO2. Une voiture avec 4 passagers émet 4 fois moins de CO2 par personne qu'une voiture avec un seul conducteur.",
+          "points": 1
+        },
+        {
+          "id": "c",
+          "texte": "Utiliser un vélo pour les trajets courts",
+          "explication": "Plus de 40% des trajets en voiture font moins de 3 km, une distance facilement réalisable à vélo. Le vélo n'émet aucun gaz à effet de serre lors de son utilisation et améliore la santé de l'utilisateur.",
+          "points": 3
+        }
+      ],
+      "bonne_reponse": "c",
+      "categorie": "transport",
+      "difficulte": "facile"
+    },
+    {
+      "id": 9,
+      "question": "Comment réduire l'impact environnemental de ses achats ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Acheter des produits d'occasion",
+          "explication": "Acheter d'occasion permet d'éviter la production d'un nouvel objet et donc toutes les émissions et ressources associées à sa fabrication, son emballage et son transport.",
+          "points": 3
+        },
+        {
+          "id": "b",
+          "texte": "Privilégier les produits avec des labels écologiques",
+          "explication": "Les labels écologiques garantissent que les produits respectent certains critères environnementaux. Cependant, tous les labels n'ont pas la même rigueur et certains peuvent relever du greenwashing.",
+          "points": 1
+        },
+        {
+          "id": "c",
+          "texte": "Réparer plutôt que remplacer",
+          "explication": "Réparer un objet plutôt que le remplacer permet d'éviter la production d'un nouvel objet et de réduire les déchets. La réparation génère également moins d'émissions que la fabrication d'un produit neuf.",
+          "points": 2
+        }
+      ],
+      "bonne_reponse": "a",
+      "categorie": "consommation",
+      "difficulte": "moyen"
+    },
+    {
+      "id": 10,
+      "question": "Quel est l'impact environnemental de l'élevage ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "L'élevage est responsable d'environ 14,5% des émissions mondiales de gaz à effet de serre",
+          "explication": "L'élevage génère des émissions de méthane (digestion des ruminants), de protoxyde d'azote (gestion des fumiers) et de CO2 (déforestation pour les pâturages et la culture des aliments pour animaux).",
+          "points": 3
+        },
+        {
+          "id": "b",
+          "texte": "La production d'1 kg de bœuf nécessite environ 15 000 litres d'eau",
+          "explication": "Cette eau est principalement utilisée pour produire les aliments consommés par les bovins tout au long de leur vie. En comparaison, 1 kg de pommes de terre nécessite environ 290 litres d'eau.",
+          "points": 2
+        },
+        {
+          "id": "c",
+          "texte": "L'élevage occupe environ 70% des terres agricoles mondiales",
+          "explication": "L'élevage utilise directement 30% des terres non gelées de la planète pour les pâturages, et indirectement 40% supplémentaires pour la production d'aliments pour animaux, ce qui en fait la principale cause de déforestation.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "a",
+      "categorie": "alimentation",
+      "difficulte": "difficile"
+    },
+    {
+      "id": 11,
+      "question": "Qu'est-ce que l'écologie ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "L'étude des relations entre les êtres vivants et leur environnement",
+          "explication": "L'écologie est la science qui étudie les interactions des organismes vivants entre eux et avec leur environnement. Le terme vient du grec 'oikos' (maison, habitat) et 'logos' (science, discours).",
+          "points": 3
+        },
+        {
+          "id": "b",
+          "texte": "Une idéologie politique uniquement",
+          "explication": "Bien que l'écologie ait des implications politiques, elle est avant tout une science qui étudie les relations entre les êtres vivants et leur milieu.",
+          "points": 0
+        },
+        {
+          "id": "c",
+          "texte": "La protection de l'environnement uniquement",
+          "explication": "La protection de l'environnement est une application pratique des connaissances écologiques, mais l'écologie est plus large et englobe l'étude scientifique des écosystèmes.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "a",
+      "categorie": "consommation",
+      "difficulte": "facile"
+    },
+    {
+      "id": 12,
+      "question": "Qu'est-ce qu'un écosystème ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Un ensemble d'espèces animales vivant dans un même milieu",
+          "explication": "Cette définition est incomplète car un écosystème inclut également les plantes, les micro-organismes et les éléments non vivants.",
+          "points": 1
+        },
+        {
+          "id": "b",
+          "texte": "Un ensemble formé par une communauté d'êtres vivants et son environnement",
+          "explication": "Un écosystème est l'ensemble des êtres vivants (biocénose) et des éléments non vivants (biotope) d'un milieu, ainsi que toutes les relations qui existent entre eux.",
+          "points": 3
+        },
+        {
+          "id": "c",
+          "texte": "Un parc naturel protégé par la loi",
+          "explication": "Un parc naturel peut être un exemple d'écosystème protégé, mais ce n'est pas la définition d'un écosystème.",
+          "points": 0
+        }
+      ],
+      "bonne_reponse": "b",
+      "categorie": "consommation",
+      "difficulte": "facile"
+    },
+    {
+      "id": 13,
+      "question": "Qu'est-ce que le développement durable ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Un développement économique qui dure dans le temps",
+          "explication": "Cette définition est incomplète car elle ne prend pas en compte les aspects environnementaux et sociaux.",
+          "points": 1
+        },
+        {
+          "id": "b",
+          "texte": "Un développement qui répond aux besoins du présent sans compromettre la capacité des générations futures à répondre aux leurs",
+          "explication": "Cette définition, issue du rapport Brundtland de 1987, est la plus communément admise. Elle souligne l'équilibre entre les besoins actuels et futurs.",
+          "points": 3
+        },
+        {
+          "id": "c",
+          "texte": "Une croissance économique respectueuse de l'environnement",
+          "explication": "Cette définition est partielle car le développement durable repose sur trois piliers : économique, environnemental et social.",
+          "points": 2
+        }
+      ],
+      "bonne_reponse": "b",
+      "categorie": "consommation",
+      "difficulte": "moyen"
+    },
+    {
+      "id": 14,
+      "question": "Qu'est-ce que la biodiversité ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "La diversité des espèces animales uniquement",
+          "explication": "Cette définition est incomplète car la biodiversité inclut également les plantes, les micro-organismes et la diversité génétique au sein des espèces.",
+          "points": 1
+        },
+        {
+          "id": "b",
+          "texte": "La diversité des milieux naturels sur Terre",
+          "explication": "La diversité des écosystèmes est une composante de la biodiversité, mais ce n'est pas sa définition complète.",
+          "points": 2
+        },
+        {
+          "id": "c",
+          "texte": "La diversité des organismes vivants, des écosystèmes et des gènes",
+          "explication": "La biodiversité comprend trois niveaux : la diversité des espèces, la diversité génétique au sein des espèces et la diversité des écosystèmes.",
+          "points": 3
+        }
+      ],
+      "bonne_reponse": "c",
+      "categorie": "consommation",
+      "difficulte": "moyen"
+    },
+    {
+      "id": 15,
+      "question": "Qu'est-ce que l'effet de serre ?",
+      "reponses": [
+        {
+          "id": "a",
+          "texte": "Un phénomène uniquement néfaste causé par la pollution",
+          "explication": "L'effet de serre est un phénomène naturel essentiel à la vie sur Terre. C'est son amplification par les activités humaines qui pose problème.",
+          "points": 0
+        },
+        {
+          "id": "b",
+          "texte": "Un phénomène naturel qui retient la chaleur dans l'atmosphère terrestre",
+          "explication": "L'effet de serre est un phénomène naturel où certains gaz dans l'atmosphère retiennent une partie de la chaleur du soleil, permettant une température moyenne de 15°C au lieu de -18°C.",
+          "points": 3
+        },
+        {
+          "id": "c",
+          "texte": "Le réchauffement observé dans les serres agricoles",
+          "explication": "Bien que le nom vienne de l'analogie avec les serres, l'effet de serre est un phénomène atmosphérique global qui concerne toute la planète.",
+          "points": 1
+        }
+      ],
+      "bonne_reponse": "b",
+      "categorie": "energie",
+      "difficulte": "moyen"
+    }
+  ],
+  "metadata": {
+    "version": "1.0",
+    "date_creation": "2024-05-21",
+    "nombre_questions": 15,
+    "categories": ["transport", "dechets", "eau", "alimentation", "numerique", "energie", "mode", "consommation"],
+    "niveaux_difficulte": ["facile", "moyen", "difficile"]
+  }
+}

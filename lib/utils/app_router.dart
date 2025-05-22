@@ -39,6 +39,7 @@ import 'package:greens_app/views/impact/environmental_impact_view.dart';
 import 'package:greens_app/views/digital_twin/eco_digital_twin_view.dart';
 import 'package:greens_app/views/ar/ar_eco_impact_view.dart';
 import 'package:greens_app/features/product_scanner/screens/enhanced_scanner_screen.dart';
+import 'package:greens_app/screens/admin/qa_admin_screen.dart';
 
 // Classe pour définir les constantes de routes
 class AppRoutes {
@@ -84,6 +85,7 @@ class AppRoutes {
   static const String digitalTwinSettings = '/digital_twin_settings';
   static const String arEcoImpact = '/ar_eco_impact';
   static const String chatbotSettings = '/chatbot_settings';
+  static const String qaAdmin = '/qa_admin';
 }
 
 class AppRouter {
@@ -201,6 +203,8 @@ class AppRouter {
           barcode = args['barcode'] as String?;
         }
         return MaterialPageRoute(builder: (_) => AREnvironmentalImpactView(barcode: barcode));
+      case AppRoutes.qaAdmin:
+        return MaterialPageRoute(builder: (_) => const QAAdminScreen());
         
       default:
         return MaterialPageRoute(

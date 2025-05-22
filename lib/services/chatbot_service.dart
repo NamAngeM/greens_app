@@ -1,5 +1,6 @@
 // lib/services/chatbot_service.dart
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:greens_app/models/chatbot_message.dart';
@@ -10,6 +11,7 @@ import 'package:greens_app/services/eco_challenge_service.dart';
 import 'package:greens_app/services/product_recommendation_service.dart';
 import 'package:greens_app/services/eco_digital_twin_service.dart';
 import 'package:greens_app/utils/app_router.dart';
+import 'package:flutter/services.dart';
 
 /// Modèle pour représenter le contexte d'une conversation
 class ChatContext {
@@ -130,8 +132,335 @@ class ChatbotService extends ChangeNotifier {
   bool get isLoading => _isLoading;
   bool get isInitialized => _isInitialized;
 
+  Map<String, dynamic>? _ecologieData;
+  List<Map<String, String>> _conversationHistory = [];
+  String? _lastCategory;
+
+  Future<void> initialize() async {
+    if (_isInitialized) return;
+
+    try {
+      // Charger le fichier JSON des questions/réponses
+      final String jsonString = await rootBundle.loadString('assets/data/ecologie.json');
+      _ecologieData = json.decode(jsonString);
+      
+      print('Fichier ecologie.json chargé avec succès');
+      print('Nombre de questions: ${_ecologieData!['questions'].length}');
+      print('Catégories disponibles: ${_ecologieData!['metadata']['categories'].join(', ')}');
+      
+      // Débogage: afficher les questions sur l'écologie
+      print('Questions sur l\'écologie:');
+      for (var question in _ecologieData!['questions']) {
+        if (question['categorie'] == 'consommation') {
+          print('- ${question['id']}: ${question['question']}');
+        }
+      }
+      
+      _isInitialized = true;
+      
+      // Ajouter un message de bienvenue à l'historique
+      final welcomeMessage = {
+        'id': '${DateTime.now().millisecondsSinceEpoch}_assistant',
+        'role': 'assistant',
+        'content': "Bonjour ! Je suis votre assistant écologique. Je peux vous aider avec des questions sur :\n"
+            "- La réduction de l'empreinte carbone (transport)\n"
+            "- La gestion des déchets plastiques (dechets)\n"
+            "- L'économie d'eau (eau)\n"
+            "N'hésitez pas à me poser vos questions !",
+      };
+      _conversationHistory.add(welcomeMessage);
+      
+    } catch (e) {
+      print('Erreur lors du chargement du fichier ecologie.json: $e');
+      _isInitialized = false;
+      throw Exception('Impossible de charger les données écologiques: $e');
+    }
+  }
+
+  Future<Map<String, String>> sendMessage(String message) async {
+    if (!_isInitialized || _ecologieData == null) {
+      return {
+        'id': '${DateTime.now().millisecondsSinceEpoch}_error',
+        'role': 'assistant',
+        'content': "Je suis désolé, je ne peux pas accéder à mes réponses pour le moment.",
+      };
+    }
+
+    // Ajouter le message de l'utilisateur à l'historique
+    final userMessage = {
+      'id': '${DateTime.now().millisecondsSinceEpoch}_user',
+      'role': 'user',
+      'content': message,
+    };
+    _conversationHistory.add(userMessage);
+
+    // Générer la réponse
+    final response = _generateResponse(message);
+
+    // Ajouter la réponse à l'historique
+    final assistantMessage = {
+      'id': '${DateTime.now().millisecondsSinceEpoch}_assistant',
+      'role': 'assistant',
+      'content': response,
+    };
+    _conversationHistory.add(assistantMessage);
+
+    return assistantMessage;
+  }
+
+  String _generateResponse(String userMessage) {
+    // Convertir le message en minuscules pour une meilleure correspondance
+    final message = userMessage.toLowerCase();
+
+    // Rechercher une correspondance dans les questions
+    List<Map<String, dynamic>> matchedQuestions = [];
+    
+    for (var question in _ecologieData!['questions']) {
+      final questionText = question['question'].toString().toLowerCase();
+      
+      // Vérifier si le message de l'utilisateur contient des mots-clés de la question
+      if (_containsKeywords(message, questionText)) {
+        matchedQuestions.add(question);
+      }
+    }
+    
+    // Si on a trouvé des correspondances
+    if (matchedQuestions.isNotEmpty) {
+      // Trouver la question la plus pertinente (celle avec le plus de mots-clés en commun)
+      var bestQuestion = matchedQuestions[0];
+      int bestMatchCount = 0;
+      
+      for (var question in matchedQuestions) {
+        final questionText = question['question'].toString().toLowerCase();
+        final keywords = questionText
+            .split(' ')
+            .where((word) => word.length > 3)
+            .map((word) => word.replaceAll(RegExp(r'[^\w\s]'), '').toLowerCase())
+            .where((word) => word.isNotEmpty)
+            .toList();
+        
+        int matchCount = 0;
+        for (var keyword in keywords) {
+          if (message.contains(keyword)) {
+            matchCount++;
+          }
+        }
+        
+        if (matchCount > bestMatchCount) {
+          bestMatchCount = matchCount;
+          bestQuestion = question;
+        }
+      }
+      
+      // Mettre à jour la dernière catégorie discutée
+      _lastCategory = bestQuestion['categorie'];
+      
+      // Trouver la meilleure réponse (celle avec le plus de points)
+      var bestResponse = bestQuestion['reponses'][0];
+      for (var reponse in bestQuestion['reponses']) {
+        if (reponse['points'] > bestResponse['points']) {
+          bestResponse = reponse;
+        }
+      }
+      
+      // Ajouter une suggestion de question liée si disponible
+      String suggestion = "";
+      final relatedQuestions = _ecologieData!['questions']
+          .where((q) => q['categorie'] == _lastCategory && q['id'] != bestQuestion['id'])
+          .toList();
+      
+      if (relatedQuestions.isNotEmpty) {
+        relatedQuestions.shuffle();
+        suggestion = "\n\nVous pourriez aussi vous intéresser à : \"${relatedQuestions[0]['question']}\"";
+      }
+      
+      return "Question: ${bestQuestion['question']}\n\n${bestResponse['texte']}\n\n${bestResponse['explication']}$suggestion";
+    }
+
+    // Vérifier si le message contient des mots-clés liés aux catégories
+    for (var categorie in _ecologieData!['metadata']['categories']) {
+      if (message.contains(categorie.toString().toLowerCase())) {
+        // Mettre à jour la dernière catégorie discutée
+        _lastCategory = categorie.toString();
+        
+        // Trouver toutes les questions de cette catégorie
+        var questionsCategorie = _ecologieData!['questions']
+            .where((q) => q['categorie'] == categorie)
+            .toList();
+        
+        if (questionsCategorie.isNotEmpty) {
+          questionsCategorie.shuffle();
+          var question = questionsCategorie[0];
+          return "Voici une question sur ${categorie} :\n\n${question['question']}\n\nVous pouvez me demander plus d'informations à ce sujet.";
+        }
+      }
+    }
+
+    // Si aucune correspondance n'est trouvée, retourner une réponse par défaut
+    return "Je suis désolé, je n'ai pas de réponse spécifique à cette question dans ma base de données. "
+           "Je peux vous aider avec des questions sur :\n"
+           "- La réduction de l'empreinte carbone (transport)\n"
+           "- La gestion des déchets plastiques (dechets)\n"
+           "- L'économie d'eau (eau)\n"
+           "- L'alimentation durable (alimentation)\n"
+           "- L'impact du numérique (numerique)\n"
+           "- La consommation d'énergie (energie)\n"
+           "- La mode éthique (mode)\n"
+           "- La consommation responsable (consommation)\n"
+           "N'hésitez pas à reformuler votre question.";
+  }
+
+  bool _containsKeywords(String message, String question) {
+    // Cas spécial pour les questions directes (qu'est-ce que X, comment faire X, etc.)
+    final directQuestionPatterns = [
+      RegExp(r"qu'est[\s-]*ce[\s-]*que.*"),
+      RegExp(r"que[\s-]*signifie.*"),
+      RegExp(r"comment[\s-]*faire.*"),
+      RegExp(r"comment[\s-]*peut[\s-]*on.*"),
+      RegExp(r"pourquoi[\s-]*.*"),
+      RegExp(r"définition[\s-]*de.*"),
+      RegExp(r"c'est[\s-]*quoi.*"),
+      RegExp(r"explique[\s-]*moi.*"),
+      RegExp(r"peux[\s-]*tu[\s-]*expliquer.*"),
+      RegExp(r"parle[\s-]*moi[\s-]*de.*")
+    ];
+    
+    // Dictionnaire de synonymes pour les termes écologiques
+    final synonymes = {
+      'écologie': ['écologique', 'environnement', 'nature', 'écosystème', 'planète', 'terre', 'durable'],
+      'déchets': ['ordures', 'poubelle', 'recyclage', 'tri', 'plastique', 'compost'],
+      'eau': ['hydrique', 'océan', 'mer', 'rivière', 'potable', 'consommation d\'eau'],
+      'énergie': ['électricité', 'renouvelable', 'solaire', 'éolienne', 'consommation énergétique'],
+      'transport': ['voiture', 'vélo', 'mobilité', 'déplacement', 'carburant', 'essence'],
+      'alimentation': ['nourriture', 'manger', 'repas', 'bio', 'végétarien', 'local'],
+      'consommation': ['acheter', 'achat', 'produit', 'magasin', 'responsable', 'éthique'],
+      'mode': ['vêtement', 'textile', 'habit', 'seconde main', 'fast fashion']
+    };
+    
+    // Vérifier si c'est une question directe
+    bool isDirectQuestion = false;
+    for (var pattern in directQuestionPatterns) {
+      if (pattern.hasMatch(message)) {
+        isDirectQuestion = true;
+        break;
+      }
+    }
+    
+    // Extraire les mots-clés significatifs de la question
+    final questionKeywords = question
+        .split(' ')
+        .where((word) => word.length > 3) // Ignorer les mots courts
+        .map((word) => word.replaceAll(RegExp(r'[^\w\s]'), '').toLowerCase()) // Supprimer la ponctuation
+        .where((word) => word.isNotEmpty) // Ignorer les mots vides après nettoyage
+        .toList();
+    
+    // Extraire les mots-clés du message de l'utilisateur
+    final messageKeywords = message
+        .split(' ')
+        .where((word) => word.length > 3)
+        .map((word) => word.replaceAll(RegExp(r'[^\w\s]'), '').toLowerCase())
+        .where((word) => word.isNotEmpty)
+        .toList();
+    
+    // Calculer le score de correspondance
+    int exactMatchCount = 0;
+    int synonymMatchCount = 0;
+    int fuzzyMatchCount = 0;
+    
+    for (var questionKeyword in questionKeywords) {
+      // Correspondance exacte
+      if (messageKeywords.contains(questionKeyword)) {
+        exactMatchCount++;
+        continue;
+      }
+      
+      // Correspondance par synonymes
+      bool foundSynonym = false;
+      synonymes.forEach((key, synonymList) {
+        if (questionKeyword == key || synonymList.contains(questionKeyword)) {
+          for (var messageKeyword in messageKeywords) {
+            if (messageKeyword == key || synonymList.contains(messageKeyword)) {
+              synonymMatchCount++;
+              foundSynonym = true;
+              break;
+            }
+          }
+        }
+        if (foundSynonym) return;
+      });
+      if (foundSynonym) continue;
+      
+      // Correspondance approximative (distance de Levenshtein)
+      for (var messageKeyword in messageKeywords) {
+        if (_levenshteinDistance(questionKeyword, messageKeyword) <= 2) { // Tolérance de 2 caractères
+          fuzzyMatchCount++;
+          break;
+        }
+      }
+    }
+    
+    // Calculer le score total pondéré
+    double score = exactMatchCount * 1.0 + synonymMatchCount * 0.8 + fuzzyMatchCount * 0.6;
+    
+    // Seuil de correspondance
+    double threshold = isDirectQuestion ? 0.8 : 1.5;
+    
+    // Vérifier également les catégories pour les questions liées
+    for (var category in _ecologieData!['metadata']['categories']) {
+      String categoryStr = category.toString().toLowerCase();
+      if (message.contains(categoryStr)) {
+        score += 0.5;
+      }
+      
+      // Vérifier les synonymes de catégories
+      if (synonymes.containsKey(categoryStr)) {
+        for (var synonym in synonymes[categoryStr]!) {
+          if (message.contains(synonym)) {
+            score += 0.3;
+            break;
+          }
+        }
+      }
+    }
+    
+    return score >= threshold;
+  }
+  
+  // Calcul de la distance de Levenshtein (distance d'édition entre deux chaînes)
+  int _levenshteinDistance(String s, String t) {
+    if (s == t) return 0;
+    if (s.isEmpty) return t.length;
+    if (t.isEmpty) return s.length;
+    
+    List<int> v0 = List<int>.filled(t.length + 1, 0);
+    List<int> v1 = List<int>.filled(t.length + 1, 0);
+    
+    for (int i = 0; i < v0.length; i++) {
+      v0[i] = i;
+    }
+    
+    for (int i = 0; i < s.length; i++) {
+      v1[0] = i + 1;
+      
+      for (int j = 0; j < t.length; j++) {
+        int cost = (s[i] == t[j]) ? 0 : 1;
+        v1[j + 1] = min(v1[j] + 1, min(v0[j + 1] + 1, v0[j] + cost));
+      }
+      
+      for (int j = 0; j < v0.length; j++) {
+        v0[j] = v1[j];
+      }
+    }
+    
+    return v1[t.length];
+  }
+
+  void clearConversation() {
+    _conversationHistory.clear();
+  }
+
   /// Initialise le service avec l'URL du webhook n8n et les services intégrés
-  Future<void> initialize({
+  Future<void> initializeWithWebhook({
     required String webhookUrl,
     CarbonFootprintService? carbonService,
     EnvironmentalImpactService? impactService,
@@ -219,36 +548,27 @@ class ChatbotService extends ChangeNotifier {
       print('Corps de la réponse: ${response.body}');
       
       if (response.statusCode >= 200 && response.statusCode < 300) {
-        try {
-          final responseData = jsonDecode(response.body);
-          
-          // Extraire les actions suggérées si présentes
-          List<ChatbotAction> actions = [];
-          if (responseData['actions'] != null && responseData['actions'] is List) {
-            actions = (responseData['actions'] as List)
-                .map((action) => ChatbotAction.fromJson(action))
-                .toList();
-          }
-          
-          // Extraire les suggestions si présentes
-          List<String> suggestions = [];
-          if (responseData['suggestions'] != null && responseData['suggestions'] is List) {
-            suggestions = List<String>.from(responseData['suggestions']);
-          }
-          
-          return {
-            'response': responseData['response'] ?? "J'ai bien reçu votre message, mais je n'ai pas de réponse spécifique.",
-            'actions': actions,
-            'suggestions': suggestions,
-          };
-        } catch (e) {
-          // Si la réponse n'est pas du JSON valide, retourner le corps de la réponse directement
-          return {
-            'response': response.body,
-            'actions': [],
-            'suggestions': [],
-          };
+        final responseData = jsonDecode(response.body);
+        
+        // Extraire les actions suggérées si présentes
+        List<ChatbotAction> actions = [];
+        if (responseData['actions'] != null && responseData['actions'] is List) {
+          actions = (responseData['actions'] as List)
+              .map((action) => ChatbotAction.fromJson(action))
+              .toList();
         }
+        
+        // Extraire les suggestions si présentes
+        List<String> suggestions = [];
+        if (responseData['suggestions'] != null && responseData['suggestions'] is List) {
+          suggestions = List<String>.from(responseData['suggestions']);
+        }
+        
+        return {
+          'response': responseData['response'] ?? "J'ai bien reçu votre message, mais je n'ai pas de réponse spécifique.",
+          'actions': actions,
+          'suggestions': suggestions,
+        };
       } else {
         print('Erreur lors de la communication avec n8n: ${response.statusCode}');
         return {
@@ -274,7 +594,7 @@ class ChatbotService extends ChangeNotifier {
   }
 
   /// Envoie un message au chatbot via n8n et récupère la réponse avec actions contextuelles
-  Future<ChatbotMessage> sendMessage(String message, {String userId = ''}) async {
+  Future<ChatbotMessage> sendMessageWithContext(String message, {String userId = ''}) async {
     try {
       _isLoading = true;
       notifyListeners();
@@ -296,7 +616,7 @@ class ChatbotService extends ChangeNotifier {
       final response = await getResponseWithContext(
         message, 
         context: _messages
-          .where((msg) => _messages.indexOf(msg) >= _messages.length - 5)
+          .take(5)
           .map((msg) => {
                 'text': msg.text,
                 'isUser': msg.isUser,
@@ -664,5 +984,61 @@ class ChatbotService extends ChangeNotifier {
       };
     }
     return result;
+  }
+
+  /// Récupère des suggestions de questions basées sur la catégorie de la dernière question posée
+  List<String> getSuggestedQuestions(String? lastCategory) {
+    if (!_isInitialized || _ecologieData == null) {
+      return [];
+    }
+    
+    List<String> suggestions = [];
+    
+    // Si une catégorie a été récemment discutée, suggérer des questions de cette catégorie
+    if (lastCategory != null) {
+      final questionsInCategory = _ecologieData!['questions']
+          .where((q) => q['categorie'] == lastCategory)
+          .toList();
+      
+      if (questionsInCategory.isNotEmpty) {
+        // Prendre jusqu'à 2 questions de cette catégorie
+        for (var i = 0; i < min(2, questionsInCategory.length); i++) {
+          suggestions.add(questionsInCategory[i]['question']);
+        }
+      }
+    }
+    
+    // Ajouter des questions d'autres catégories pour diversifier
+    final categories = _ecologieData!['metadata']['categories'] as List;
+    final otherCategories = categories.where((c) => c != lastCategory).toList();
+    
+    if (otherCategories.isNotEmpty) {
+      // Prendre jusqu'à 3 questions d'autres catégories
+      final randomCategories = List.from(otherCategories)..shuffle();
+      for (var i = 0; i < min(3, randomCategories.length); i++) {
+        final category = randomCategories[i];
+        final questionsInCategory = _ecologieData!['questions']
+            .where((q) => q['categorie'] == category)
+            .toList();
+        
+        if (questionsInCategory.isNotEmpty) {
+          questionsInCategory.shuffle();
+          suggestions.add(questionsInCategory[0]['question']);
+        }
+      }
+    }
+    
+    // Si nous n'avons pas assez de suggestions, ajouter des questions aléatoires
+    if (suggestions.length < 3) {
+      final allQuestions = List.from(_ecologieData!['questions'])..shuffle();
+      for (var question in allQuestions) {
+        if (!suggestions.contains(question['question'])) {
+          suggestions.add(question['question']);
+          if (suggestions.length >= 3) break;
+        }
+      }
+    }
+    
+    return suggestions;
   }
 }
