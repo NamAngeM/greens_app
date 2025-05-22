@@ -6,6 +6,7 @@ import '../utils/app_colors.dart';
 import '../utils/app_styles.dart';
 import '../utils/app_router.dart';
 import '../widgets/menu.dart';
+import 'package:intl/intl.dart';
 
 class ChatMessage {
   final String text;
@@ -103,15 +104,16 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
   @override
   Widget build(BuildContext context) {
     final double screenHeight = MediaQuery.of(context).size.height;
-
+    final bool keyboardIsOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+    
     return Scaffold(
       backgroundColor: Colors.white,
       body: Column(
         children: [
-          // Contenu principal (90% de l'écran)
-          Container(
-            height: screenHeight * 0.9,
+          // Contenu principal (90% de l'écran ou 100% si clavier ouvert)
+          Expanded(
             child: SafeArea(
+              bottom: false,
               child: Column(
                 children: [
                   // En-tête avec titre et icône de rafraîchissement
@@ -150,33 +152,34 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                       ],
                     ),
                   ),
-
-                  // Description du chatbot
-                  Padding(
-                    padding: const EdgeInsets.all(16.0),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: const [
-                        Text(
-                          'Discutez avec notre assistant',
-                          style: TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black87,
+                  
+                  // Description du chatbot (masquée si clavier ouvert)
+                  if (!keyboardIsOpen)
+                    Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: const [
+                          Text(
+                            'Discutez avec notre assistant',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Colors.black87,
+                            ),
                           ),
-                        ),
-                        SizedBox(height: 8),
-                        Text(
-                          'Posez vos questions sur l\'écologie, le développement durable et les gestes quotidiens pour protéger l\'environnement.',
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Colors.black54,
+                          SizedBox(height: 8),
+                          Text(
+                            'Posez vos questions sur l\'écologie, le développement durable et les gestes quotidiens pour protéger l\'environnement.',
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Colors.black54,
+                            ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                  ),
-
+                  
                   // Liste des messages
                   Expanded(
                     child: ListView.builder(
@@ -191,63 +194,85 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
                       },
                     ),
                   ),
-
+                  
                   // Barre de saisie
                   _buildInputBar(),
                 ],
               ),
             ),
           ),
-
-          // Menu de navigation (10% de l'écran)
-          CustomMenu(
-            currentIndex: 4, // Index pour le chatbot
-            onTap: (index) {
-              // Navigation vers les différentes pages
-              switch (index) {
-                case 0:
-                  Navigator.pushReplacementNamed(context, AppRoutes.home);
-                  break;
-                case 1:
-                  Navigator.pushReplacementNamed(context, AppRoutes.articles);
-                  break;
-                case 2:
-                  Navigator.pushReplacementNamed(context, AppRoutes.products);
-                  break;
-                case 3:
-                  Navigator.pushReplacementNamed(context, AppRoutes.profile);
-                  break;
-              }
-            },
-          ),
+          
+          // Menu de navigation (masqué si clavier ouvert)
+          if (!keyboardIsOpen)
+            CustomMenu(
+              currentIndex: 4, // Index pour le chatbot
+              onTap: (index) {
+                // Navigation vers les différentes pages
+                switch (index) {
+                  case 0:
+                    Navigator.pushReplacementNamed(context, AppRoutes.home);
+                    break;
+                  case 1:
+                    Navigator.pushReplacementNamed(context, AppRoutes.articles);
+                    break;
+                  case 2:
+                    Navigator.pushReplacementNamed(context, AppRoutes.products);
+                    break;
+                  case 3:
+                    Navigator.pushReplacementNamed(context, AppRoutes.profile);
+                    break;
+                }
+              },
+            ),
         ],
       ),
     );
   }
 
   Widget _buildMessage(ChatMessage message) {
+    // Formatter l'heure pour l'affichage (HH:mm)
+    final timeFormat = DateFormat('HH:mm', 'fr_FR'); // Assurez-vous d'importer intl
+    final formattedTime = timeFormat.format(message.timestamp);
+
     return Container(
-      margin: const EdgeInsets.symmetric(vertical: 10.0),
+      margin: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 16.0), // Ajuster les marges
       child: Row(
         mainAxisAlignment:
             message.isUser ? MainAxisAlignment.end : MainAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.end, // Alignement pour l'heure
         children: [
           if (!message.isUser) _buildAvatar(),
-          Container(
-            constraints: BoxConstraints(
-              maxWidth: MediaQuery.of(context).size.width * 0.7,
-            ),
-            padding: const EdgeInsets.symmetric(horizontal: 14.0, vertical: 10.0),
-            decoration: BoxDecoration(
-              color: AppColors.backgroundColor,
-              borderRadius: BorderRadius.circular(20.0),
-            ),
-            child: Text(
-              message.text,
-              style: TextStyle(
-                color: AppColors.primaryColor,
+          Column(
+            crossAxisAlignment: message.isUser ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+            children: [
+              Container(
+                constraints: BoxConstraints(
+                  maxWidth: MediaQuery.of(context).size.width * 0.75, // Ajuster la largeur max
+                ),
+                padding: const EdgeInsets.symmetric(horizontal: 12.0, vertical: 8.0), // Ajuster le padding
+                decoration: BoxDecoration(
+                  color: message.isUser
+                      ? AppColors.primaryColor // Vert pour l'utilisateur
+                      : AppColors.backgroundColor, // Gris clair pour le bot (utiliser backgroundColor qui semble approprié)
+                  borderRadius: BorderRadius.circular(16.0), // Arrondir les coins
+                ),
+                child: Text(
+                  message.text,
+                  style: TextStyle(
+                    color: message.isUser ? Colors.white : Colors.black87, // Couleur du texte
+                    fontSize: 15.0, // Ajuster la taille de la police
+                  ),
+                ),
               ),
-            ),
+              const SizedBox(height: 4.0), // Espace entre la bulle et l'heure
+              Text(
+                formattedTime,
+                style: TextStyle(
+                  color: Colors.grey[600], // Couleur de l'heure
+                  fontSize: 10.0, // Taille de la police pour l'heure
+                ),
+              ),
+            ],
           ),
           if (message.isUser) _buildAvatar(isUser: true),
         ],

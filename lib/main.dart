@@ -4,6 +4,8 @@ import 'package:greens_app/utils/app_colors.dart';
 import 'package:greens_app/utils/app_router.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:greens_app/controllers/auth_controller.dart';
 import 'package:greens_app/controllers/carbon_footprint_controller.dart';
 import 'package:greens_app/controllers/reward_controller.dart';
@@ -30,6 +32,13 @@ import 'screens/chat_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  
+  // Initialiser la locale pour le formatage des dates
+  try {
+    await initializeDateFormatting('fr_FR', null);
+  } catch (e) {
+    print('Erreur lors de l\'initialisation de la locale pour le formatage des dates : $e');
+  }
   
   // Initialiser Firebase avec la configuration
   try {
