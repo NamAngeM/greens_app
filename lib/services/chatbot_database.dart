@@ -150,16 +150,21 @@ class ChatbotDatabase {
       return searchQuestions(query); // Recherche simple si pas de mots-clés
     }
     
-    // Construire la requête SQL avec plusieurs conditions LIKE
+    // Construire la requête SQL avec plusieurs conditions LIKE et scoring avancé
     String sql = '''
       SELECT q.id, q.question, q.categorie, q.difficulte,
              (
     ''';
     
-    // Ajouter un score pour chaque mot-clé trouvé
+    // Ajouter un score pour chaque mot-clé trouvé avec pondération
     for (int i = 0; i < keywords.length; i++) {
       if (i > 0) sql += ' + ';
-      sql += "CASE WHEN q.question LIKE '%${keywords[i]}%' THEN 1 ELSE 0 END";
+      // Score plus élevé pour les correspondances exactes dans la question
+      sql += "CASE WHEN q.question LIKE '% ${keywords[i]} %' THEN 2.0 ";
+      // Score moyen pour les correspondances partielles
+      sql += "WHEN q.question LIKE '%${keywords[i]}%' THEN 1.0 ";
+      // Score plus faible pour les correspondances dans la catégorie
+      sql += "WHEN q.categorie LIKE '%${keywords[i]}%' THEN 0.5 ELSE 0 END";
     }
     
     sql += '''
@@ -169,19 +174,104 @@ class ChatbotDatabase {
     ''';
     
     // Ajouter une condition pour chaque mot-clé (au moins un doit correspondre)
+    List<String> conditions = [];
     for (int i = 0; i < keywords.length; i++) {
-      if (i > 0) sql += ' OR ';
-      sql += "q.question LIKE '%${keywords[i]}%'";
+      conditions.add("q.question LIKE '%${keywords[i]}%'");
+      conditions.add("q.categorie LIKE '%${keywords[i]}%'");
     }
+    
+    sql += conditions.join(' OR ');
     
     sql += '''
       ORDER BY score DESC, q.id
-      LIMIT 10
+      LIMIT 15
     ''';
     
     return await db.rawQuery(sql);
   }
+
+  // Nouvelle méthode pour trouver des questions similaires
+  Future<List<Map<String, dynamic>>> findSimilarQuestions(int questionId, {int limit = 5}) async {
+    final db = await database;
+    
+    // Obtenir la question de référence
+    final questionData = await db.query(
+      'questions',
+      where: 'id = ?',
+      whereArgs: [questionId],
+    );
+    
+    if (questionData.isEmpty) {
+      return [];
+    }
+    
+    final question = questionData.first;
+    final categorie = question['categorie'] as String;
+    final keywords = _extractKeywords(question['question'] as String);
+    
+    if (keywords.isEmpty) {
+      // Si pas de mots-clés, retourner des questions de la même catégorie
+      return await db.query(
+        'questions',
+        where: 'categorie = ? AND id != ?',
+        whereArgs: [categorie, questionId],
+        orderBy: 'id',
+        limit: limit,
+      );
+    }
+    
+    // Construire une requête pour trouver des questions similaires
+    String sql = '''
+      SELECT q.id, q.question, q.categorie, q.difficulte,
+             (CASE WHEN q.categorie = ? THEN 1.0 ELSE 0.0 END) as category_score,
+             (
+    ''';
+    
+    // Ajouter un score pour chaque mot-clé trouvé
+    for (int i = 0; i < keywords.length; i++) {
+      if (i > 0) sql += ' + ';
+      sql += "CASE WHEN q.question LIKE '%${keywords[i]}%' THEN 0.5 ELSE 0 END";
+    }
+    
+    sql += '''
+             ) as keyword_score,
+             (CASE WHEN q.categorie = ? THEN 1.0 ELSE 0.0 END) + (
+    ''';
+    
+    // Répéter les mêmes conditions pour le score total
+    for (int i = 0; i < keywords.length; i++) {
+      if (i > 0) sql += ' + ';
+      sql += "CASE WHEN q.question LIKE '%${keywords[i]}%' THEN 0.5 ELSE 0 END";
+    }
+    
+    sql += '''
+             ) as total_score
+      FROM questions q
+      WHERE q.id != ?
+      ORDER BY total_score DESC, q.id
+      LIMIT ?
+    ''';
+    
+    return await db.rawQuery(sql, [categorie, categorie, questionId, limit]);
+  }
   
+  // Méthode pour extraire les mots-clés d'une question
+  List<String> _extractKeywords(String text) {
+    final stopWords = {
+      'le', 'la', 'les', 'un', 'une', 'des', 'et', 'ou', 'mais', 'donc',
+      'car', 'ni', 'que', 'qui', 'quoi', 'dont', 'où', 'comment', 'pourquoi',
+      'quand', 'est', 'sont', 'être', 'avoir', 'faire', 'dire', 'voir',
+      'aller', 'venir', 'pouvoir', 'vouloir', 'devoir', 'falloir', 'savoir'
+    };
+    
+    return text
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^\w\s]'), '')
+        .split(' ')
+        .where((word) => word.length > 3 && !stopWords.contains(word))
+        .toList();
+  }
+
   // Obtenir une question par ID avec ses réponses
   Future<Map<String, dynamic>> getQuestionWithResponses(int questionId) async {
     final db = await database;
@@ -245,6 +335,49 @@ class ChatbotDatabase {
     );
   }
   
+  // Nouvelle méthode pour obtenir des questions par difficulté
+  Future<List<Map<String, dynamic>>> getQuestionsByDifficulty(String difficulty) async {
+    final db = await database;
+    
+    return await db.query(
+      'questions',
+      where: 'difficulte = ?',
+      whereArgs: [difficulty],
+    );
+  }
+  
+  // Nouvelle méthode pour obtenir des statistiques sur les questions
+  Future<Map<String, dynamic>> getQuestionStats() async {
+    final db = await database;
+    
+    // Nombre total de questions
+    final totalCount = Sqflite.firstIntValue(
+      await db.rawQuery('SELECT COUNT(*) FROM questions')
+    );
+    
+    // Nombre de questions par catégorie
+    final categoryCounts = await db.rawQuery('''
+      SELECT categorie, COUNT(*) as count
+      FROM questions
+      GROUP BY categorie
+      ORDER BY count DESC
+    ''');
+    
+    // Nombre de questions par difficulté
+    final difficultyCounts = await db.rawQuery('''
+      SELECT difficulte, COUNT(*) as count
+      FROM questions
+      GROUP BY difficulte
+      ORDER BY difficulte
+    ''');
+    
+    return {
+      'totalCount': totalCount,
+      'categoryCounts': categoryCounts,
+      'difficultyCounts': difficultyCounts,
+    };
+  }
+
   // Couleurs par défaut pour les catégories
   String _getCategoryColor(String category) {
     final colors = {

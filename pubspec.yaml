@@ -49,13 +49,15 @@ dependencies:
   flutter_cache_manager: ^3.3.1
   qr_code_scanner: ^1.0.1
   fl_chart: ^0.65.0  # Mise à jour vers la dernière version
-  image_picker: ^1.0.5
+  http: ^1.1.0  # Pour les requêtes API
+  image_picker: ^1.0.4  # Pour la capture d'images
+  url_launcher: ^6.1.14  # Pour ouvrir les URLs externes
+  flutter_svg: ^2.0.7  # Pour afficher des icônes SVG
+  shimmer: ^3.0.0  # Pour les effets de chargement
+  connectivity_plus: ^5.0.1  # Pour vérifier la connectivité internet
   location: ^5.0.3  # Replace geolocator with location package
-  url_launcher: ^6.2.2
   path_provider: ^2.1.5
   permission_handler: ^11.1.0
-  # Http pour les requêtes API
-  http: ^0.13.5
   googleapis: ^11.0.0
   googleapis_auth: ^1.4.1
   langchain: ^0.7.7+2

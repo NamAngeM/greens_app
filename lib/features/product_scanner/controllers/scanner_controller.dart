@@ -6,6 +6,7 @@ import '../services/product_database.dart';
 import 'dart:async';
 import 'package:flutter_barcode_scanner/flutter_barcode_scanner.dart';
 import '../services/product_service.dart';
+import '../services/eco_product_api_service.dart';
 
 enum ScannerState {
   initial,
@@ -16,8 +17,10 @@ enum ScannerState {
 }
 
 class ScannerController extends ChangeNotifier {
-  final ProductDatabase _database = ProductDatabase();
+  final ProductDatabase _database;
   final ProductService _productService;
+  final EcoProductApiService _ecoProductApiService;
+  final ImagePicker _imagePicker;
   
   ScannerState _state = ScannerState.initial;
   ScannerState get state => _state;
@@ -41,8 +44,16 @@ class ScannerController extends ChangeNotifier {
   String? get errorMessage => _errorMessage;
   File? get imageFile => _imageFile;
   
-  ScannerController({required ProductService productService}) 
-      : _productService = productService;
+  ScannerController({
+    required ProductService productService,
+    ProductDatabase? database,
+    EcoProductApiService? ecoProductApiService,
+    ImagePicker? imagePicker,
+  }) : 
+    _productService = productService,
+    _database = database ?? ProductDatabase(),
+    _ecoProductApiService = ecoProductApiService ?? EcoProductApiService.instance,
+    _imagePicker = imagePicker ?? ImagePicker();
   
   void toggleHistoryVisibility() {
     _isHistoryVisible = !_isHistoryVisible;
@@ -80,7 +91,7 @@ class ScannerController extends ChangeNotifier {
       _clearError();
       
       // Prendre une photo avec l'appareil photo
-      final pickedFile = await ImagePicker().pickImage(
+      final pickedFile = await _imagePicker.pickImage(
         source: ImageSource.camera,
         imageQuality: 80,
       );
@@ -161,17 +172,81 @@ class ScannerController extends ChangeNotifier {
     notifyListeners();
   }
 
+  // Méthode exposée pour les tests
+  @visibleForTesting
+  Future<void> testFetchProductInfo(String barcode) async {
+    return _fetchProductInfo(barcode);
+  }
+
   Future<void> _fetchProductInfo(String barcode) async {
     try {
       _setState(ScannerState.loading);
       
-      final product = await _productService.getProductByBarcode(barcode);
+      // Utiliser le nouveau service multi-sources pour obtenir des informations plus complètes
+      final product = await _ecoProductApiService.getProductInfo(barcode);
       
-      _scannedProduct = product;
-      _addToHistory(product);
+      // Si le produit n'a pas été trouvé dans les APIs externes, essayer avec le service local
+      if (product.name == 'Produit non trouvé') {
+        try {
+          final localProduct = await _productService.getProductByBarcode(barcode);
+          _scannedProduct = localProduct;
+        } catch (e) {
+          // Si le produit n'est pas trouvé localement non plus, utiliser le produit minimal
+          _scannedProduct = product;
+        }
+      } else {
+        _scannedProduct = product;
+      }
+      
+      // Ajouter le produit à l'historique
+      _addToHistory(_scannedProduct!);
+      
+      // Rechercher des alternatives plus écologiques
+      await _findAlternatives(_scannedProduct!);
+      
       _setState(ScannerState.success);
     } catch (e) {
-      _setError('Produit non trouvé ou erreur de connexion');
+      _setError('Produit non trouvé ou erreur de connexion: ${e.toString()}');
+    }
+  }
+
+  // Méthode exposée pour les tests
+  @visibleForTesting
+  Future<void> testFindAlternatives(Product product) async {
+    return _findAlternatives(product);
+  }
+
+  // Rechercher des alternatives plus écologiques
+  Future<void> _findAlternatives(Product product) async {
+    try {
+      _alternatives = await _database.getAlternatives(product);
+      
+      // Si aucune alternative n'est trouvée dans la base de données locale,
+      // essayer de rechercher des produits similaires dans la même catégorie
+      if (_alternatives.isEmpty) {
+        try {
+          final similarProducts = await _productService.searchProducts(product.category);
+          
+          // Filtrer pour ne garder que les produits avec un meilleur eco-score
+          _alternatives = similarProducts
+              .where((p) => p.ecoScore > product.ecoScore)
+              .toList();
+          
+          // Trier par eco-score décroissant
+          _alternatives.sort((a, b) => b.ecoScore.compareTo(a.ecoScore));
+          
+          // Limiter à 5 alternatives
+          if (_alternatives.length > 5) {
+            _alternatives = _alternatives.sublist(0, 5);
+          }
+        } catch (e) {
+          debugPrint('Erreur lors de la recherche d\'alternatives: $e');
+        }
+      }
+      
+      notifyListeners();
+    } catch (e) {
+      debugPrint('Erreur lors de la recherche d\'alternatives: $e');
     }
   }
 
@@ -200,4 +275,4 @@ class ScannerController extends ChangeNotifier {
     _addToHistory(_scannedProduct!);
     _setState(ScannerState.success);
   }
-} 
+}

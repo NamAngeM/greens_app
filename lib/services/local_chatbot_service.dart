@@ -135,33 +135,190 @@ class LocalChatbotService extends ChangeNotifier {
   }
 
   Future<String> getResponse(String userMessage) async {
+    if (!_isInitialized) {
+      await initialize();
+    }
+
     final settings = await getSettings();
     final normalizedMessage = _normalizeMessage(userMessage);
+    
+    // Détecter si c'est une question directe
+    final isDirectQuestion = _isDirectQuestion(normalizedMessage);
+    
+    // Extraire les mots-clés de la question
     final keywords = _extractKeywords(normalizedMessage);
     
+    // Ajouter des synonymes si activé
     if (settings['useSynonyms']) {
       keywords.addAll(_expandKeywordsWithSynonyms(keywords));
     }
 
+    // Mettre à jour le contexte si activé
     if (settings['useContext']) {
       _updateContext(keywords);
     }
 
-    final results = await _databaseService.searchQA(normalizedMessage);
-    String response;
-
-    if (results.isNotEmpty) {
-      final bestMatch = _selectBestMatch(results, keywords, settings['useContext']);
-      response = bestMatch.answer;
+    // Recherche dans la base de données
+    List<Map<String, dynamic>> results;
+    
+    // Stratégie de recherche différente pour les questions directes
+    if (isDirectQuestion) {
+      // Pour les questions directes, on peut être plus souple sur les correspondances
+      results = await _database.searchQuestionsAdvanced(normalizedMessage);
     } else {
-      response = await _getFallbackResponse(settings['showSuggestions']);
+      // Pour les autres messages, on exige une correspondance plus stricte
+      results = await _database.searchQuestionsAdvanced(normalizedMessage);
     }
 
+    String response;
+    String? category;
+
+    if (results.isNotEmpty) {
+      // Sélectionner la meilleure correspondance
+      final bestMatch = _selectBestMatch(results, isDirectQuestion);
+      
+      // Obtenir la question complète avec ses réponses
+      final questionWithResponses = await _database.getQuestionWithResponses(bestMatch['id'] as int);
+      
+      if (questionWithResponses.isNotEmpty) {
+        // Extraire la bonne réponse
+        final reponses = questionWithResponses['reponses'] as List<dynamic>;
+        final bonneReponse = reponses.firstWhere(
+          (r) => r['est_bonne_reponse'] == 1,
+          orElse: () => reponses.first,
+        );
+        
+        response = bonneReponse['texte'] as String;
+        
+        // Ajouter l'explication si disponible
+        final explication = bonneReponse['explication'] as String;
+        if (explication.isNotEmpty) {
+          response += '\n\n' + explication;
+        }
+        
+        // Mettre à jour la dernière catégorie pour les suggestions contextuelles
+        category = questionWithResponses['categorie'] as String;
+        _lastCategory = category;
+        
+        // Trouver des questions similaires pour les suggestions
+        if (settings['showSuggestions']) {
+          final similarQuestions = await _database.findSimilarQuestions(bestMatch['id'] as int);
+          if (similarQuestions.isNotEmpty) {
+            response += "\n\nVous pourriez aussi être intéressé par :\n";
+            for (var i = 0; i < min(3, similarQuestions.length); i++) {
+              response += '- ${similarQuestions[i]['question']}\n';
+            }
+          }
+        }
+      } else {
+        // Fallback si on ne trouve pas la question complète
+        response = await _getAsyncFallbackResponse(settings['showSuggestions']);
+      }
+    } else {
+      // Aucune correspondance trouvée
+      response = await _getAsyncFallbackResponse(settings['showSuggestions']);
+    }
+
+    // Formater la réponse pour la rendre plus naturelle
     if (settings['useNaturalLanguage']) {
       response = _formatResponse(response);
     }
 
     return response;
+  }
+
+  // Détecte si le message est une question directe
+  bool _isDirectQuestion(String message) {
+    final directQuestionPatterns = [
+      RegExp(r"^qu[e'].*\?", caseSensitive: false),
+      RegExp(r"^qu[i'].*\?", caseSensitive: false),
+      RegExp(r"^comment.*\?", caseSensitive: false),
+      RegExp(r"^pourquoi.*\?", caseSensitive: false),
+      RegExp(r"^quand.*\?", caseSensitive: false),
+      RegExp(r"^où.*\?", caseSensitive: false),
+      RegExp(r"^est-ce que.*\?", caseSensitive: false),
+      RegExp(r"^peux-tu.*\?", caseSensitive: false),
+      RegExp(r"^pouvez-vous.*\?", caseSensitive: false),
+      RegExp(r"^c'est quoi.*", caseSensitive: false),
+      RegExp(r"^qu'est-ce que.*", caseSensitive: false),
+      RegExp(r"^explique.*", caseSensitive: false),
+      RegExp(r"^expliques?.*", caseSensitive: false),
+      RegExp(r"^parle.*de.*", caseSensitive: false),
+      RegExp(r"^dis-moi.*", caseSensitive: false),
+    ];
+    
+    final normalizedMessage = message.toLowerCase();
+    
+    // Vérifier si le message correspond à un pattern de question directe
+    for (final pattern in directQuestionPatterns) {
+      if (pattern.hasMatch(normalizedMessage)) {
+        return true;
+      }
+    }
+    
+    // Vérifier si le message se termine par un point d'interrogation
+    if (normalizedMessage.trim().endsWith('?')) {
+      return true;
+    }
+    
+    return false;
+  }
+
+  // Sélectionne la meilleure correspondance parmi les résultats
+  Map<String, dynamic> _selectBestMatch(List<Map<String, dynamic>> results, bool isDirectQuestion) {
+    // Si c'est une question directe, on peut être plus souple
+    if (isDirectQuestion && results.length > 1) {
+      // Vérifier si le premier résultat a un score significativement plus élevé
+      final firstScore = results[0]['score'] as double;
+      final secondScore = results[1]['score'] as double;
+      
+      // Si le premier score est nettement supérieur, on le choisit
+      if (firstScore > secondScore * 1.5) {
+        return results[0];
+      }
+      
+      // Sinon, on choisit aléatoirement parmi les meilleurs résultats
+      // pour varier les réponses et éviter la monotonie
+      final topResults = results.where((r) => (r['score'] as double) >= firstScore * 0.8).toList();
+      return topResults[_random.nextInt(topResults.length)];
+    }
+    
+    // Par défaut, on prend le meilleur résultat
+    return results[0];
+  }
+
+  // Méthode améliorée pour obtenir une réponse de secours
+  String _getFallbackResponse(bool showSuggestions) {
+    String response = _fallbackResponses[_random.nextInt(_fallbackResponses.length)];
+    
+    // Ajouter des suggestions basées sur la dernière catégorie discutée
+    if (showSuggestions && _lastCategory != null) {
+      final suggestions = getSuggestedQuestions(_lastCategory);
+      if (suggestions.isNotEmpty) {
+        response += "\n\nVoici quelques questions sur ${_getCategoryName(_lastCategory!)} :\n";
+        for (final suggestion in suggestions) {
+          response += "- $suggestion\n";
+        }
+      }
+    }
+    
+    return response;
+  }
+
+  // Obtenir le nom complet d'une catégorie
+  String _getCategoryName(String category) {
+    final categoryNames = {
+      'transport': 'les transports et la mobilité',
+      'dechets': 'la gestion des déchets',
+      'eau': 'l\'économie d\'eau',
+      'alimentation': 'l\'alimentation durable',
+      'numerique': 'l\'impact du numérique',
+      'energie': 'l\'économie d\'énergie',
+      'mode': 'la mode éthique',
+      'consommation': 'la consommation responsable',
+    };
+    
+    return categoryNames[category] ?? category;
   }
 
   String _normalizeMessage(String message) {
@@ -220,53 +377,6 @@ class LocalChatbotService extends ChangeNotifier {
     }
   }
 
-  QAModel _selectBestMatch(List<QAModel> results, List<String> keywords, bool useContext) {
-    QAModel bestMatch = results.first;
-    double bestScore = 0;
-
-    for (final result in results) {
-      double score = 0;
-      final resultKeywords = _extractKeywords(result.question);
-
-      // Score pour les mots-clés exacts
-      for (final keyword in keywords) {
-        if (resultKeywords.contains(keyword)) {
-          score += 2;
-        }
-      }
-
-      // Score pour les mots-clés similaires
-      for (final keyword in keywords) {
-        for (final resultKeyword in resultKeywords) {
-          if (_levenshteinDistance(keyword, resultKeyword) <= 2) {
-            score += 1;
-          }
-        }
-      }
-
-      // Bonus pour les questions commençant par les mêmes mots
-      if (result.question.toLowerCase().startsWith(keywords.first.toLowerCase())) {
-        score += 1;
-      }
-
-      // Bonus pour le contexte
-      if (useContext) {
-        for (final contextKeyword in _recentKeywords) {
-          if (resultKeywords.contains(contextKeyword)) {
-            score += 0.5;
-          }
-        }
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestMatch = result;
-      }
-    }
-
-    return bestMatch;
-  }
-
   int _levenshteinDistance(String s, String t) {
     if (s.isEmpty) return t.length;
     if (t.isEmpty) return s.length;
@@ -293,7 +403,7 @@ class LocalChatbotService extends ChangeNotifier {
     return matrix[s.length][t.length];
   }
 
-  Future<String> _getFallbackResponse(bool showSuggestions) async {
+  Future<String> _getAsyncFallbackResponse(bool showSuggestions) async {
     final fallbackResponses = [
       "Je ne suis pas sûr de comprendre votre question. Pourriez-vous la reformuler ?",
       "Désolé, je n'ai pas d'information précise sur ce sujet. Avez-vous une autre question ?",
