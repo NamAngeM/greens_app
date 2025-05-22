@@ -4,6 +4,8 @@ import '../models/qa_model.dart';
 import '../services/local_chatbot_service.dart';
 import '../utils/app_colors.dart';
 import '../utils/app_styles.dart';
+import '../utils/app_router.dart';
+import '../widgets/menu.dart';
 
 class ChatMessage {
   final String text;
@@ -100,41 +102,123 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final double screenHeight = MediaQuery.of(context).size.height;
+
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Assistant Écologique'),
-        backgroundColor: AppColors.primaryColor,
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.settings),
-            onPressed: () {
-              Navigator.pushNamed(context, '/chatbot_settings');
-            },
-          ),
-        ],
-      ),
+      backgroundColor: Colors.white,
       body: Column(
         children: [
-          Expanded(
-            child: ListView.builder(
-              controller: _scrollController,
-              padding: const EdgeInsets.all(8.0),
-              itemCount: _messages.length + (_isTyping ? 1 : 0),
-              itemBuilder: (context, index) {
-                if (index == _messages.length) {
-                  return _buildTypingIndicator();
-                }
-                return _buildMessage(_messages[index]);
-              },
+          // Contenu principal (90% de l'écran)
+          Container(
+            height: screenHeight * 0.9,
+            child: SafeArea(
+              child: Column(
+                children: [
+                  // En-tête avec titre et icône de rafraîchissement
+                  Padding(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Spacer(),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.chat,
+                              color: AppColors.primaryColor,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              'Assistant Écologique',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.black87,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const Spacer(),
+                        IconButton(
+                          icon: const Icon(Icons.settings),
+                          onPressed: () {
+                            Navigator.pushNamed(context, '/chatbot_settings');
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Description du chatbot
+                  Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: const [
+                        Text(
+                          'Discutez avec notre assistant',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                        SizedBox(height: 8),
+                        Text(
+                          'Posez vos questions sur l\'écologie, le développement durable et les gestes quotidiens pour protéger l\'environnement.',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.black54,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  // Liste des messages
+                  Expanded(
+                    child: ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.all(8.0),
+                      itemCount: _messages.length + (_isTyping ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (index == _messages.length) {
+                          return _buildTypingIndicator();
+                        }
+                        return _buildMessage(_messages[index]);
+                      },
+                    ),
+                  ),
+
+                  // Barre de saisie
+                  _buildInputBar(),
+                ],
+              ),
             ),
           ),
-          const Divider(height: 1.0),
-          Container(
-            decoration: BoxDecoration(
-              color: AppColors.backgroundColor,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: _buildTextComposer(),
+
+          // Menu de navigation (10% de l'écran)
+          CustomMenu(
+            currentIndex: 4, // Index pour le chatbot
+            onTap: (index) {
+              // Navigation vers les différentes pages
+              switch (index) {
+                case 0:
+                  Navigator.pushReplacementNamed(context, AppRoutes.home);
+                  break;
+                case 1:
+                  Navigator.pushReplacementNamed(context, AppRoutes.articles);
+                  break;
+                case 2:
+                  Navigator.pushReplacementNamed(context, AppRoutes.products);
+                  break;
+                case 3:
+                  Navigator.pushReplacementNamed(context, AppRoutes.profile);
+                  break;
+              }
+            },
           ),
         ],
       ),
@@ -204,7 +288,7 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     );
   }
 
-  Widget _buildTextComposer() {
+  Widget _buildInputBar() {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8.0),
       child: Row(
@@ -235,4 +319,4 @@ class _ChatbotScreenState extends State<ChatbotScreen> {
     _scrollController.dispose();
     super.dispose();
   }
-} 
+}

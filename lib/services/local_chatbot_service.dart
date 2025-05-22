@@ -64,6 +64,9 @@ class LocalChatbotService extends ChangeNotifier {
     if (_isInitialized) return;
 
     try {
+      // Réinitialiser la base de données
+      await _database.resetDatabase();
+      
       // Initialiser la base de données
       await _database.loadInitialData();
       
@@ -139,92 +142,112 @@ class LocalChatbotService extends ChangeNotifier {
       await initialize();
     }
 
-    final settings = await getSettings();
-    final normalizedMessage = _normalizeMessage(userMessage);
-    
-    // Détecter si c'est une question directe
-    final isDirectQuestion = _isDirectQuestion(normalizedMessage);
-    
-    // Extraire les mots-clés de la question
-    final keywords = _extractKeywords(normalizedMessage);
-    
-    // Ajouter des synonymes si activé
-    if (settings['useSynonyms']) {
-      keywords.addAll(_expandKeywordsWithSynonyms(keywords));
-    }
-
-    // Mettre à jour le contexte si activé
-    if (settings['useContext']) {
-      _updateContext(keywords);
-    }
-
-    // Recherche dans la base de données
-    List<Map<String, dynamic>> results;
-    
-    // Stratégie de recherche différente pour les questions directes
-    if (isDirectQuestion) {
-      // Pour les questions directes, on peut être plus souple sur les correspondances
-      results = await _database.searchQuestionsAdvanced(normalizedMessage);
-    } else {
-      // Pour les autres messages, on exige une correspondance plus stricte
-      results = await _database.searchQuestionsAdvanced(normalizedMessage);
-    }
-
-    String response;
-    String? category;
-
-    if (results.isNotEmpty) {
-      // Sélectionner la meilleure correspondance
-      final bestMatch = _selectBestMatch(results, isDirectQuestion);
+    try {
+      final settings = await getSettings();
+      final normalizedMessage = _normalizeMessage(userMessage);
       
-      // Obtenir la question complète avec ses réponses
-      final questionWithResponses = await _database.getQuestionWithResponses(bestMatch['id'] as int);
+      // Détecter si c'est une question directe
+      final isDirectQuestion = _isDirectQuestion(normalizedMessage);
       
-      if (questionWithResponses.isNotEmpty) {
-        // Extraire la bonne réponse
-        final reponses = questionWithResponses['reponses'] as List<dynamic>;
-        final bonneReponse = reponses.firstWhere(
-          (r) => r['est_bonne_reponse'] == 1,
-          orElse: () => reponses.first,
-        );
-        
-        response = bonneReponse['texte'] as String;
-        
-        // Ajouter l'explication si disponible
-        final explication = bonneReponse['explication'] as String;
-        if (explication.isNotEmpty) {
-          response += '\n\n' + explication;
+      // Extraire les mots-clés de la question
+      final keywords = _extractKeywords(normalizedMessage);
+      
+      // Ajouter des synonymes si activé
+      if (settings['useSynonyms']) {
+        keywords.addAll(_expandKeywordsWithSynonyms(keywords));
+      }
+
+      // Mettre à jour le contexte si activé
+      if (settings['useContext']) {
+        _updateContext(keywords);
+      }
+
+      // Recherche dans la base de données
+      List<Map<String, dynamic>> results;
+      
+      try {
+        // Stratégie de recherche différente pour les questions directes
+        if (isDirectQuestion) {
+          // Pour les questions directes, on peut être plus souple sur les correspondances
+          results = await _database.searchQuestionsAdvanced(normalizedMessage);
+        } else {
+          // Pour les autres messages, on exige une correspondance plus stricte
+          results = await _database.searchQuestionsAdvanced(normalizedMessage);
         }
+      } catch (e) {
+        print('Erreur lors de la recherche dans la base de données: $e');
+        // En cas d'erreur, essayer une recherche simple
+        results = await _database.searchQuestions(normalizedMessage);
+      }
+
+      String response;
+      String? category;
+
+      if (results.isNotEmpty) {
+        // Sélectionner la meilleure correspondance
+        final bestMatch = _selectBestMatch(results, isDirectQuestion);
         
-        // Mettre à jour la dernière catégorie pour les suggestions contextuelles
-        category = questionWithResponses['categorie'] as String;
-        _lastCategory = category;
-        
-        // Trouver des questions similaires pour les suggestions
-        if (settings['showSuggestions']) {
-          final similarQuestions = await _database.findSimilarQuestions(bestMatch['id'] as int);
-          if (similarQuestions.isNotEmpty) {
-            response += "\n\nVous pourriez aussi être intéressé par :\n";
-            for (var i = 0; i < min(3, similarQuestions.length); i++) {
-              response += '- ${similarQuestions[i]['question']}\n';
+        try {
+          // Obtenir la question complète avec ses réponses
+          final questionWithResponses = await _database.getQuestionWithResponses(bestMatch['id'] as int);
+          
+          if (questionWithResponses.isNotEmpty) {
+            // Extraire la bonne réponse
+            final reponses = questionWithResponses['reponses'] as List<dynamic>;
+            final bonneReponse = reponses.firstWhere(
+              (r) => r['est_bonne_reponse'] == 1,
+              orElse: () => reponses.first,
+            );
+            
+            response = bonneReponse['texte'] as String;
+            
+            // Ajouter l'explication si disponible
+            final explication = bonneReponse['explication'] as String;
+            if (explication.isNotEmpty) {
+              response += '\n\n' + explication;
             }
+            
+            // Mettre à jour la dernière catégorie pour les suggestions contextuelles
+            category = questionWithResponses['categorie'] as String;
+            _lastCategory = category;
+            
+            // Trouver des questions similaires pour les suggestions
+            if (settings['showSuggestions']) {
+              try {
+                final similarQuestions = await _database.findSimilarQuestions(bestMatch['id'] as int);
+                if (similarQuestions.isNotEmpty) {
+                  response += "\n\nVous pourriez aussi être intéressé par :\n";
+                  for (var i = 0; i < min(3, similarQuestions.length); i++) {
+                    response += '- ${similarQuestions[i]['question']}\n';
+                  }
+                }
+              } catch (e) {
+                print('Erreur lors de la recherche de questions similaires: $e');
+              }
+            }
+          } else {
+            // Fallback si on ne trouve pas la question complète
+            response = await _getAsyncFallbackResponse(settings['showSuggestions']);
           }
+        } catch (e) {
+          print('Erreur lors de la récupération des réponses: $e');
+          response = await _getAsyncFallbackResponse(settings['showSuggestions']);
         }
       } else {
-        // Fallback si on ne trouve pas la question complète
+        // Aucune correspondance trouvée
         response = await _getAsyncFallbackResponse(settings['showSuggestions']);
       }
-    } else {
-      // Aucune correspondance trouvée
-      response = await _getAsyncFallbackResponse(settings['showSuggestions']);
-    }
 
-    // Formater la réponse pour la rendre plus naturelle
-    if (settings['useNaturalLanguage']) {
-      response = _formatResponse(response);
-    }
+      // Formater la réponse pour la rendre plus naturelle
+      if (settings['useNaturalLanguage']) {
+        response = _formatResponse(response);
+      }
 
-    return response;
+      return response;
+    } catch (e) {
+      print('Erreur lors de la génération de la réponse: $e');
+      return "Je suis désolé, je rencontre des difficultés techniques. Pourriez-vous reformuler votre question ?";
+    }
   }
 
   // Détecte si le message est une question directe
@@ -293,7 +316,7 @@ class LocalChatbotService extends ChangeNotifier {
     
     // Ajouter des suggestions basées sur la dernière catégorie discutée
     if (showSuggestions && _lastCategory != null) {
-      final suggestions = getSuggestedQuestions(_lastCategory);
+      final suggestions = getSuggestedQuestions(_lastCategory!);
       if (suggestions.isNotEmpty) {
         response += "\n\nVoici quelques questions sur ${_getCategoryName(_lastCategory!)} :\n";
         for (final suggestion in suggestions) {

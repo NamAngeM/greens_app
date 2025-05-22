@@ -73,6 +73,15 @@ class ChatbotDatabase {
     );
   }
 
+  Future<void> resetDatabase() async {
+    final db = await database;
+    await db.delete('questions');
+    await db.delete('reponses');
+    await db.delete('conversations');
+    await db.delete('categories');
+    print('Base de données réinitialisée avec succès');
+  }
+
   // Charger les données initiales depuis le fichier JSON
   Future<void> loadInitialData() async {
     final db = await database;
@@ -88,39 +97,31 @@ class ChatbotDatabase {
 
     try {
       // Charger le fichier JSON
-      final String jsonString = await rootBundle.loadString('assets/data/ecologie.json');
+      final String jsonString = await rootBundle.loadString('assets/ecologie.json');
       final data = json.decode(jsonString);
       
-      // Insérer les catégories
-      for (var categorie in data['metadata']['categories']) {
-        await db.insert('categories', {
-          'nom': categorie,
-          'couleur': _getCategoryColor(categorie),
-        });
-      }
-      
       // Insérer les questions et réponses
-      for (var questionData in data['questions']) {
+      for (var qaPair in data['qa_pairs']) {
         final questionId = await db.insert('questions', {
-          'question': questionData['question'],
-          'categorie': questionData['categorie'],
-          'difficulte': questionData['difficulte'],
+          'question': qaPair['question'],
+          'categorie': 'general', // Catégorie par défaut
+          'difficulte': 'facile', // Difficulté par défaut
         });
         
-        for (var reponseData in questionData['reponses']) {
-          await db.insert('reponses', {
-            'question_id': questionId,
-            'texte': reponseData['texte'],
-            'explication': reponseData['explication'],
-            'points': reponseData['points'],
-            'est_bonne_reponse': reponseData['id'] == questionData['bonne_reponse'] ? 1 : 0,
-          });
-        }
+        // Insérer la réponse
+        await db.insert('reponses', {
+          'question_id': questionId,
+          'texte': qaPair['answer'],
+          'explication': '', // Pas d'explication dans le format simple
+          'points': 1, // Points par défaut
+          'est_bonne_reponse': 1, // C'est la seule réponse
+        });
       }
       
       print('Données initiales chargées avec succès dans la base de données SQLite.');
     } catch (e) {
       print('Erreur lors du chargement des données initiales: $e');
+      rethrow;
     }
   }
   
@@ -141,8 +142,10 @@ class ChatbotDatabase {
   Future<List<Map<String, dynamic>>> searchQuestionsAdvanced(String query) async {
     final db = await database;
     
-    // Diviser la requête en mots-clés
-    final keywords = query.toLowerCase().split(' ')
+    // Diviser la requête en mots-clés et échapper les apostrophes
+    final keywords = query.toLowerCase()
+        .replaceAll("'", "''") // Échapper les apostrophes pour SQLite
+        .split(' ')
         .where((word) => word.length > 3)
         .toList();
     

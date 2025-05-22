@@ -153,10 +153,6 @@ class _HomeViewState extends State<HomeView> {
           children: [
             const SizedBox(height: 24),
             
-            // Section: Parcours écologique et défis
-            const EcoJourneyCard(),
-            const SizedBox(height: 16),
-            
             // Section: Scanner de produit
             const ScannerQuickAccess(),
             const SizedBox(height: 16),

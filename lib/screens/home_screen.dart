@@ -20,7 +20,7 @@ class _HomeScreenState extends State<HomeScreen> with AutomaticKeepAliveClientMi
   final List<Widget> _screens = [
     const _HomeTab(),
     const ArticlesScreen(),
-    const _GreenMindsTab(),
+    const ChatbotView(),
     const ProductsView(),
     const ProfileView(),
   ];

@@ -87,6 +87,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
+    - assets/ecologie.json
     - assets/images/
     - assets/images/backgrounds/
     - assets/images/logo/
